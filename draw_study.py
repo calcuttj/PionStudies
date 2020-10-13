@@ -16,17 +16,24 @@ parser.add_argument( "--Ymin", type=float, help='legend positions', default = -1
 parser.add_argument( "--Ymax", type=float, help='legend positions', default = -1. )
 parser.add_argument( "-s", type=str, help='Name of output plot file', default='stack_try.pdf' )
 parser.add_argument( "-l", type=int, help='Cut level', default = 0 )
+parser.add_argument( "--listNames", type=int, help='List contents of MC file and exit', default = 0 )
 
 args = parser.parse_args()
+
+fMC   = TFile(args.m) 
+if args.listNames:
+  for i in fMC.GetListOfKeys(): print i.GetName()
+  exit()
+
 
 gROOT.SetBatch(1)
 gStyle.SetOptStat(0)
 
 fData = TFile(args.d)
-fMC   = TFile(args.m) 
 
 c1 = TCanvas("c1", "c1", 500, 400)
 c1.SetTicks()
+
 if args.l == 0:
   data_hist = fData.Get(args.t + "hist")
   mc_hist   = fMC.Get(args.t + "stack")

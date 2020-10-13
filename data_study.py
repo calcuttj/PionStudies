@@ -28,6 +28,12 @@ beamY = array("d", [0])
 startDirZ = array("d", [0])
 startDirX = array("d", [0])
 startDirY = array("d", [0])
+caloDirZ = array("d", [0])
+caloDirX = array("d", [0])
+caloDirY = array("d", [0])
+caloZ = array("d", [0])
+caloX = array("d", [0])
+caloY = array("d", [0])
 beamDirZ = array("d", [0])
 beamDirX = array("d", [0])
 beamDirY = array("d", [0])
@@ -47,6 +53,12 @@ outtree.Branch("beamY",       beamY,      "beamY/D")
 outtree.Branch("startDirZ",   startDirZ,  "startDirZ/D")
 outtree.Branch("startDirX",   startDirX,  "startDirX/D")
 outtree.Branch("startDirY",   startDirY,  "startDirY/D")
+outtree.Branch("caloDirZ",   caloDirZ,  "caloDirZ/D")
+outtree.Branch("caloDirX",   caloDirX,  "caloDirX/D")
+outtree.Branch("caloDirY",   caloDirY,  "caloDirY/D")
+outtree.Branch("caloZ",   caloZ,  "caloZ/D")
+outtree.Branch("caloX",   caloX,  "caloX/D")
+outtree.Branch("caloY",   caloY,  "caloY/D")
 outtree.Branch("beamDirZ",    beamDirZ,   "beamDirZ/D")
 outtree.Branch("beamDirX",    beamDirX,   "beamDirX/D")
 outtree.Branch("beamDirY",    beamDirY,   "beamDirY/D")
@@ -83,6 +95,14 @@ for e in tree:
   startDirX[0] = e.reco_beam_trackDirX
   startDirY[0] = e.reco_beam_trackDirY
 
+  caloDirZ[0] = e.reco_beam_calo_startDirZ[0]
+  caloDirX[0] = e.reco_beam_calo_startDirX[0]
+  caloDirY[0] = e.reco_beam_calo_startDirY[0]
+
+  caloZ[0] = e.reco_beam_calo_startZ
+  caloX[0] = e.reco_beam_calo_startX
+  caloY[0] = e.reco_beam_calo_startY
+
   chi2[0] = e.reco_beam_Chi2_proton / e.reco_beam_Chi2_ndof
   cnn[0] = e.reco_beam_PFP_trackScore
   cnn_collection[0] = e.reco_beam_PFP_trackScore_collection
@@ -99,7 +119,7 @@ startXhist = gDirectory.Get("startXhist")
 outtree.Draw( "startY>>startYhist(40, 380., 500.)" )
 startYhist = gDirectory.Get("startYhist")
 
-outtree.Draw( "startZ>>startZhist(80, 0., 80.)" )
+outtree.Draw( "startZ>>startZhist(50, 0., 50.)" )
 startZhist = gDirectory.Get("startZhist")
 
 outtree.Draw( "startX-beamX>>deltaXhist(50, -100., 100.)" )
@@ -108,8 +128,53 @@ deltaXhist = gDirectory.Get("deltaXhist")
 outtree.Draw( "startY-beamY>>deltaYhist(50, -100., 100.)" )
 deltaYhist = gDirectory.Get("deltaYhist")
 
+outtree.Draw( "beamX>>beamXhist(40,-100.,100.)" )
+beamXhist = gDirectory.Get("beamXhist")
+
+outtree.Draw( "beamY>>beamYhist(40, 380., 500.)" )
+beamYhist = gDirectory.Get("beamYhist")
+
+outtree.Draw( "beamDirX>>beam_dirXhist(100, -.3, -.1)" )
+beam_dirXhist = gDirectory.Get("beam_dirXhist")
+
+outtree.Draw( "beamDirY>>beam_dirYhist(100, -.3, -.1)" )
+beam_dirYhist = gDirectory.Get("beam_dirYhist")
+
+outtree.Draw( "beamDirZ>>beam_dirZhist(100, .9, 1.)" )
+beam_dirZhist = gDirectory.Get("beam_dirZhist")
+
+outtree.Draw( "startDirX>>trackDirXhist(40, -.75, .5)" )
+trackDirXhist = gDirectory.Get("trackDirXhist")
+
+outtree.Draw( "startDirY>>trackDirYhist(40, -.75, .5)" )
+trackDirYhist = gDirectory.Get("trackDirYhist")
+
+outtree.Draw( "startDirZ>>trackDirZhist(20, .75, 1.)" )
+trackDirZhist = gDirectory.Get("trackDirZhist")
+
+outtree.Draw( "caloDirX>>caloDirXhist(40, -.75, .5)" )
+caloDirXhist = gDirectory.Get("caloDirXhist")
+
+outtree.Draw( "caloDirY>>caloDirYhist(40, -.75, .5)" )
+caloDirYhist = gDirectory.Get("caloDirYhist")
+
+outtree.Draw( "caloDirZ>>caloDirZhist(20, .75, 1.)" )
+caloDirZhist = gDirectory.Get("caloDirZhist")
+
+outtree.Draw( "caloX>>caloXhist(40, -100., 100.)" )
+caloXhist = gDirectory.Get("caloXhist")
+
+outtree.Draw( "caloY>>caloYhist(40, 380., 500.)" )
+caloYhist = gDirectory.Get("caloYhist")
+
+outtree.Draw( "caloZ>>caloZhist(20, -20., 20.)" )
+caloZhist = gDirectory.Get("caloZhist")
+
 outtree.Draw( "(beamDirX*startDirX + beamDirY*startDirY + beamDirZ*startDirZ)>>coshist(50, .75, 1.)")
 coshist = gDirectory.Get("coshist")
+
+outtree.Draw( "(caloDirX*startDirX + caloDirY*startDirY + caloDirZ*startDirZ)>>cosSCEhist(50, .75, 1.)")
+cosSCEhist = gDirectory.Get("cosSCEhist")
 
 outtree.Draw( "chi2>>chi2hist(100, 0., 400.)" )
 chi2hist = gDirectory.Get("chi2hist")
@@ -153,6 +218,10 @@ set_style(coshist, "Cos(#theta)", "")
 markers(coshist)
 coshist.Write()
 
+set_style(cosSCEhist, "Cos(#theta)", "")
+markers(cosSCEhist)
+cosSCEhist.Write()
+
 set_style(chi2hist, "#chi^{2}", "")
 markers(chi2hist)
 chi2hist.Write()
@@ -169,7 +238,61 @@ set_style(endZhist, "Track End Z (cm)", "")
 markers(endZhist)
 endZhist.Write()
 
+set_style(beamXhist, "Beam X (cm)", "")
+markers(beamXhist)
+beamXhist.Write()
 
+set_style(beamYhist, "Beam Y (cm)", "")
+markers(beamYhist)
+beamYhist.Write()
+
+set_style(beam_dirXhist, "Beam dir X", "")
+markers(beam_dirXhist)
+beam_dirXhist.Write()
+
+set_style(beam_dirYhist, "Beam dir Y", "")
+markers(beam_dirYhist)
+beam_dirYhist.Write()
+
+set_style(beam_dirZhist, "Beam dir Z", "")
+markers(beam_dirZhist)
+beam_dirZhist.Write()
+
+set_style(trackDirXhist, "Reco dir X", "")
+markers(trackDirXhist)
+trackDirXhist.Write()
+
+set_style(trackDirYhist, "Reco dir Y", "")
+markers(trackDirYhist)
+trackDirYhist.Write()
+
+set_style(trackDirZhist, "Reco dir Z", "")
+markers(trackDirZhist)
+trackDirZhist.Write()
+
+set_style(caloDirXhist, "Reco dir X", "")
+markers(caloDirXhist)
+caloDirXhist.Write()
+
+set_style(caloDirYhist, "Reco dir Y", "")
+markers(caloDirYhist)
+caloDirYhist.Write()
+
+set_style(caloDirZhist, "Reco dir Z", "")
+markers(caloDirZhist)
+caloDirZhist.Write()
+
+set_style(caloXhist, "Reco X (cm)", "")
+markers(caloXhist)
+caloXhist.Write()
+
+set_style(caloYhist, "Reco Y (cm)", "")
+markers(caloYhist)
+caloYhist.Write()
+
+set_style(caloZhist, "Reco Z (cm)", "")
+markers(caloZhist)
+caloZhist.Write()
 
 ### First cut: with angular and position cuts ###
 first_cut_dir = fout.mkdir( "first_cut_dir", "Cuts include start position and angular cuts")

@@ -140,7 +140,7 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
 
   //Column definitions in data
   auto data_all = data_frame
-    .Define("beamPID", data_beam_PID, {"data_BI_PDG_candidates"})
+    .Define("beamPID", data_beam_PID, {"beam_inst_PDG_candidates"})
     
     //FRANCESCA: not using distance anymore.. kick out?
     .Define("daughter_distance3D", compute_distanceVertex,
@@ -189,8 +189,8 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
     .Define("passBeamCutBI", beam_cut_MC_BI,
             {"reco_beam_startX", "reco_beam_startY", "reco_beam_startZ",
              "reco_beam_trackDirX", "reco_beam_trackDirY", "reco_beam_trackDirZ",
-             "data_BI_X", "data_BI_Y", "data_BI_dirX", "data_BI_dirY",
-             "data_BI_dirZ", "data_BI_nMomenta", "data_BI_nTracks"})
+             "beam_inst_X", "beam_inst_Y", "beam_inst_dirX", "beam_inst_dirY",
+             "beam_inst_dirZ", "beam_inst_nMomenta", "beam_inst_nTracks"})
 
     .Define("primary_ends_inAPA3", endAPA3, {"reco_beam_endZ"})
 
@@ -209,12 +209,12 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
  
     .Define("primary_isBeamType", isBeamType, {"reco_beam_type"})
     .Define("passBeamQuality", data_BI_quality,
-            {"data_BI_nMomenta", "data_BI_nTracks"})
+            {"beam_inst_nMomenta", "beam_inst_nTracks"})
     .Define("passBeamCut", manual_beamPos_data,
             {"reco_beam_startX", "reco_beam_startY", "reco_beam_startZ",
              "reco_beam_trackDirX", "reco_beam_trackDirY", "reco_beam_trackDirZ",
-             "data_BI_X", "data_BI_Y", "data_BI_dirX", "data_BI_dirY",
-             "data_BI_dirZ", "data_BI_nMomenta", "data_BI_nTracks"})
+             "beam_inst_X", "beam_inst_Y", "beam_inst_dirX", "beam_inst_dirY",
+             "beam_inst_dirZ", "beam_inst_nMomenta", "beam_inst_nTracks"})
 
      .Define("has_noPion_daughter", secondary_noPion,
             {"reco_daughter_PFP_trackScore_collection",

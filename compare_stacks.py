@@ -1,4 +1,4 @@
-from ROOT import *
+import ROOT as RT
 import sys
 from set_style import * 
 from add_stack import *
@@ -21,6 +21,7 @@ parser.add_argument( "-l", type=int, help="Set Log?", default=0 )
 
 parser.add_argument( "-t", type=str, help='Name of output plot file', default='stack_try.pdf' )
 parser.add_argument( "-r", type=int, help='Rebin?', default = 0 )
+parser.add_argument( "--listNames", type=int, help='List stacks?', default=0)
 
 args = parser.parse_args()
 
@@ -28,15 +29,19 @@ args = parser.parse_args()
 do_range = True
 if( args.min == -1. and args.max == -1. ): do_range = False
 
+fMC = RT.TFile(args.m)
+if args.listNames:
+  for i in fMC.GetListOfKeys(): print(i.GetName())
+  exit()
+
 stack_title = args.s 
 
-gROOT.SetBatch(1)
-gStyle.SetOptStat(0)
+RT.gROOT.SetBatch(1)
+RT.gStyle.SetOptStat(0)
 
-fData = TFile(args.d)
+fData = RT.TFile(args.d)
 #data_stack = fData.Get(stack_title)
 
-fMC = TFile(args.m)
 mc_stack = fMC.Get(stack_title)
 
 
@@ -48,8 +53,8 @@ data_hist = fData.Get(stack_title).GetHists().At(0).Clone("")
 #data_hist = fData.Get(stack_title)
 
 
-print data_hist.Integral()
-print add_stack( mc_stack )
+#print data_hist.Integral()
+#print add_stack( mc_stack )
 
 
 #data_hist.Scale( mc_hist.Integral() / data_hist.Integral() )
@@ -67,13 +72,13 @@ if( args.r ):
     new_hists[i].Rebin(args.r) 
     new_hists[i].Scale( 1. / args.r )
 
-  mc_stack = THStack()
+  mc_stack = RT.THStack()
   for h in new_hists:
     mc_stack.Add( h )
 
 
   
-c1 = TCanvas("c1", "c1", 500, 400)
+c1 = RT.TCanvas("c1", "c1", 500, 400)
 c1.SetTicks()
 if args.l: c1.SetLogy()
 mc_stack.Draw()
@@ -81,7 +86,7 @@ set_style( mc_stack, args.p, "" )
 if do_range:
   mc_stack.GetXaxis().SetRangeUser(args.min, args.max)
 
-print data_hist.GetMaximum(), mc_stack.GetMaximum()
+#print data_hist.GetMaximum(), mc_stack.GetMaximum()
 if data_hist.GetMaximum() > mc_stack.GetMaximum():
   mc_stack.SetMaximum(1.1*data_hist.GetMaximum())
 

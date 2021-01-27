@@ -1,4 +1,4 @@
-from ROOT import * 
+import ROOT as RT
 import sys
 from defcuts import defcuts, testcuts, testcuts_FS, ang_pos_test_cut, ang_cut_str, pos_cut_str
 from defcuts import data_ang_pos_test_cut, data_ang_cut_str, data_pos_cut_str
@@ -7,16 +7,16 @@ from set_style import *
 
 
 
-gROOT.SetBatch(1)
+RT.gROOT.SetBatch(1)
 
-f = TFile( sys.argv[1] )
+f = RT.TFile( sys.argv[1] )
 
 tree = f.Get("pionana/beamana")
 
 base_cut = " && reco_beam_type == 13"
 
-fout = TFile( sys.argv[2], "RECREATE" )
-outtree = TTree("tree", "")
+fout = RT.TFile( sys.argv[2], "RECREATE" )
+outtree = RT.TTree("tree", "")
 endZ = array("d", [0])
 length = array("d", [0])
 startZ = array("d", [0])
@@ -95,9 +95,14 @@ for e in tree:
   startDirX[0] = e.reco_beam_trackDirX
   startDirY[0] = e.reco_beam_trackDirY
 
-  caloDirZ[0] = e.reco_beam_calo_startDirZ[0]
-  caloDirX[0] = e.reco_beam_calo_startDirX[0]
-  caloDirY[0] = e.reco_beam_calo_startDirY[0]
+  if (len([i for i in e.reco_beam_calo_startDirZ])):
+    caloDirZ[0] = e.reco_beam_calo_startDirZ[0]
+    caloDirX[0] = e.reco_beam_calo_startDirX[0]
+    caloDirY[0] = e.reco_beam_calo_startDirY[0]
+  else:
+    caloDirZ[0] = -1.
+    caloDirX[0] = -1.
+    caloDirY[0] = -1.
 
   caloZ[0] = e.reco_beam_calo_startZ
   caloX[0] = e.reco_beam_calo_startX
@@ -111,82 +116,82 @@ for e in tree:
   outtree.Fill()
 
 outtree.Draw( "length>>lenhist(40,0,500.)" )
-lenhist = gDirectory.Get("lenhist")
+lenhist = RT.gDirectory.Get("lenhist")
 
 outtree.Draw( "startX>>startXhist(40, -100., 100.)" )
-startXhist = gDirectory.Get("startXhist")
+startXhist = RT.gDirectory.Get("startXhist")
 
 outtree.Draw( "startY>>startYhist(40, 380., 500.)" )
-startYhist = gDirectory.Get("startYhist")
+startYhist = RT.gDirectory.Get("startYhist")
 
 outtree.Draw( "startZ>>startZhist(50, 0., 50.)" )
-startZhist = gDirectory.Get("startZhist")
+startZhist = RT.gDirectory.Get("startZhist")
 
 outtree.Draw( "startX-beamX>>deltaXhist(50, -100., 100.)" )
-deltaXhist = gDirectory.Get("deltaXhist")
+deltaXhist = RT.gDirectory.Get("deltaXhist")
 
 outtree.Draw( "startY-beamY>>deltaYhist(50, -100., 100.)" )
-deltaYhist = gDirectory.Get("deltaYhist")
+deltaYhist = RT.gDirectory.Get("deltaYhist")
 
 outtree.Draw( "beamX>>beamXhist(40,-100.,100.)" )
-beamXhist = gDirectory.Get("beamXhist")
+beamXhist = RT.gDirectory.Get("beamXhist")
 
 outtree.Draw( "beamY>>beamYhist(40, 380., 500.)" )
-beamYhist = gDirectory.Get("beamYhist")
+beamYhist = RT.gDirectory.Get("beamYhist")
 
 outtree.Draw( "beamDirX>>beam_dirXhist(100, -.3, -.1)" )
-beam_dirXhist = gDirectory.Get("beam_dirXhist")
+beam_dirXhist = RT.gDirectory.Get("beam_dirXhist")
 
 outtree.Draw( "beamDirY>>beam_dirYhist(100, -.3, -.1)" )
-beam_dirYhist = gDirectory.Get("beam_dirYhist")
+beam_dirYhist = RT.gDirectory.Get("beam_dirYhist")
 
 outtree.Draw( "beamDirZ>>beam_dirZhist(100, .9, 1.)" )
-beam_dirZhist = gDirectory.Get("beam_dirZhist")
+beam_dirZhist = RT.gDirectory.Get("beam_dirZhist")
 
 outtree.Draw( "startDirX>>trackDirXhist(40, -.75, .5)" )
-trackDirXhist = gDirectory.Get("trackDirXhist")
+trackDirXhist = RT.gDirectory.Get("trackDirXhist")
 
 outtree.Draw( "startDirY>>trackDirYhist(40, -.75, .5)" )
-trackDirYhist = gDirectory.Get("trackDirYhist")
+trackDirYhist = RT.gDirectory.Get("trackDirYhist")
 
 outtree.Draw( "startDirZ>>trackDirZhist(20, .75, 1.)" )
-trackDirZhist = gDirectory.Get("trackDirZhist")
+trackDirZhist = RT.gDirectory.Get("trackDirZhist")
 
 outtree.Draw( "caloDirX>>caloDirXhist(40, -.75, .5)" )
-caloDirXhist = gDirectory.Get("caloDirXhist")
+caloDirXhist = RT.gDirectory.Get("caloDirXhist")
 
 outtree.Draw( "caloDirY>>caloDirYhist(40, -.75, .5)" )
-caloDirYhist = gDirectory.Get("caloDirYhist")
+caloDirYhist = RT.gDirectory.Get("caloDirYhist")
 
 outtree.Draw( "caloDirZ>>caloDirZhist(20, .75, 1.)" )
-caloDirZhist = gDirectory.Get("caloDirZhist")
+caloDirZhist = RT.gDirectory.Get("caloDirZhist")
 
 outtree.Draw( "caloX>>caloXhist(40, -100., 100.)" )
-caloXhist = gDirectory.Get("caloXhist")
+caloXhist = RT.gDirectory.Get("caloXhist")
 
 outtree.Draw( "caloY>>caloYhist(40, 380., 500.)" )
-caloYhist = gDirectory.Get("caloYhist")
+caloYhist = RT.gDirectory.Get("caloYhist")
 
 outtree.Draw( "caloZ>>caloZhist(20, -20., 20.)" )
-caloZhist = gDirectory.Get("caloZhist")
+caloZhist = RT.gDirectory.Get("caloZhist")
 
 outtree.Draw( "(beamDirX*startDirX + beamDirY*startDirY + beamDirZ*startDirZ)>>coshist(50, .75, 1.)")
-coshist = gDirectory.Get("coshist")
+coshist = RT.gDirectory.Get("coshist")
 
 outtree.Draw( "(caloDirX*startDirX + caloDirY*startDirY + caloDirZ*startDirZ)>>cosSCEhist(50, .75, 1.)")
-cosSCEhist = gDirectory.Get("cosSCEhist")
+cosSCEhist = RT.gDirectory.Get("cosSCEhist")
 
 outtree.Draw( "chi2>>chi2hist(100, 0., 400.)" )
-chi2hist = gDirectory.Get("chi2hist")
+chi2hist = RT.gDirectory.Get("chi2hist")
 
 outtree.Draw( "cnn>>cnnhist(100, 0., 1.)" )
-cnnhist = gDirectory.Get("cnnhist")
+cnnhist = RT.gDirectory.Get("cnnhist")
 
 outtree.Draw( "cnn_collection>>cnn_collectionhist(100, 0., 1.)" )
-cnn_collectionhist = gDirectory.Get("cnn_collectionhist")
+cnn_collectionhist = RT.gDirectory.Get("cnn_collectionhist")
 
 outtree.Draw( "endZ>>endZhist(40, 0., 500.)" )
-endZhist = gDirectory.Get("endZhist")
+endZhist = RT.gDirectory.Get("endZhist")
 
 fout.cd()
 
@@ -307,25 +312,25 @@ pos_cut += " && ( ( startY - beamY ) < 10. ) "
 pos_cut += " && ( startZ > 30. ) && ( startZ < 35. )"
 
 outtree.Draw( "length>>len_ang_pos_cut(40,0.,500.)", "1 " + ang_cut + pos_cut)
-lenhist = gDirectory.Get("len_ang_pos_cut")
+lenhist = RT.gDirectory.Get("len_ang_pos_cut")
 
 outtree.Draw( "endZ>>endZ_ang_pos_cut(40,0.,500.)", "1 " + ang_cut + pos_cut)
-endZhist = gDirectory.Get("endZ_ang_pos_cut")
+endZhist = RT.gDirectory.Get("endZ_ang_pos_cut")
 
 outtree.Draw( "startZ>>startZ_ang_pos_cut(80, 0., 80.)", "1 " + ang_cut + pos_cut)
-startZhist = gDirectory.Get("startZ_ang_pos_cut")
+startZhist = RT.gDirectory.Get("startZ_ang_pos_cut")
 
 outtree.Draw( "startX>>startX_ang_pos_cut(40, -100., 100.)", "1 " + ang_cut + pos_cut)
-startXhist = gDirectory.Get("startX_ang_pos_cut")
+startXhist = RT.gDirectory.Get("startX_ang_pos_cut")
 
 outtree.Draw( "startY>>startY_ang_pos_cut(40, 380., 500.)", "1 " + ang_cut + pos_cut)
-startYhist = gDirectory.Get("startY_ang_pos_cut")
+startYhist = RT.gDirectory.Get("startY_ang_pos_cut")
 
 outtree.Draw( "chi2>>chi2_ang_pos_cut(100, 0., 400.)", "1 " + ang_cut + pos_cut)
-chi2hist = gDirectory.Get("chi2_ang_pos_cut")
+chi2hist = RT.gDirectory.Get("chi2_ang_pos_cut")
 
 outtree.Draw( "cnn>>cnn_ang_pos_cut(100, 0., 1.)", "1 " + ang_cut + pos_cut)
-cnnhist = gDirectory.Get("cnn_ang_pos_cut")
+cnnhist = RT.gDirectory.Get("cnn_ang_pos_cut")
 
 
 first_cut_dir.cd()
@@ -371,25 +376,25 @@ second_cut_dir.cd()
 endZ_cut = " && endZ < 226. "
 
 outtree.Draw( "length>>len_ang_pos_endZ_cut(40,0.,500.)", "1 " + ang_cut + pos_cut + endZ_cut)
-lenhist = gDirectory.Get("len_ang_pos_endZ_cut")
+lenhist = RT.gDirectory.Get("len_ang_pos_endZ_cut")
 
 outtree.Draw( "endZ>>endZ_ang_pos_endZ_cut(40,0.,500.)", "1 " + ang_cut + pos_cut + endZ_cut)
-endZhist = gDirectory.Get("endZ_ang_pos_endZ_cut")
+endZhist = RT.gDirectory.Get("endZ_ang_pos_endZ_cut")
 
 outtree.Draw( "startZ>>startZ_ang_pos_endZ_cut(80, 0., 80.)", "1 " + ang_cut + pos_cut + endZ_cut)
-startZhist = gDirectory.Get("startZ_ang_pos_endZ_cut")
+startZhist = RT.gDirectory.Get("startZ_ang_pos_endZ_cut")
 
 outtree.Draw( "startX>>startX_ang_pos_endZ_cut(40, -100., 100.)", "1 " + ang_cut + pos_cut + endZ_cut)
-startXhist = gDirectory.Get("startX_ang_pos_endZ_cut")
+startXhist = RT.gDirectory.Get("startX_ang_pos_endZ_cut")
 
 outtree.Draw( "startY>>startY_ang_pos_endZ_cut(40, 380., 500.)", "1 " + ang_cut + pos_cut + endZ_cut)
-startYhist = gDirectory.Get("startY_ang_pos_endZ_cut")
+startYhist = RT.gDirectory.Get("startY_ang_pos_endZ_cut")
 
 outtree.Draw( "chi2>>chi2_ang_pos_endZ_cut(100, 0., 400.)", "1 " + ang_cut + pos_cut + endZ_cut)
-chi2hist = gDirectory.Get("chi2_ang_pos_endZ_cut")
+chi2hist = RT.gDirectory.Get("chi2_ang_pos_endZ_cut")
 
 outtree.Draw( "cnn>>cnn_ang_pos_endZ_cut(100, 0., 1.)", "1 " + ang_cut + pos_cut + endZ_cut)
-cnnhist = gDirectory.Get("cnn_ang_pos_endZ_cut")
+cnnhist = RT.gDirectory.Get("cnn_ang_pos_endZ_cut")
 
 
 second_cut_dir.cd()
@@ -434,25 +439,25 @@ chi2_cut = " && chi2 > 140. "
 
 
 outtree.Draw( "length>>len_ang_pos_endZ_chi2_cut(40,0.,500.)", "1 " + ang_cut + pos_cut + endZ_cut + chi2_cut)
-lenhist = gDirectory.Get("len_ang_pos_endZ_chi2_cut")
+lenhist = RT.gDirectory.Get("len_ang_pos_endZ_chi2_cut")
 
 outtree.Draw( "endZ>>endZ_ang_pos_endZ_chi2_cut(40,0.,500.)", "1 " + ang_cut + pos_cut + endZ_cut + chi2_cut)
-endZhist = gDirectory.Get("endZ_ang_pos_endZ_chi2_cut")
+endZhist = RT.gDirectory.Get("endZ_ang_pos_endZ_chi2_cut")
 
 outtree.Draw( "startZ>>startZ_ang_pos_endZ_chi2_cut(80, 0., 80.)", "1 " + ang_cut + pos_cut + endZ_cut + chi2_cut)
-startZhist = gDirectory.Get("startZ_ang_pos_endZ_chi2_cut")
+startZhist = RT.gDirectory.Get("startZ_ang_pos_endZ_chi2_cut")
 
 outtree.Draw( "startX>>startX_ang_pos_endZ_chi2_cut(40, -100., 100.)", "1 " + ang_cut + pos_cut + endZ_cut + chi2_cut)
-startXhist = gDirectory.Get("startX_ang_pos_endZ_chi2_cut")
+startXhist = RT.gDirectory.Get("startX_ang_pos_endZ_chi2_cut")
 
 outtree.Draw( "startY>>startY_ang_pos_endZ_chi2_cut(40, 380., 500.)", "1 " + ang_cut + pos_cut + endZ_cut + chi2_cut)
-startYhist = gDirectory.Get("startY_ang_pos_endZ_chi2_cut")
+startYhist = RT.gDirectory.Get("startY_ang_pos_endZ_chi2_cut")
 
 outtree.Draw( "chi2>>chi2_ang_pos_endZ_chi2_cut(100, 0., 400.)", "1 " + ang_cut + pos_cut + endZ_cut + chi2_cut)
-chi2hist = gDirectory.Get("chi2_ang_pos_endZ_chi2_cut")
+chi2hist = RT.gDirectory.Get("chi2_ang_pos_endZ_chi2_cut")
 
 outtree.Draw( "cnn>>cnn_ang_pos_endZ_chi2_cut(100, 0., 1.)", "1 " + ang_cut + pos_cut + endZ_cut + chi2_cut)
-cnnhist = gDirectory.Get("cnn_ang_pos_endZ_chi2_cut")
+cnnhist = RT.gDirectory.Get("cnn_ang_pos_endZ_chi2_cut")
 
 
 third_cut_dir.cd()

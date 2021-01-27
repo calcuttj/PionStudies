@@ -70,10 +70,6 @@ int leading_proton_study(const string selected_abs_file, const string APA3_cut_f
        "true_daughter_nProton", "leading_proton_momentum"));
   selected_abs_nProton_leadingP.Write();
 
-  //TH1D abs_selected_nProton = *(abs_absSignal_filter.Histo1D(
-  //    {"abs_selected_nProton", "", 10, 0, 10}, "true_daughter_nProton"));
-  //TH1D abs_total_nProton = *(endAPA3_absSignal_filter.Histo1D(
-  //    {"abs_total_nProton", "", 10, 0, 10}, "true_daughter_nProton"));
   TH1D * abs_selected_nProton =
       (TH1D*)selected_abs_nProton_leadingP.ProjectionX()->Clone();
   TH1D * abs_total_nProton =

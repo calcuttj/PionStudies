@@ -1,7 +1,6 @@
-from ROOT import *
-
+import ROOT as RT
 def scale_stack(s, h):
-  new_stack = THStack()
+  new_stack = RT.THStack()
   hists = [i.Clone() for i in s.GetHists()]
 
   stack_total = 0

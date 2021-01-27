@@ -133,6 +133,11 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
              "true_beam_endZ", "true_beam_endProcess", "true_daughter_nPi0",
              "reco_beam_hit_true_origin", "reco_beam_hit_true_ID",
              "true_beam_daughter_PDG", "true_beam_daughter_startP"})
+    .Define("new_interaction_topology", new_interaction_topology,
+            {"true_beam_PDG",
+             "true_beam_endZ", "true_beam_endProcess", "true_daughter_nPi0",
+             "true_beam_daughter_PDG", "true_beam_daughter_startP",
+             "true_beam_incidentEnergies"})
     //Filter for true primary Pion and Beam Muon
     .Filter("true_beam_PDG == 211 || true_beam_PDG == -13");
 
@@ -199,9 +204,12 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
              "reco_daughter_allTrack_ID", 
              "reco_daughter_allTrack_truncLibo_dEdX"})
    
-     .Define("has_shower_nHits_distance", has_shower_nHits,
+    .Define("has_shower_nHits_distance", has_shower_nHits,
             {"reco_daughter_PFP_trackScore_collection",
-             "reco_daughter_PFP_nHits"});
+             "reco_daughter_PFP_nHits"})
+    .Define("selection_ID", selection_ID,
+            {"primary_ends_inAPA3", "has_noPion_daughter", "passBeamCut",
+            "has_shower_nHits_distance"});
     
   // DATA
   data_all/*_cutValues*/ = data_all
@@ -223,7 +231,10 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
      
      .Define("has_shower_nHits_distance", has_shower_nHits,
             {"reco_daughter_PFP_trackScore_collection",
-             "reco_daughter_PFP_nHits"});
+             "reco_daughter_PFP_nHits"})
+     .Define("selection_ID", selection_ID,
+             {"primary_ends_inAPA3", "has_noPion_daughter", "passBeamCut",
+             "has_shower_nHits_distance"});
 
   //Label within MC files who passed which CUT (this can help to see when what drops out)
   auto mc_output_with_label = mc_all/*_cutValues*/;
@@ -334,6 +345,10 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
       "!(has_shower_nHits_distance)");
   auto data_snap_abs = dataSIGNAL_abs.Snapshot(
       "pionana/beamana", "eventSelection_data_ABS.root");
+
+  auto dataCUT_PionDaughter = dataCUT_endAPA3.Filter("!has_noPion_daughter");
+  auto data_snap_rejected = dataCUT_PionDaughter.Snapshot(
+      "pionana/beamana", "eventSelection_data_rejected.root");
   return 0;
 }
 

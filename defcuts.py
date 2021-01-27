@@ -1,4 +1,4 @@
-from ROOT import * 
+#from ROOT import * 
 
 def defcuts():
   cuts = {
@@ -9,7 +9,8 @@ def defcuts():
 
     "Cosmic":             "reco_beam_true_byHits_origin == 2",
 
-    "PrimaryBeamNotTrig": "reco_beam_true_byHits_process == \"primary\" && !reco_beam_true_byHits_matched && reco_beam_true_byHits_origin == 4",
+    #"PrimaryBeamNotTrig": "reco_beam_true_byHits_process == \"primary\" && !reco_beam_true_byHits_matched && reco_beam_true_byHits_origin == 4",
+    "PrimaryBeamNotTrig": "reco_beam_true_byHits_process == \"primaryBackground\"",
 
     "UpstreamInt":        "(reco_beam_true_byHits_process == \"neutronInelastic\" ||  reco_beam_true_byHits_process == \"protonInelastic\" || reco_beam_true_byHits_process == \"pi-Inelastic\" || reco_beam_true_byHits_process == \"hadElastic\" || reco_beam_true_byHits_process == \"pi+Inelastic\") && reco_beam_true_byHits_origin == 4",
     "NeutronInel":        "reco_beam_true_byHits_process == \"neutronInelastic\"",
@@ -49,7 +50,8 @@ def testcuts(e):
     return "PrimaryElectron"
   elif( e.reco_beam_true_byHits_origin == 2 ):
     return "Cosmic"
-  elif( e.reco_beam_true_byHits_process == "primary" and not e.reco_beam_true_byHits_matched  and e.reco_beam_true_byHits_origin == 4 ):
+  #elif( e.reco_beam_true_byHits_process == "primary" and not e.reco_beam_true_byHits_matched  and e.reco_beam_true_byHits_origin == 4 ):
+  elif( e.reco_beam_true_byHits_process == "primaryBackground" ):
     return "PrimaryBeamNotTrig"
 
 
@@ -119,7 +121,8 @@ def testcuts_FS(e):
     return "PrimaryElectron"
   elif( e.reco_beam_true_byHits_origin == 2 ):
     return "Cosmic"
-  elif( e.reco_beam_true_byHits_process == "primary" and not e.reco_beam_true_byHits_matched  and e.reco_beam_true_byHits_origin == 4 ):
+  #elif( e.reco_beam_true_byHits_process == "primary" and not e.reco_beam_true_byHits_matched  and e.reco_beam_true_byHits_origin == 4 ):
+  elif( e.reco_beam_true_byHits_process == "primaryBackground" ):
     return "PrimaryBeamNotTrig"
 
   elif( ( e.reco_beam_true_byHits_process == "neutronInelastic" or e.reco_beam_true_byHits_process == "protonInelastic" 

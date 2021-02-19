@@ -41,8 +41,9 @@ std::string default_data =
 //***********************
 //Main Function
 int eventSelection(const string mcFile, const string dataFile = default_data,
+                   std::string tree_name = "pionana/beamana",
                    bool doCounting = true, bool doBatch = false) {
-
+  std::cout << "Tree name: " << tree_name << std::endl;
   //This prevents the canvas from being draw at the end
   //Useful for when on the gpvms 
   gROOT->SetBatch(doBatch);
@@ -50,8 +51,8 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
 
   gInterpreter->GenerateDictionary("vector<vector<int>>", "vector");
   
-  ROOT::RDataFrame frame(inputTree, mcFile);
-  ROOT::RDataFrame data_frame(inputTree, dataFile);
+  ROOT::RDataFrame frame(tree_name, mcFile);
+  ROOT::RDataFrame data_frame(tree_name, dataFile);
 
   //TFile *output = new TFile ("output_eventSelection.root", "RECREATE");
   //THStack *stack_cutFlow = new THStack("cutFlow", "Cut Flow MC and Data");
@@ -128,11 +129,11 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
           {"libo_low", "libo_high", "reco_daughter_allTrack_dQdX_SCE"})
     .Define("reco_daughter_allTrack_truncLibo_dEdX",truncatedMean, 
           {"libo_low", "libo_high", "reco_daughter_allTrack_calibrated_dEdX_SCE"} )
-    .Define("interaction_topology", interaction_topology,
-            {"reco_beam_true_byHits_origin", "true_beam_PDG", "true_beam_ID",
-             "true_beam_endZ", "true_beam_endProcess", "true_daughter_nPi0",
-             "reco_beam_hit_true_origin", "reco_beam_hit_true_ID",
-             "true_beam_daughter_PDG", "true_beam_daughter_startP"})
+    //.Define("interaction_topology", interaction_topology,
+    //        {"reco_beam_true_byHits_origin", "true_beam_PDG", "true_beam_ID",
+    //         "true_beam_endZ", "true_beam_endProcess", "true_daughter_nPi0",
+    //         "reco_beam_hit_true_origin", "reco_beam_hit_true_ID",
+    //         "true_beam_daughter_PDG", "true_beam_daughter_startP"})
     .Define("new_interaction_topology", new_interaction_topology,
             {"true_beam_PDG",
              "true_beam_endZ", "true_beam_endProcess", "true_daughter_nPi0",
@@ -252,7 +253,7 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
   std::cout << "Starting cuts" << std::endl;
   auto time0 = high_resolution_clock::now();
   auto mc_snap_all = mc_output_with_label.Snapshot(
-      "pionana/beamana", "eventSelection_mc_all.root");
+      tree_name, "eventSelection_mc_all.root");
 
   auto mcCUT_beamType = mc_output_with_label.Filter("primary_isBeamType");
   auto time1 = high_resolution_clock::now();
@@ -262,7 +263,7 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
                std::endl;
 
   auto mc_snap_beam_type = mcCUT_beamType.Snapshot(
-      "pionana/beamana", "eventSelection_mc_beamType.root");
+      tree_name, "eventSelection_mc_beamType.root");
 
   //Beam quality cuts (start position/direction)
   //auto mcCUT_beamCut = mcCUT_beamType.Filter("passBeamCut");
@@ -278,7 +279,7 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
 
   //Make a file with only primary pions in it
   auto mc_snap_primPion = mcCUT_endAPA3.Snapshot(
-      "pionana/beamana", "eventSelection_mc_PRIMARYPION.root");
+      tree_name, "eventSelection_mc_PRIMARYPION.root");
 
   /* ****** COMBINED SAMPLE ******/
 
@@ -288,24 +289,24 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
   //Create an output file for the (combined) selected events
   auto mc_COMBINED_Signal = mcCUT_noPionDaughter;
   auto mc_snap_combined = mc_COMBINED_Signal.Snapshot(
-      "pionana/beamana", "eventSelection_mc_COMBINED.root");
+      tree_name, "eventSelection_mc_COMBINED.root");
 
   //Find pi0 showers from the combined selection
   //and make an output file for them (Cex events) 
   auto mcSIGNAL_cex = mc_COMBINED_Signal.Filter("has_shower_nHits_distance");
   auto mc_snap_cex = mcSIGNAL_cex.Snapshot(
-      "pionana/beamana", "eventSelection_mc_CEX.root");
+      tree_name, "eventSelection_mc_CEX.root");
 
   //Find the selected events without pi0 showers
   //and make an output file (Abs events)
   auto mcSIGNAL_abs = mc_COMBINED_Signal.Filter("!(has_shower_nHits_distance)");
   auto mc_snap_abs = mcSIGNAL_abs.Snapshot(
-      "pionana/beamana", "eventSelection_mc_ABS.root");
+      tree_name, "eventSelection_mc_ABS.root");
 
   //Make a file for events with a tagged pion daughter
   auto mcCUT_PionDaughter = mcCUT_endAPA3.Filter("!has_noPion_daughter");
   auto mc_snap_pion_daughter = mcCUT_PionDaughter.Snapshot(
-      "pionana/beamana", "eventSelection_mc_rejected.root");
+      tree_name, "eventSelection_mc_rejected.root");
                         
 
   //Start Cutting DATA
@@ -315,11 +316,11 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
 
   //Filter out non track-like beam objects 
   auto data_snap_all = data_output_with_label.Snapshot(
-      "pionana/beamana", "eventSelection_data_all.root");
+      tree_name, "eventSelection_data_all.root");
 
   auto dataCUT_beamQuality = data_output_with_label.Filter("passBeamQuality && primary_isBeamType");
   auto data_snap_beamQuality = dataCUT_beamQuality.Snapshot(
-      "pionana/beamana", "eventSelection_data_BeamQuality.root");
+      tree_name, "eventSelection_data_BeamQuality.root");
 
   //Ends before APA2
   auto dataCUT_endAPA3 = dataCUT_beamQuality.Filter("primary_ends_inAPA3 && passBeamCut");
@@ -331,24 +332,24 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
 
   auto data_COMBINED_Signal = dataCUT_noPionDaughter;
   auto data_snap_combined = data_COMBINED_Signal.Snapshot(
-      "pionana/beamana", "eventSelection_data_COMBINED.root");
+      tree_name, "eventSelection_data_COMBINED.root");
 
   //Find pi0 showers from the combined selection
   //and make an output file for them (Cex events) 
   auto dataSIGNAL_cex = data_COMBINED_Signal.Filter("has_shower_nHits_distance");
   auto data_snap_cex = dataSIGNAL_cex.Snapshot(
-      "pionana/beamana", "eventSelection_data_CEX.root");
+      tree_name, "eventSelection_data_CEX.root");
 
   //Find the selected events without pi0 showers
   //and make an output file (Abs events)
   auto dataSIGNAL_abs = data_COMBINED_Signal.Filter(
       "!(has_shower_nHits_distance)");
   auto data_snap_abs = dataSIGNAL_abs.Snapshot(
-      "pionana/beamana", "eventSelection_data_ABS.root");
+      tree_name, "eventSelection_data_ABS.root");
 
   auto dataCUT_PionDaughter = dataCUT_endAPA3.Filter("!has_noPion_daughter");
   auto data_snap_rejected = dataCUT_PionDaughter.Snapshot(
-      "pionana/beamana", "eventSelection_data_rejected.root");
+      tree_name, "eventSelection_data_rejected.root");
   return 0;
 }
 

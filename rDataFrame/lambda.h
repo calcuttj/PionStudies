@@ -22,7 +22,8 @@ using namespace ROOT::VecOps;
 //lambda.h includes the definitions used for the pionAnalysis 
 //
 //INPUTfiles
-const std::string inputTree = "pionana/beamana";
+//const std::string inputTree = "pionana/beamana";
+const std::string inputTree = "pduneana/beamana";
 //**********************************************************
 //DEFINITIONS
 //

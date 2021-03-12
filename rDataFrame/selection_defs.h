@@ -1,7 +1,7 @@
 auto interaction_topology = [](int origin, int pdg, int ID, double endZ,
                                std::string process, int nPi0,
-                               std::vector<int> & beam_hit_true_origin,
-                               std::vector<int> & beam_hit_true_ID,
+                               int beam_hit_true_origin,
+                               int beam_hit_true_ID,
                                std::vector<int> & true_daughter_pdg,
                                std::vector<double> & true_daughter_startP) {
   int topology = -1;
@@ -42,10 +42,10 @@ auto interaction_topology = [](int origin, int pdg, int ID, double endZ,
     }
   }
   else if (pdg == -13) {
-    if (beam_hit_true_origin.back() == 2) {
+    if (beam_hit_true_origin == 2) {
       topology = 7; //Other for now
     }
-    else if (beam_hit_true_ID.back() == ID) {
+    else if (beam_hit_true_ID == ID) {
       topology = 5;
     }
     else {

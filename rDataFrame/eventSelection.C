@@ -35,7 +35,7 @@ using namespace ROOT::VecOps;
 using namespace std::chrono; 
 
 std::string default_data = 
-    "/Users/fstocker/cernbox/pionAnalyzer/pionAnalyzerTree/pionana_5387_1GeV_1_27_20.root";
+    "/Users/fstocker/cernbox/pionanalyzer/pionanalyzerTree/pionana_5387_1GeV_1_27_20.root";
 
 
 //***********************
@@ -52,7 +52,6 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
   
   ROOT::RDataFrame frame(inputTree, mcFile);
   ROOT::RDataFrame data_frame(inputTree, dataFile);
-
   //TFile *output = new TFile ("output_eventSelection.root", "RECREATE");
   //THStack *stack_cutFlow = new THStack("cutFlow", "Cut Flow MC and Data");
 
@@ -131,7 +130,7 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
     .Define("interaction_topology", interaction_topology,
             {"reco_beam_true_byHits_origin", "true_beam_PDG", "true_beam_ID",
              "true_beam_endZ", "true_beam_endProcess", "true_daughter_nPi0",
-             "reco_beam_hit_true_origin", "reco_beam_hit_true_ID",
+             "reco_beam_true_byHits_origin", "reco_beam_true_byHits_ID",
              "true_beam_daughter_PDG", "true_beam_daughter_startP"})
     //Filter for true primary Pion and Beam Muon
     .Filter("true_beam_PDG == 211 || true_beam_PDG == -13");
@@ -201,7 +200,10 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
    
      .Define("has_shower_nHits_distance", has_shower_nHits,
             {"reco_daughter_PFP_trackScore_collection",
-             "reco_daughter_PFP_nHits"});
+             "reco_daughter_PFP_nHits"})
+     .Define("selected_incidentPion", "primary_isBeamType && passBeamCut && passBeamCutBI")
+     .Define("selected_abs", "primary_isBeamType && passBeamCut && passBeamCutBI && primary_ends_inAPA3 && has_noPion_daughter &&!(has_shower_nHits_distance)")
+     .Define("selected_cex", "primary_isBeamType && passBeamCut && passBeamCutBI && primary_ends_inAPA3 && has_noPion_daughter && has_shower_nHits_distance");
     
   // DATA
   data_all/*_cutValues*/ = data_all
@@ -223,7 +225,10 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
      
      .Define("has_shower_nHits_distance", has_shower_nHits,
             {"reco_daughter_PFP_trackScore_collection",
-             "reco_daughter_PFP_nHits"});
+             "reco_daughter_PFP_nHits"})
+     .Define("selected_incidentPion", "primary_isBeamType && passBeamCut && passBeamQuality")
+     .Define("selected_abs", "primary_isBeamType && passBeamCut && passBeamQuality && primary_ends_inAPA3 && has_noPion_daughter && !(has_shower_nHits_distance)")
+     .Define("selected_cex", "primary_isBeamType && passBeamCut && passBeamQuality && primary_ends_inAPA3 && has_noPion_daughter && has_shower_nHits_distance");
 
   //Label within MC files who passed which CUT (this can help to see when what drops out)
   auto mc_output_with_label = mc_all/*_cutValues*/;

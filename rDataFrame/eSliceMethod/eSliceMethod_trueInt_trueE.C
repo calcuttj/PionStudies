@@ -53,24 +53,21 @@ int eSliceMethod_trueInt_trueE(const string mcFilepath){
    
    //output file
    TFile *output = new TFile ("output_eSliceMethod_trueProcess_trueEnergy.root", "RECREATE");
-
-   double bin_size = 20.;
-   double eStart = 1200.;
-   double eEnd = 0.;
-   int nBin = (eStart - eEnd) / bin_size;
-   double mass_pion = 139.; // MeV
    
+   //make binning inc for true true same
+   bin_size_inc = bin_size_int;
+        
    //Incident Histogram and Interacting Histogram, interacting for different Processes
    //Energies are kinetic Energy of beam particle
 
-   TH1D* h_true_pion_true_incidentE = new TH1D("h_true_pion_true_incidentE", "Incident True Pion", nBin, eEnd, eStart);
+   TH1D* h_true_pion_true_incidentE = new TH1D("h_true_pion_true_incidentE", "Incident True Pion", nBin_inc, eEnd, eStart);
    h_true_pion_true_incidentE->GetXaxis()->SetTitle("True KE (MeV)");
 
-   TH1D* h_true_abs_true_interactingE = new TH1D("h_true_abs_true_interactingE", "Interacting true ABS Energy", nBin, eEnd, eStart);
+   TH1D* h_true_abs_true_interactingE = new TH1D("h_true_abs_true_interactingE", "Interacting true ABS Energy", nBin_int, eEnd, eStart);
    h_true_abs_true_interactingE->GetXaxis()->SetTitle("True KE (MeV)");
-   TH1D* h_true_cex_true_interactingE = new TH1D("h_true_cex_true_interactingE", "Interacting true CEX Energy", nBin, eEnd, eStart);
+   TH1D* h_true_cex_true_interactingE = new TH1D("h_true_cex_true_interactingE", "Interacting true CEX Energy", nBin_int, eEnd, eStart);
    h_true_cex_true_interactingE->GetXaxis()->SetTitle("True KE (MeV)");
-   TH1D* h_true_totInel_true_interactingE = new TH1D("h_true_totInel_true_interactingE", "Interacting true total INEL Energy", nBin, eEnd, eStart);
+   TH1D* h_true_totInel_true_interactingE = new TH1D("h_true_totInel_true_interactingE", "Interacting true total INEL Energy", nBin_int, eEnd, eStart);
    h_true_totInel_true_interactingE->GetXaxis()->SetTitle("True KE (MeV)");
 
    //Initial Filters for all events
@@ -89,7 +86,7 @@ int eSliceMethod_trueInt_trueE(const string mcFilepath){
    //------------------------------------------------------
    //
    //for the true samples no beam Cuts are applied as one should reproduce the geant XS
-
+   
    auto mcIncident_true_primaryPi = frame_filter      
       .Filter("true_beam_PDG == 211")
       //.Filter("true_primPionInel && !isDecay")
@@ -99,34 +96,44 @@ int eSliceMethod_trueInt_trueE(const string mcFilepath){
             double endKE = sqrt( pow(true_beam_endP,2) + pow(mass_pion,2)  ) - mass_pion;
             return endKE;}
             ,{"true_beam_endP"})
+      .Define("true_interacting_wire", "true_beam_endZ / 0.48");
+//some research for comparisons true KE incident vs wire, get first incident Energy when entering the detector
+      //.Define("true_E_at_TPC_entry", [](const std::vector<double> &true_beam_traj_Z, double ){})
+      
 
-      ;
-   //.Range(50);
+   auto h2_wire_KEint = mcIncident_true_primaryPi.Histo2D({"trueE_vs_wire", "trueEnergy at wire", 400,0,800, 200,0,1000}, "true_interacting_wire", "true_KEint_fromEndP");
+   h2_wire_KEint->Write();
 
+   
    //Build the Incident Histogram
    //---------
    //take the interacting energy, that slice is filled too
    //first entry of true_beam_incidentEnergies is the first bin to be filled up until the interacting energy bin
 
    mcIncident_true_primaryPi
-      .Foreach( [h_true_pion_true_incidentE, &bin_size, &nBin] (double true_firstEntryIncident, double true_beam_interactingEnergy) {
+      //.Filter("abs( true_KEint_fromEndP - true_firstEntryIncident) > 20 ")
+      .Foreach( [h_true_pion_true_incidentE] (double true_firstEntryIncident, double true_beam_interactingEnergy) {
             //bin that energy falls into is (int) energy/nbins + 1
-            int binNumber_initEnergy = (int) true_firstEntryIncident / bin_size + 1;
-            int binNumber_interEnergy = (int) true_beam_interactingEnergy / bin_size + 1;
+            int binNumber_initEnergy = (int) true_firstEntryIncident / bin_size_inc + 1;
+            int binNumber_interEnergy = (int) true_beam_interactingEnergy / bin_size_inc + 1;
             //how many bins need to be filled
             //start from initial energy value and subtract nBin at every time
-            int cnt = 0;
-            for(int i = binNumber_interEnergy; i <= binNumber_initEnergy; i++){  //stopping one before initial energy bc of initial eBin not filled completely
-               
-              if(i <= nBin){
-                  h_true_pion_true_incidentE->AddBinContent(i);
-               };
+
+            for(int i = binNumber_interEnergy; i <= binNumber_initEnergy; i++){                 
+              
+            if(i <= nBin_inc){
+                  h_true_pion_true_incidentE->SetBinContent( i, h_true_pion_true_incidentE->GetBinContent(i) + 1 ); 
+                  //increment previous bin content by one. should handle number of entries in hist. unlike AddBinContent
+                  };
             //h_true_pion_true_incidentE->Fill( true_firstEntryIncident - cnt*bin_size);
-               cnt++;
             };
             }
             ,{"true_firstEntryIncident", "true_KEint_fromEndP"});
             //,{"true_firstEntryIncident", "true_beam_interactingEnergy"});
+   h_true_pion_true_incidentE->Sumw2(0);
+   h_true_pion_true_incidentE->Rebin( bin_size_int/bin_size_inc );
+   h_true_pion_true_incidentE->Scale( 1 / (bin_size_int/bin_size_inc) );
+   h_true_pion_true_incidentE->Write();
 
    h_true_pion_true_incidentE->Sumw2(0);
    h_true_pion_true_incidentE->Write();
@@ -142,7 +149,8 @@ int eSliceMethod_trueInt_trueE(const string mcFilepath){
    // --> For incident we still need to take into account that some interact 
    // further back in the TPC, so the cut on APA3 is not applied for the incident sample
    //
-   auto mcInteracting_true_allPrimaryPi = mcIncident_true_primaryPi;//.Filter("true_beam_endZ < 226");
+   auto mcInteracting_true_allPrimaryPi = mcIncident_true_primaryPi
+      .Filter("true_beam_endZ < 226");
 
    //for the true samples no beam Cuts are applied as one should reproduce the geant XS
 
@@ -186,11 +194,11 @@ int eSliceMethod_trueInt_trueE(const string mcFilepath){
    //******************************************************
    //            Prepare BetheBloch Mean for each Bin 
    //******************************************************
-   TH1D* h_betheMean_pion = new TH1D("h_betheMean_pion", "Mean Energy Loss", nBin, eEnd, eStart);
+   TH1D* h_betheMean_pion = new TH1D("h_betheMean_pion", "Mean Energy Loss", nBin_int, eEnd, eStart);
 
    //fill histo with Mean dEdX of bin center
-   for(int i = 1; i <= nBin; i++){
-      h_betheMean_pion->SetBinContent(i , betheBloch( eEnd + (i - 0.5)*bin_size  , mass_pion) );
+   for(int i = 1; i <= nBin_int; i++){
+      h_betheMean_pion->SetBinContent(i , betheBloch( eEnd + (i - 0.5)*bin_size_int  , mass_pion) );
    };
 
    h_betheMean_pion->Write();
@@ -203,7 +211,7 @@ int eSliceMethod_trueInt_trueE(const string mcFilepath){
    //
    // More Accurate use log( Ninc / (Ninc - Nint ))
    //
-   double scale_factor = atomic_mass / ( density * N_avogadro * bin_size );
+   double scale_factor = atomic_mass / ( density * N_avogadro * bin_size_int );
    
    //------------------------------------------------------
    //    Absorption, True Interactions, True Energy
@@ -215,7 +223,7 @@ int eSliceMethod_trueInt_trueE(const string mcFilepath){
    TH1D* dummy_abs = (TH1D*) h_true_pion_true_incidentE->Clone("h_xs_true_abs_true_E");
    dummy_abs->Add( h_true_abs_true_interactingE, -1);
    h_xs_true_abs_true_E->Divide( dummy_abs );
-   for(int i = 1; i <= nBin; i++) h_xs_true_abs_true_E->SetBinContent(i, log( h_xs_true_abs_true_E->GetBinContent(i) ));
+   for(int i = 1; i <= nBin_int; i++) h_xs_true_abs_true_E->SetBinContent(i, log( h_xs_true_abs_true_E->GetBinContent(i) ));
    h_xs_true_abs_true_E->Multiply( h_betheMean_pion );
    h_xs_true_abs_true_E->Scale( factor_mbarn*scale_factor );
    
@@ -229,7 +237,7 @@ int eSliceMethod_trueInt_trueE(const string mcFilepath){
    //Try Bin Errors from error propagation derivation of sigma(E)
    //error is like error of binomial factor*sqrt( p(1-p)/Ninc) where p=Nint/Ninc
    
-   for(int i=1; i <= nBin; i++){
+   for(int i=1; i <= nBin_int; i++){
 
       double p = h_true_abs_true_interactingE->GetBinContent(i) / h_true_pion_true_incidentE->GetBinContent(i);
       double nInc_i = h_true_pion_true_incidentE->GetBinContent(i);
@@ -249,7 +257,7 @@ int eSliceMethod_trueInt_trueE(const string mcFilepath){
    TH1D* dummy_cex = (TH1D*) h_true_pion_true_incidentE->Clone("h_xs_true_cex_true_E");
    dummy_cex->Add( h_true_cex_true_interactingE, -1);
    h_xs_true_cex_true_E->Divide( dummy_cex );
-   for(int i = 1; i <= nBin; i++) h_xs_true_cex_true_E->SetBinContent(i, log( h_xs_true_cex_true_E->GetBinContent(i) ));
+   for(int i = 1; i <= nBin_int; i++) h_xs_true_cex_true_E->SetBinContent(i, log( h_xs_true_cex_true_E->GetBinContent(i) ));
    h_xs_true_cex_true_E->Multiply( h_betheMean_pion );
    h_xs_true_cex_true_E->Scale( factor_mbarn*scale_factor );
    
@@ -261,7 +269,7 @@ int eSliceMethod_trueInt_trueE(const string mcFilepath){
    */
 
   //Bin Errors
-   for(int i=1; i <= nBin; i++){
+   for(int i=1; i <= nBin_int; i++){
 
       double p = h_true_cex_true_interactingE->GetBinContent(i) / h_true_pion_true_incidentE->GetBinContent(i);
       double nInc_i = h_true_pion_true_incidentE->GetBinContent(i);
@@ -279,7 +287,7 @@ int eSliceMethod_trueInt_trueE(const string mcFilepath){
    TH1D* dummy_totInel = (TH1D*) h_true_pion_true_incidentE->Clone("h_xs_true_totInel_true_E");
    dummy_totInel->Add( h_true_totInel_true_interactingE, -1);
    h_xs_true_totInel_true_E->Divide( dummy_totInel );
-   for(int i = 1; i <= nBin; i++) h_xs_true_totInel_true_E->SetBinContent(i, log( h_xs_true_totInel_true_E->GetBinContent(i) ));
+   for(int i = 1; i <= nBin_int; i++) h_xs_true_totInel_true_E->SetBinContent(i, log( h_xs_true_totInel_true_E->GetBinContent(i) ));
    h_xs_true_totInel_true_E->Multiply( h_betheMean_pion );
    h_xs_true_totInel_true_E->Scale( factor_mbarn*scale_factor );
    
@@ -291,7 +299,7 @@ int eSliceMethod_trueInt_trueE(const string mcFilepath){
    */
 
    //Bin Errors
-   for(int i=1; i <= nBin; i++){
+   for(int i=1; i <= nBin_int; i++){
 
       double p = h_true_totInel_true_interactingE->GetBinContent(i) / h_true_pion_true_incidentE->GetBinContent(i);
       double nInc_i = h_true_pion_true_incidentE->GetBinContent(i);

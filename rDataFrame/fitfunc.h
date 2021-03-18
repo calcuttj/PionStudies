@@ -33,7 +33,7 @@ void gaus_fit(int minEntries, TH2D* h2, TH1D *fit_mean, TH1D *fit_std, TH1D *fit
    };
 };
 
-void landau_fit(int minEntries, TH2D* h2, TH1D *fit_mpv, TH1D *fit_std, TH1D *fit_chi2, TH1D *fit_ndf){
+void landau_fit(int minEntries, TH2D* h2, TH1D *fit_mpv, TH1D* fit_mean, TH1D *fit_std, TH1D *fit_chi2, TH1D *fit_ndf){
 
    double temp_maxEntry = 0.;
     for(int i = 1; i <= h2->GetNbinsX(); i++){
@@ -47,21 +47,18 @@ void landau_fit(int minEntries, TH2D* h2, TH1D *fit_mpv, TH1D *fit_std, TH1D *fi
       //fit only if Entries > 100
       if( temp_projection->GetEntries() > minEntries){
 
-         //bin with highest entry WATCHOUT hard coded Bins..
-         int max_bin = temp_projection->GetMaximumBin();
-         int widthLeft = max_bin - 100;
-         int widthRight = max_bin + 100;
-
-         temp_maxEntry = temp_projection->GetBinContent( max_bin );
-         widthLeft = temp_projection->FindFirstBinAbove( 0.2*temp_maxEntry, 1, widthLeft, max_bin );
-         widthRight = temp_projection->FindLastBinAbove( 0.2*temp_maxEntry, 1, max_bin , widthRight );
-
-         TF1* f2 = new TF1("f2", "landau", temp_projection->GetBinCenter(widthLeft) , temp_projection->GetBinCenter(widthRight));
+         TF1* f2 = new TF1("f2", "landau",  0, 500);
          //temp_projection->Fit("f2", "RS ");
-         temp_projection->Fit("f2", "RS QN");
+         //temp_projection->Fit("f2", "RS QN");
+         
+         temp_projection->Fit("f2", "S QN"); //not fitting with range anymore
          //gPad->WaitPrimitive();
          //save Parameters of Landau Fit each to a histo
          //Landa Par1 MPV is not real MPV, do GetMaximumX for landau most probable value
+         //GetMean for Mean of the fitfunction
+         //Taking 0, 500 to get mean of landau fit because of distribution of reco_beam_calibrated_dEdX (plot in logy scale) showing that from value 500 on there are less than 100 entries per bin
+         fit_mean->SetBinContent( i , f2->Mean( 0, 500 ) ); 
+         fit_mean->SetBinError( i , f2->GetParError(1) );
          fit_mpv->SetBinContent( i , f2->GetMaximumX() );
          fit_mpv->SetBinError( i , f2->GetParError(1) );
          fit_std->SetBinContent( i , f2->GetParameter(2) );

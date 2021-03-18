@@ -55,6 +55,26 @@ void hist_bethe(double E_init, double mass_particle, TH1D* fit_mean, TH1D* h_bet
    };
 };
 
+void bethe_mean(double E_init, double mass_particle, TH1D* fit_mean, TH1D* mean_bethe ){
+   //initial beam energy
+   int cnt =0;
+   for(int i=1; i <= fit_mean->GetNbinsX(); i++){
+      auto temp = fit_mean->GetBinContent(i);
+      //should be from wire 68 on
+      //first wire with hit
+      //if(temp > 0) {
+         mean_bethe->SetBinContent( i, betheBloch(E_init, mass_particle)); 
+         mean_bethe->SetBinError(i, 0.001 );
+         E_init = E_init - betheBloch(E_init, mass_particle)*0.5; //should put pitch apparent at that point
+         
+         //energy at each passage is reduced by mean value of bethe bloch
+      //}
+      
+      if(E_init <= 0) return;
+
+   };
+};
+
 int fit_dEdX_correction_try(const string file_path) {
 
    //string to const char*
@@ -104,6 +124,9 @@ int fit_dEdX_correction_try(const string file_path) {
    TH1D *fit_dEdX_mpv = new TH1D("fit_dEdX_mpv", "", h2_5387_dEdX_wire->GetNbinsX(), 1, h2_5387_dEdX_wire->GetNbinsX() );
    fit_dEdX_mpv->GetXaxis()->SetTitle("wire");
    fit_dEdX_mpv->GetYaxis()->SetTitle("dEdX (MeV/cm)"); 
+   TH1D *fit_dEdX_mean = new TH1D("fit_dEdX_mean", "", h2_5387_dEdX_wire->GetNbinsX(), 1, h2_5387_dEdX_wire->GetNbinsX() );
+   fit_dEdX_mean->GetXaxis()->SetTitle("wire");
+   fit_dEdX_mean->GetYaxis()->SetTitle("dEdX (MeV/cm)"); 
    TH1D *fit_dEdX_std = new TH1D("fit_dEdX_std", "", h2_5387_dEdX_wire->GetNbinsX(), 1, h2_5387_dEdX_wire->GetNbinsX() );
    TH1D *fit_dEdX_chi2 = new TH1D("fit_dEdX_chi2", "", h2_5387_dEdX_wire->GetNbinsX(), 1, h2_5387_dEdX_wire->GetNbinsX() );
    TH1D *fit_dEdX_ndf = new TH1D("fit_dEdX_ndf", "", h2_5387_dEdX_wire->GetNbinsX(), 1, h2_5387_dEdX_wire->GetNbinsX() );
@@ -111,13 +134,16 @@ int fit_dEdX_correction_try(const string file_path) {
    TH1D *fit_dEdX_SCEcorr_mpv = new TH1D("fit_dEdX_SCEcorr_mpv", "", h2_5387_SCEcorr_dEdX_wire->GetNbinsX(), 1, h2_5387_SCEcorr_dEdX_wire->GetNbinsX() );
    fit_dEdX_SCEcorr_mpv->GetXaxis()->SetTitle("wire");
    fit_dEdX_SCEcorr_mpv->GetYaxis()->SetTitle("dEdX (MeV/cm)"); 
+   TH1D *fit_dEdX_SCEcorr_mean = new TH1D("fit_dEdX_SCEcorr_mean", "", h2_5387_SCEcorr_dEdX_wire->GetNbinsX(), 1, h2_5387_SCEcorr_dEdX_wire->GetNbinsX() );
+   fit_dEdX_SCEcorr_mean->GetXaxis()->SetTitle("wire");
+   fit_dEdX_SCEcorr_mean->GetYaxis()->SetTitle("dEdX (MeV/cm)"); 
    TH1D *fit_dEdX_SCEcorr_std = new TH1D("fit_dEdX_SCEcorr_std", "", h2_5387_SCEcorr_dEdX_wire->GetNbinsX(), 1, h2_5387_SCEcorr_dEdX_wire->GetNbinsX() );
    TH1D *fit_dEdX_SCEcorr_chi2 = new TH1D("fit_dEdX_SCEcorr_chi2", "", h2_5387_SCEcorr_dEdX_wire->GetNbinsX(), 1, h2_5387_SCEcorr_dEdX_wire->GetNbinsX() );
    TH1D *fit_dEdX_SCEcorr_ndf = new TH1D("fit_dEdX_SCEcorr_ndf", "", h2_5387_SCEcorr_dEdX_wire->GetNbinsX(), 1, h2_5387_SCEcorr_dEdX_wire->GetNbinsX() );
 
    //Call fit function for Landau
-   landau_fit( minEntries, h2_5387_dEdX_wire, fit_dEdX_mpv, fit_dEdX_std, fit_dEdX_chi2, fit_dEdX_ndf );
-   landau_fit( minEntries, h2_5387_SCEcorr_dEdX_wire, fit_dEdX_SCEcorr_mpv, fit_dEdX_SCEcorr_std, fit_dEdX_SCEcorr_chi2, fit_dEdX_SCEcorr_ndf );
+   landau_fit( minEntries, h2_5387_dEdX_wire, fit_dEdX_mpv, fit_dEdX_mean, fit_dEdX_std, fit_dEdX_chi2, fit_dEdX_ndf );
+   landau_fit( minEntries, h2_5387_SCEcorr_dEdX_wire, fit_dEdX_SCEcorr_mpv, fit_dEdX_SCEcorr_mean, fit_dEdX_SCEcorr_std, fit_dEdX_SCEcorr_chi2, fit_dEdX_SCEcorr_ndf );
 
    //Lifetime correction histogram --> This has to be applied to the non corrected pandoracalonosce object
    //5387 had a correction of 20ms for the run (MC has 35ms) 
@@ -154,6 +180,10 @@ int fit_dEdX_correction_try(const string file_path) {
    h_dEdX_mpv_lifetime->Multiply(h_lifetime_correction, fit_dEdX_mpv);
    h_dEdX_mpv_lifetime->Write();
 
+   TH1D* h_dEdX_mean_lifetime = new TH1D("dEdX_mean_lifetime", "", h2_5387_dEdX_wire->GetNbinsX(), 1, h2_5387_dEdX_wire->GetNbinsX());
+   h_dEdX_mean_lifetime->Multiply(h_lifetime_correction, fit_dEdX_mean);
+   h_dEdX_mean_lifetime->Write();
+
    //Bethe Bloch
    TH1D* h_betheMPV_pion = new TH1D("betheMPV_pion", "", h2_5387_pitch_wire->GetNbinsX(), 1, h2_5387_pitch_wire->GetNbinsX() );
    h_betheMPV_pion->GetXaxis()->SetTitle("wire");
@@ -170,6 +200,22 @@ int fit_dEdX_correction_try(const string file_path) {
 
    h_betheMPV_pion->Write();
    h_betheMPV_muon->Write();
+
+   TH1D* h_betheMean_pion = new TH1D("betheMean_pion", "", h2_5387_pitch_wire->GetNbinsX(), 1, h2_5387_pitch_wire->GetNbinsX() );
+   h_betheMean_pion->GetXaxis()->SetTitle("wire");
+   h_betheMean_pion->GetYaxis()->SetTitle("dEdX (MeV/cm)");
+   TH1D* h_betheMean_muon = new TH1D("betheMean_muon", "", h2_5387_pitch_wire->GetNbinsX(), 1, h2_5387_pitch_wire->GetNbinsX() );
+   h_betheMean_muon->GetXaxis()->SetTitle("wire");
+   h_betheMean_muon->GetYaxis()->SetTitle("dEdX (MeV/cm)");
+ 
+   mass_pion = 139; mass_muon = 105.6;
+   E_in_pion = 850; E_in_muon = 890;
+   
+   bethe_mean( E_in_pion, mass_pion, fit_pitch_mean, h_betheMean_pion);
+   bethe_mean( E_in_muon, mass_muon, fit_pitch_mean, h_betheMean_muon);
+
+   h_betheMean_pion->Write();
+   h_betheMean_muon->Write();
 
 
    double data_cosThetaXZ = 0.98;
@@ -303,7 +349,7 @@ int fit_dEdX_correction_try(const string file_path) {
    fit_dEdX_SCEcorr_std->Write();
    fit_dEdX_SCEcorr_chi2->Write();
    fit_dEdX_SCEcorr_ndf->Write();
-   file->Close();
+   //file->Close();
 
    //Plotting
    //dEdX Data
@@ -460,7 +506,34 @@ int fit_dEdX_correction_try(const string file_path) {
    canv_pitch_data->SetSelected(canv_pitch_data);
    canv_pitch_data->ToggleToolBar();
    canv_pitch_data->Write();
-   //canv_pitch_data->Close();
+   canv_pitch_data->Close();
+   output->Write();
+   //output->Close();
+
+   //Save for eSlice Method values
+   TFile *output_fitval = new TFile("output_fit_5387_Prod4_eSlice.root", "RECREATE");
+
+
+   fit_pitch_SCEcorr_mean->Write();
+   fit_pitch_SCEcorr_std->Write();
+   fit_pitch_SCEcorr_chi2->Write();
+   fit_pitch_ndf->Write();
+   fit_pitch_mean->Write();
+   fit_pitch_std->Write();
+   fit_pitch_chi2->Write();
+   fit_pitch_ndf->Write();
+   fit_dEdX_mpv->Write();
+   fit_dEdX_std->Write();
+   fit_dEdX_chi2->Write();
+   fit_dEdX_ndf->Write();
+   h_dEdX_mpv_lifetime->Write();
+   fit_dEdX_SCEcorr_mpv->Write();
+   fit_dEdX_SCEcorr_std->Write();
+   fit_dEdX_SCEcorr_chi2->Write();
+   fit_dEdX_SCEcorr_ndf->Write();
+   
+   output_fitval->Write();
+   output_fitval->Close();
 
 
    return 0;

@@ -4,6 +4,7 @@
 #include "TGraphErrors.h"
 #include "TMultiGraph.h"
 #include "TH1.h"
+#include "TF1.h"
 #include "THStack.h"
 #include "TLegend.h"
 #include "TArrow.h"
@@ -37,6 +38,10 @@ int eSliceMethod_trueInt_recoE(const string mcFilepath){
 
    gInterpreter->GenerateDictionary("vector<vector<int>>", "vector");
    ROOT::RDataFrame frame(inputTree, mcFilepath);
+   gStyle->SetNdivisions(1020);
+   
+   //output file
+   TFile *output = new TFile ("output_eSliceMethod_trueProcess_recoEnergy.root", "RECREATE");
 
    //access Jakes GeantFile in folder
    TFile f1("exclusive_xsec.root");
@@ -45,14 +50,80 @@ int eSliceMethod_trueInt_recoE(const string mcFilepath){
    TGraph *cex_KE = (TGraph*)f1.Get("cex_KE");
    f1.Close();
 
+   TFile f2("fit_mc_Prod4_dEdX_pitch_1_14_21.root");
+   TH1D *fit_dEdX_lifetime_mpv = (TH1D*)f2.Get("dEdX_mpv_lifetime"); //mean value corrected for lifetime
+   TH1D *fit_pitch_mean = (TH1D*)f2.Get("fit_mc_pitch_mean");
+   
+   //TH1D *fit_dEdX_lifetime_mpv = (TH1D*)f2.Get("fit_mc_dEdX_SCEcorr_mpv"); //mean value corrected for lifetime
+   //TH1D *fit_pitch_mean = (TH1D*)f2.Get("fit_mc_pitch_SCEcorr_mean");
+   
+   //Datadriven corrected pitch
+   //TH1D *fit_pitch_mean = (TH1D*)f2.Get("true_pitch_mean_lifetime");
+
+   output->cd();
+   fit_dEdX_lifetime_mpv->Write();
+   fit_pitch_mean->Write();
+
    TMultiGraph *mg = new TMultiGraph();
    mg->Add(totInel_KE);
    mg->Add(abs_KE);
    mg->Add(cex_KE);
-   mg->SetTitle("Cross-Section; true kinetic Energy (MeV); #sigma (mbarn)");
+   mg->SetTitle("Cross-Section; reco kinetic Energy (MeV); #sigma (mbarn)");
    
-   //output file
-   TFile *output = new TFile ("output_eSliceMethod_trueProcess_recoEnergy.root", "RECREATE");
+   //--------------------------------------------------------
+   //Bethe Bloch MPV and Mean
+   //--------------------------------------------------------
+   TH1D* bethe_pi_mpv = new TH1D("betheMPV_pion", "", fit_pitch_mean->GetNbinsX(), 1, fit_pitch_mean->GetNbinsX() );
+   bethe_pi_mpv->GetXaxis()->SetTitle("wire");  bethe_pi_mpv->GetYaxis()->SetTitle("dEdX (MeV/cm)");
+   
+   TH1D* bethe_mu_mpv = new TH1D("betheMPV_muon", "", fit_pitch_mean->GetNbinsX(), 1, fit_pitch_mean->GetNbinsX() );
+   bethe_mu_mpv->GetXaxis()->SetTitle("wire");  bethe_mu_mpv->GetYaxis()->SetTitle("dEdX (MeV/cm)");
+   
+   TH1D* bethe_pi_mean = new TH1D("betheMean_pion", "", fit_pitch_mean->GetNbinsX(), 1, fit_pitch_mean->GetNbinsX() );
+   bethe_pi_mean->GetXaxis()->SetTitle("wire"); bethe_pi_mean->GetYaxis()->SetTitle("dEdX (MeV/cm)");
+   
+   TH1D* bethe_mu_mean = new TH1D("betheMean_muon", "", fit_pitch_mean->GetNbinsX(), 1, fit_pitch_mean->GetNbinsX() );
+   bethe_mu_mean->GetXaxis()->SetTitle("wire"); bethe_mu_mean->GetYaxis()->SetTitle("dEdX (MeV/cm)");
+
+   hist_bethe_mpv( KE_in_pion, mass_pion, fit_pitch_mean, bethe_pi_mpv);
+   hist_bethe_mpv( KE_in_muon, mass_muon, fit_pitch_mean, bethe_mu_mpv);
+   hist_bethe_mean( KE_in_pion, mass_pion, fit_pitch_mean, bethe_pi_mean);
+   hist_bethe_mean( KE_in_muon, mass_muon, fit_pitch_mean, bethe_mu_mean);
+
+   bethe_pi_mpv->Write();
+   bethe_mu_mpv->Write();
+
+   bethe_pi_mean->Write();
+   bethe_mu_mean->Write();
+
+   //--------------------------------------------------------
+   //PREP for INTERACTING ENERGY
+   //Histogram with energy deposit along wire and running sum
+   //
+   //Strategy for MPV --> Mean of Data is to multiply fitted MPV (stable fit) by factor of betheMean/betheMPV
+   TH1D* bethe_frac_mu = new TH1D("betheFrac_mu", "", fit_pitch_mean->GetNbinsX(), 1, fit_pitch_mean->GetNbinsX() );
+   bethe_frac_mu->Divide(bethe_mu_mean, bethe_mu_mpv);
+   bethe_frac_mu->Write();
+   
+   TH1D* dEdX_mean_calc_fit_bethe = (TH1D*)bethe_frac_mu->Clone("dEdX_mean_calc_fit_bethe");
+   dEdX_mean_calc_fit_bethe->Multiply(fit_dEdX_lifetime_mpv);
+   dEdX_mean_calc_fit_bethe->Write();
+
+   TH1D dE_product_fit_dEdX_pitch = (*dEdX_mean_calc_fit_bethe) * (*fit_pitch_mean);
+   dE_product_fit_dEdX_pitch.SetName("dE_product_fit_dEdX_pitch");
+
+   TH1D *runningSum_dE = new TH1D("runningSum_dE", "", fit_pitch_mean->GetNbinsX(), 1, fit_pitch_mean->GetNbinsX() );
+
+   double temp = 0;
+   for(int i=0; i <= dE_product_fit_dEdX_pitch.GetNbinsX(); i++){
+      temp += dE_product_fit_dEdX_pitch.GetBinContent(i);
+      runningSum_dE->SetBinContent( i, temp);
+   };
+
+   dE_product_fit_dEdX_pitch.Write();
+   runningSum_dE->Write();
+//--------------------------------------------------------
+   
 
    double bin_size = 40.;
    double eStart = 1200.;
@@ -81,24 +152,39 @@ int eSliceMethod_trueInt_recoE(const string mcFilepath){
 
    //Filter for different interaction types
    //
-   //******************************************************
+   //=====================================================
    //          TRUE Interactions, RECO Energies
-   //******************************************************
+   //=====================================================
    //------------------------------------------------------
    //Incident true sample, reconstructed Energy
    //------------------------------------------------------
    //
+   //for Interacting energy, the wire the primary particle interacted at should be the last one in reco_beam_calo_wire
    //
 
    auto mcIncident_true_primaryPi = frame_filter      
       .Filter("true_beam_PDG == 211")
+      //.Range(20)
       //.Filter("true_primPionInel && !isDecay")
-      .Define("reco_firstEntryIncident", firstIncident, {"reco_beam_incidentEnergies"})
-      //.Define("reco_interactingKE", reco_interactingE, {"reco_beam_incidentEnergies"})
-      .Define("reco_interactingKE", reco_interactingE, {"reco_beam_incidentEnergies", "reco_beam_calibrated_dEdX", "reco_beam_TrkPitch", "reco_beam_interactingEnergy"})
+      .Define("reco_firstEntryIncident", firstIncident,{"reco_beam_incidentEnergies"})
+      //Reco interacting Energy event-by-event on dEdX * TrkPitch
+      //.Define("reco_interactingKE", reco_interactingE, 
+     // {"reco_beam_incidentEnergies", "reco_beam_calibrated_dEdX_SCE", "reco_beam_TrkPitch_SCE", "reco_firstEntryIncident"})
+      //Determining the interacting Kinetic Energy using the runningSum of dE
+      .Define("reco_interactingKE", [runningSum_dE](const std::vector<double> &reco_beam_calo_wire, double incidentE){
+            double interactingWire = reco_beam_calo_wire[ reco_beam_calo_wire.size() ];
+            double interactingKE;
+            if(interactingWire >= 1 && interactingWire < runningSum_dE->GetNbinsX()){
+               interactingKE = incidentE - runningSum_dE->GetBinContent(interactingWire);
+             }
+            else interactingKE = -999;
+            return interactingKE;
+            }
+            ,{"reco_beam_calo_wire", "reco_firstEntryIncident"})
+      //.Define("dEdX_times_trkPitch", deltaE, {"reco_beam_calibrated_dEdX_SCE", "reco_beam_TrkPitch_SCE"})
+      //.Define("relPosition", relPos, {"reco_beam_calibrated_dEdX_SCE", "reco_beam_TrkPitch_SCE"})
       .Filter("reco_interactingKE > 0 ");
-   //.Range(20);
-
+      //.Range(20);
 
    //Build the Incident Histogram
    //---------
@@ -112,17 +198,13 @@ int eSliceMethod_trueInt_recoE(const string mcFilepath){
             int binNumber_interEnergy = (int) reco_beam_interactingEnergy / bin_size + 1;
             //how many bins need to be filled
             //starting at interacting energy (lower than first incident energy)
-            int cnt = 0;
-
             //if(binNumber_initEnergy < 0 || binNumber_interEnergy < 0) return;
             for(int i = binNumber_interEnergy; i <= binNumber_initEnergy; i++){      
-
-
               if( i > 0 && i <= nBin){ //make sure we don't go outside of bin range
-                  h_true_pion_reco_incidentE->AddBinContent(i);
+                  h_true_pion_reco_incidentE->SetBinContent( i, h_true_pion_reco_incidentE->GetBinContent(i) + 1 ); 
+                  //increment previous bin content by one. should handle number of entries in hist. unlike AddBinContent
                };
             //h_true_pion_reco_incidentE->Fill( true_firstEntryIncident - cnt*bin_size);
-               cnt++;
             };
             }
             ,{"reco_firstEntryIncident", "reco_interactingKE"});
@@ -132,7 +214,8 @@ int eSliceMethod_trueInt_recoE(const string mcFilepath){
    h_true_pion_reco_incidentE->Write();
 
 
-   //******************************************************
+
+   //=====================================================
    //------------------------------------------------------
    //Interacting true samples
    //------------------------------------------------------
@@ -182,9 +265,11 @@ int eSliceMethod_trueInt_recoE(const string mcFilepath){
    h_true_totInel_reco_interactingE->Sumw2(0);
    h_true_totInel_reco_interactingE->Write();
 
-   //******************************************************
+   //=====================================================
    //            Prepare BetheBloch Mean for each Bin 
-   //******************************************************
+   //            QUESTION: take betheBloch of Pion or Muon?? Comparison to data fits better muon Bethe... 
+   //            at hihger momentum ~400-800 they anway are almost the same
+   //=====================================================
    TH1D* h_betheMean_pion = new TH1D("h_betheMean_pion", "Mean Energy Loss", nBin, eEnd, eStart);
 
    //fill histo with Mean dEdX of bin center
@@ -194,9 +279,9 @@ int eSliceMethod_trueInt_recoE(const string mcFilepath){
 
    h_betheMean_pion->Write();
 
-   //******************************************************
+   //=====================================================
    //             Computing the XS
-   //******************************************************
+   //=====================================================
    //
    // xs(Ebin) = (A / (Na*density*bin_size)) * dEdX(Ebin) * hInteracting / hIncident
    //
@@ -301,9 +386,9 @@ int eSliceMethod_trueInt_recoE(const string mcFilepath){
    h_xs_true_totInel_reco_E->Write();
  
 
-   //******************************************************
+   //=====================================================*
    //            Plotting and Style
-   //******************************************************
+   //=====================================================
    //
    
    TCanvas *c_abs = new TCanvas("c_abs", "c_abs");
@@ -372,7 +457,7 @@ int eSliceMethod_trueInt_recoE(const string mcFilepath){
 
    c_all->Write();
 
-
+   
 
 
    output->Write();

@@ -24,6 +24,7 @@ using namespace ROOT::VecOps;
 //INPUTfiles
 //const std::string inputTree = "pionana/beamana";
 const std::string inputTree = "pduneana/beamana";
+const std::string pionTree = "pionana/beamana";
 //**********************************************************
 //DEFINITIONS
 //

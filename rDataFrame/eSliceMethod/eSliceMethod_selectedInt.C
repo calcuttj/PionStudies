@@ -37,11 +37,11 @@ using namespace ROOT::VecOps;
 int eSliceMethod_selectedInt(const string mcFilepath){
 
    gInterpreter->GenerateDictionary("vector<vector<int>>", "vector");
-   ROOT::RDataFrame frame(inputTree, mcFilepath);
+   ROOT::RDataFrame frame(pionTree, mcFilepath);
    gStyle->SetNdivisions(1020);
    
    //output file
-   TFile *output = new TFile ("output_eSliceMethod_selectedEvents.root", "RECREATE");
+   TFile *output = new TFile ("output_eSliceMethod_selectedEvents_primMu.root", "RECREATE");
 
    //access Jakes GeantFile in folder
    TFile f1("exclusive_xsec.root");
@@ -154,8 +154,8 @@ int eSliceMethod_selectedInt(const string mcFilepath){
    auto frame_filter = frame
       .Filter("true_beam_endZ > 0")
       //.Filter("true_beam_PDG == abs(211)")
-      //.Filter("primary_isBeamType && passBeamCut && passBeamQuality");
-      .Filter("primary_isBeamType && passBeamCutBI");    //particles that make it into TPC, couldn't be considered otherwise
+      .Filter("selected_incidentPion");
+      //.Filter("primary_isBeamType && passBeamCut && passBeamCutBI");    //particles that make it into TPC, couldn't be considered otherwise
 
 
    //Filter for different interaction types
@@ -279,6 +279,7 @@ int eSliceMethod_selectedInt(const string mcFilepath){
 
 
    auto mcInteracting_selected_abs = mcInteracting_selected_allPrimaryPi
+      //.Filter("selected_abs");
       .Filter("has_noPion_daughter && !(has_shower_nHits_distance)");
 
    mcInteracting_selected_abs
@@ -304,6 +305,7 @@ int eSliceMethod_selectedInt(const string mcFilepath){
    h2_reco_true_KE_abs->Write();
 
    auto mcInteracting_selected_cex = mcInteracting_selected_allPrimaryPi
+      //.Filter("selected_cex");
       .Filter("has_noPion_daughter && has_shower_nHits_distance");
 
    mcInteracting_selected_cex
@@ -368,7 +370,11 @@ int eSliceMethod_selectedInt(const string mcFilepath){
    //    Absorption, Selected Interactions Reconstrucetd Energy
    //------------------------------------------------------
    //
-   
+  
+   //Test Multiply Incident histo by it's purity and divide by it's efficiency not bin-by-bin, just testing overall
+   //h_selected_pion_incidentRecoE->Scale(0.79/0.97);
+   //Multiply Interacting by it's purity and divide by efficiency wrt to incident slection (I think..)
+   //h_selected_abs_interactingRecoE->Scale(0.54 / 0.54 );
 
    TH1D* h_xs_RecoE_selected_abs = (TH1D*) h_selected_pion_incidentRecoE->Clone("h_xs_RecoE_selected_abs");
    TH1D* dummy_recoE_abs = (TH1D*) h_selected_pion_incidentRecoE->Clone("h_xs_RecoE_selected_abs");

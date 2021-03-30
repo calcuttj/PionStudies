@@ -32,8 +32,7 @@ using namespace ROOT::VecOps;
 //Look at dE vs wire without SCE corrections
 //Francescos Idea
 
-//int dEdX_correction_try(const string path1, const string path2, const string path3, const string path4){
-int dEdX_correction_try(const string path1, const string path2 ){
+int dEdX_correction_pionAnalyzerOutput(const string path1, const string path2, const string path3, const string path4){
 
    auto dEdX_trkPitch = [](std::vector<double> &dEdX, std::vector<double> &pitch){
 
@@ -61,14 +60,14 @@ int dEdX_correction_try(const string path1, const string path2 ){
 
    //gROOT->ForceStyle();
    //read in Data, MC SCE and MC without SCE
-   ROOT::RDataFrame frame_mc_SCE(pionTree, path1);
-   ROOT::RDataFrame frame_data5387(pionTree, path2);
+   ROOT::RDataFrame frame_mc_SCE(inputTree, path1);
+   ROOT::RDataFrame frame_data5387(inputTree, path2);
 
-   //ROOT::RDataFrame frame_data5809(pionTree, path3);
-   //ROOT::RDataFrame frame_data5770(pionTree, path4);
+   ROOT::RDataFrame frame_data5809(inputTree, path3);
+   ROOT::RDataFrame frame_data5770(inputTree, path4);
 
 
-   TFile *output = new TFile ("output_dEdX_correction.root", "RECREATE");
+   TFile *output = new TFile ("output_dEdX_correction_pionAnalyzerJan14_21.root", "RECREATE");
    int nBin_wire, nBin_dE, nBin_dEdX, nBin_pitch;
    double binLow_wire, binHigh_wire,  binLow_dE, binHigh_dE, 
           binLow_dEdX, binHigh_dEdX,  binLow_pitch, binHigh_pitch;
@@ -80,78 +79,71 @@ int dEdX_correction_try(const string path1, const string path2 ){
 
    auto filtered_SCE = frame_mc_SCE
       .Filter("primary_isBeamType")
+      //.Filter("primary_ends_inAPA3")
+      //.Filter("true_primPionInel")
       .Filter("passBeamCut")
-      .Filter("!isPrimaryMuonCandidate")
-      .Define("uncorrected_dE", dEdX_trkPitch, {"reco_beam_calibrated_dEdX_NoSCE", "reco_beam_TrkPitch_NoSCE"})
-      .Define("corrected_dE", dEdX_trkPitch, {"reco_beam_calibrated_dEdX_SCE", "reco_beam_TrkPitch_SCE"})
-      .Define("cut_uncorrected_dEdX", cut_dEdX, {"reco_beam_calibrated_dEdX_NoSCE", "reco_beam_calo_wire"})
-      .Define("cut_corrected_dEdX", cut_dEdX, {"reco_beam_calibrated_dEdX_SCE", "reco_beam_calo_wire"});
+      //.Alias("reco_beam_calibrated_dEdX", "reco_beam_calibrated_dEdX_SCE") //change since PDSP ANALYZER is introduced
+      //.Alias("reco_beam_TrkPitch", "reco_beam_TrkPitch_SCE") //change since PDSP ANALYZER is introduced
+      //.Alias("reco_beam_calibrated_dEdX_no_SCE", "reco_beam_calibrated_dEdX_NoSCE") //change since PDSP ANALYZER is introduced
+      //.Alias("reco_beam_TrkPitch_no_SCE", "reco_beam_TrkPitch_NoSCE") //change since PDSP ANALYZER is introduced
+      .Define("uncorrected_dE", dEdX_trkPitch, {"reco_beam_calibrated_dEdX_no_SCE", "reco_beam_TrkPitch_no_SCE"})
+      .Define("corrected_dE", dEdX_trkPitch, {"reco_beam_calibrated_dEdX", "reco_beam_TrkPitch"})
+      .Define("cut_uncorrected_dEdX", cut_dEdX, {"reco_beam_calibrated_dEdX_no_SCE", "reco_beam_calo_wire"})
+      .Define("cut_corrected_dEdX", cut_dEdX, {"reco_beam_calibrated_dEdX", "reco_beam_calo_wire"});
 
    auto filtered_data5387 = frame_data5387
       .Filter("primary_isBeamType")
+      //.Filter("primary_ends_inAPA3")
       .Filter("passBeamCut")
-      .Filter("!isPrimaryMuonCandidate")
-      .Define("uncorrected_dE", dEdX_trkPitch, {"reco_beam_calibrated_dEdX_NoSCE", "reco_beam_TrkPitch_NoSCE"})
-      .Define("cut_uncorrected_dEdX", cut_dEdX, {"reco_beam_calibrated_dEdX_NoSCE", "reco_beam_calo_wire_NoSCE"})
-      .Define("corrected_dE", dEdX_trkPitch, {"reco_beam_calibrated_dEdX_SCE", "reco_beam_TrkPitch_SCE"})
-      .Define("cut_corrected_dEdX", cut_dEdX, {"reco_beam_calibrated_dEdX_SCE", "reco_beam_calo_wire"});
+      .Define("uncorrected_dE", dEdX_trkPitch, {"reco_beam_calibrated_dEdX_no_SCE", "reco_beam_TrkPitch_no_SCE"})
+      .Define("cut_uncorrected_dEdX", cut_dEdX, {"reco_beam_calibrated_dEdX_no_SCE", "reco_beam_calo_wire_no_SCE"})
+      .Define("corrected_dE", dEdX_trkPitch, {"reco_beam_calibrated_dEdX", "reco_beam_TrkPitch"})
+      .Define("cut_corrected_dEdX", cut_dEdX, {"reco_beam_calibrated_dEdX", "reco_beam_calo_wire"});
 
-/*   
    auto filtered_data5809 = frame_data5809
       .Filter("primary_isBeamType")
+      //.Filter("primary_ends_inAPA3")
       .Filter("passBeamCut")
-      .Filter("!isPrimaryMuonCandidate")
-      .Alias("reco_beam_calibrated_dEdX_SCE", "reco_beam_calibrated_dEdX")
-      .Alias("reco_beam_TrkPitch_SCE", "reco_beam_TrkPitch")
-      .Alias("reco_beam_calibrated_dEdX_NoSCE", "reco_beam_calibrated_dEdX_no_SCE")
-      .Alias("reco_beam_TrkPitch_NoSCE", "reco_beam_TrkPitch_no_SCE")
-      .Alias("reco_beam_calo_wire_NoSCE", "reco_beam_calo_wire_no_SCE")
-      .Define("uncorrected_dE", dEdX_trkPitch, {"reco_beam_calibrated_dEdX_NoSCE", "reco_beam_TrkPitch_NoSCE"})
-      .Define("cut_uncorrected_dEdX", cut_dEdX, {"reco_beam_calibrated_dEdX_NoSCE", "reco_beam_calo_wire_NoSCE"})
-      .Define("corrected_dE", dEdX_trkPitch, {"reco_beam_calibrated_dEdX_SCE", "reco_beam_TrkPitch_SCE"})
-      .Define("cut_corrected_dEdX", cut_dEdX, {"reco_beam_calibrated_dEdX_SCE", "reco_beam_calo_wire"});
+      .Define("uncorrected_dE", dEdX_trkPitch, {"reco_beam_calibrated_dEdX_no_SCE", "reco_beam_TrkPitch_no_SCE"})
+      .Define("cut_uncorrected_dEdX", cut_dEdX, {"reco_beam_calibrated_dEdX_no_SCE", "reco_beam_calo_wire_no_SCE"})
+      .Define("corrected_dE", dEdX_trkPitch, {"reco_beam_calibrated_dEdX", "reco_beam_TrkPitch"})
+      .Define("cut_corrected_dEdX", cut_dEdX, {"reco_beam_calibrated_dEdX", "reco_beam_calo_wire"});
 
    auto filtered_data5770 = frame_data5770
       .Filter("primary_isBeamType")
+      //.Filter("primary_ends_inAPA3")
       .Filter("passBeamCut")
-      .Filter("!isPrimaryMuonCandidate")
-      .Alias("reco_beam_calibrated_dEdX_SCE", "reco_beam_calibrated_dEdX")
-      .Alias("reco_beam_TrkPitch_SCE", "reco_beam_TrkPitch")
-      .Alias("reco_beam_calibrated_dEdX_NoSCE", "reco_beam_calibrated_dEdX_no_SCE")
-      .Alias("reco_beam_TrkPitch_NoSCE", "reco_beam_TrkPitch_no_SCE")
-      .Alias("reco_beam_calo_wire_NoSCE", "reco_beam_calo_wire_no_SCE")
-      .Define("uncorrected_dE", dEdX_trkPitch, {"reco_beam_calibrated_dEdX_NoSCE", "reco_beam_TrkPitch_NoSCE"})
-      .Define("cut_uncorrected_dEdX", cut_dEdX, {"reco_beam_calibrated_dEdX_NoSCE", "reco_beam_calo_wire_NoSCE"})
-      .Define("corrected_dE", dEdX_trkPitch, {"reco_beam_calibrated_dEdX_SCE", "reco_beam_TrkPitch_SCE"})
-      .Define("cut_corrected_dEdX", cut_dEdX, {"reco_beam_calibrated_dEdX_SCE", "reco_beam_calo_wire"});
+      .Define("uncorrected_dE", dEdX_trkPitch, {"reco_beam_calibrated_dEdX_no_SCE", "reco_beam_TrkPitch_no_SCE"})
+      .Define("cut_uncorrected_dEdX", cut_dEdX, {"reco_beam_calibrated_dEdX_no_SCE", "reco_beam_calo_wire_no_SCE"})
+      .Define("corrected_dE", dEdX_trkPitch, {"reco_beam_calibrated_dEdX", "reco_beam_TrkPitch"})
+      .Define("cut_corrected_dEdX", cut_dEdX, {"reco_beam_calibrated_dEdX", "reco_beam_calo_wire"});
 
-*/
+
    auto h2_mc_dE_wire_uncorrected = filtered_SCE
-      .Histo2D({"h2_mc_dE_wire_uncorrected","MC wire vs dE not corrected for SCE", nBin_wire ,binLow_wire ,binHigh_wire ,nBin_dE, binLow_dE, binHigh_dE}, "reco_beam_calo_wire_NoSCE","uncorrected_dE");
+      .Histo2D({"h2_mc_dE_wire_uncorrected","MC wire vs dE not corrected for SCE", nBin_wire ,binLow_wire ,binHigh_wire ,nBin_dE, binLow_dE, binHigh_dE}, "reco_beam_calo_wire_no_SCE","uncorrected_dE");
 
    auto h2_mc_dE_wire_corrected = filtered_SCE
       .Histo2D({"h2_mc_dE_wire_corrected","MC wire vs dE corrected for SCE", nBin_wire ,binLow_wire ,binHigh_wire ,nBin_dE, binLow_dE, binHigh_dE}, "reco_beam_calo_wire","corrected_dE");
 
    auto h2_data5387_dE_wire_uncorrected = filtered_data5387
-      .Histo2D({"h2_data5387_dE_wire_uncorrected","DATA 5387 wire vs dE uncorrected", nBin_wire ,binLow_wire ,binHigh_wire ,nBin_dE, binLow_dE, binHigh_dE}, "reco_beam_calo_wire_NoSCE","uncorrected_dE");
+      .Histo2D({"h2_data5387_dE_wire_uncorrected","DATA 5387 wire vs dE uncorrected", nBin_wire ,binLow_wire ,binHigh_wire ,nBin_dE, binLow_dE, binHigh_dE}, "reco_beam_calo_wire_no_SCE","uncorrected_dE");
 
    auto h2_data5387_dE_wire_corrected = filtered_data5387
       .Histo2D({"h2_data5387_dE_wire_corrected","DATA 5387 wire vs dE corrected", nBin_wire ,binLow_wire ,binHigh_wire ,nBin_dE, binLow_dE, binHigh_dE}, "reco_beam_calo_wire","corrected_dE");
 
-/*   
    auto h2_data5809_dE_wire_uncorrected = filtered_data5809
-      .Histo2D({"h2_data5809_dE_wire_uncorrected","DATA 5809 wire vs dE uncorrected", nBin_wire ,binLow_wire ,binHigh_wire ,nBin_dE, binLow_dE, binHigh_dE}, "reco_beam_calo_wire_NoSCE","uncorrected_dE");
+      .Histo2D({"h2_data5809_dE_wire_uncorrected","DATA 5809 wire vs dE uncorrected", nBin_wire ,binLow_wire ,binHigh_wire ,nBin_dE, binLow_dE, binHigh_dE}, "reco_beam_calo_wire_no_SCE","uncorrected_dE");
 
 
    auto h2_data5809_dE_wire_corrected = filtered_data5809
       .Histo2D({"h2_data5809_dE_wire_corrected","DATA 5809 wire vs dE corrected", nBin_wire ,binLow_wire ,binHigh_wire ,nBin_dE, binLow_dE, binHigh_dE}, "reco_beam_calo_wire","corrected_dE");
 
    auto h2_data5770_dE_wire_uncorrected = filtered_data5770
-      .Histo2D({"h2_data5770_dE_wire_uncorrected","DATA 5770 wire vs dE uncorrected", nBin_wire ,binLow_wire ,binHigh_wire ,nBin_dE, binLow_dE, binHigh_dE}, "reco_beam_calo_wire_NoSCE","uncorrected_dE");
+      .Histo2D({"h2_data5770_dE_wire_uncorrected","DATA 5770 wire vs dE uncorrected", nBin_wire ,binLow_wire ,binHigh_wire ,nBin_dE, binLow_dE, binHigh_dE}, "reco_beam_calo_wire_no_SCE","uncorrected_dE");
 
    auto h2_data5770_dE_wire_corrected = filtered_data5770
       .Histo2D({"h2_data5770_dE_wire_corrected","DATA 5770 wire vs dE corrected", nBin_wire ,binLow_wire ,binHigh_wire ,nBin_dE, binLow_dE, binHigh_dE}, "reco_beam_calo_wire","corrected_dE");
-*/
+
 
 
    h2_mc_dE_wire_uncorrected->GetYaxis()->SetTitle("dE");
@@ -164,12 +156,6 @@ int dEdX_correction_try(const string path1, const string path2 ){
    h2_data5387_dE_wire_uncorrected->GetXaxis()->SetTitle("wire");
    h2_data5387_dE_wire_corrected->GetXaxis()->SetTitle("wire");
 
-   h2_mc_dE_wire_uncorrected->Write();
-   h2_mc_dE_wire_corrected->Write();
-   h2_data5387_dE_wire_uncorrected->Write();
-   h2_data5387_dE_wire_corrected->Write();
-
-/*
    h2_data5809_dE_wire_uncorrected->GetYaxis()->SetTitle("dE");
    h2_data5809_dE_wire_corrected->GetYaxis()->SetTitle("dE");
 
@@ -181,6 +167,10 @@ int dEdX_correction_try(const string path1, const string path2 ){
    h2_data5770_dE_wire_uncorrected->GetXaxis()->SetTitle("wire");
    h2_data5770_dE_wire_corrected->GetXaxis()->SetTitle("wire");
 
+   h2_mc_dE_wire_uncorrected->Write();
+   h2_mc_dE_wire_corrected->Write();
+   h2_data5387_dE_wire_uncorrected->Write();
+   h2_data5387_dE_wire_corrected->Write();
 
    h2_data5809_dE_wire_uncorrected->Write();
    h2_data5809_dE_wire_corrected->Write();
@@ -188,31 +178,29 @@ int dEdX_correction_try(const string path1, const string path2 ){
    h2_data5770_dE_wire_uncorrected->Write();
 
    h2_data5770_dE_wire_corrected->Write();
-*/
+
    auto h2_mc_dEdX_wire_uncorrected = filtered_SCE
-      .Histo2D({"h2_mc_dEdX_wire_uncorrected","MC wire vs dEdX not corrected for SCE", nBin_wire, binLow_wire, binHigh_wire, nBin_dEdX, binLow_dEdX, binHigh_dEdX}, "reco_beam_calo_wire_NoSCE","cut_uncorrected_dEdX");
+      .Histo2D({"h2_mc_dEdX_wire_uncorrected","MC wire vs dEdX not corrected for SCE", nBin_wire, binLow_wire, binHigh_wire, nBin_dEdX, binLow_dEdX, binHigh_dEdX}, "reco_beam_calo_wire_no_SCE","cut_uncorrected_dEdX");
 
    auto h2_mc_dEdX_wire_corrected = filtered_SCE
       .Histo2D({"h2_mc_dEdX_wire_corrected","MC wire vs dEdX corrected for SCE", nBin_wire, binLow_wire, binHigh_wire, nBin_dEdX, binLow_dEdX, binHigh_dEdX}, "reco_beam_calo_wire","cut_corrected_dEdX");
 
    auto h2_data5387_dEdX_wire_uncorrected = filtered_data5387
-      .Histo2D({"h2_data5387_dEdX_wire_uncorrected","DATA 5387 wire vs dEdX uncorrected", nBin_wire, binLow_wire, binHigh_wire, nBin_dEdX, binLow_dEdX, binHigh_dEdX}, "reco_beam_calo_wire_NoSCE","cut_uncorrected_dEdX");
+      .Histo2D({"h2_data5387_dEdX_wire_uncorrected","DATA 5387 wire vs dEdX uncorrected", nBin_wire, binLow_wire, binHigh_wire, nBin_dEdX, binLow_dEdX, binHigh_dEdX}, "reco_beam_calo_wire_no_SCE","cut_uncorrected_dEdX");
 
    auto h2_data5387_dEdX_wire_corrected = filtered_data5387
       .Histo2D({"h2_data5387_dEdX_wire_corrected","DATA 5387 wire vs dEdX corrected", nBin_wire, binLow_wire, binHigh_wire, nBin_dEdX, binLow_dEdX, binHigh_dEdX}, "reco_beam_calo_wire","cut_corrected_dEdX");
 
-/*   
    auto h2_data5809_dEdX_wire_uncorrected = filtered_data5809
-      .Histo2D({"h2_data5809_dEdX_wire_uncorrected","DATA 5809 wire vs dEdX uncorrected", nBin_wire, binLow_wire, binHigh_wire, nBin_dEdX, binLow_dEdX, binHigh_dEdX}, "reco_beam_calo_wire_NoSCE","cut_uncorrected_dEdX");
+      .Histo2D({"h2_data5809_dEdX_wire_uncorrected","DATA 5809 wire vs dEdX uncorrected", nBin_wire, binLow_wire, binHigh_wire, nBin_dEdX, binLow_dEdX, binHigh_dEdX}, "reco_beam_calo_wire_no_SCE","cut_uncorrected_dEdX");
 
    auto h2_data5809_dEdX_wire_corrected = filtered_data5809
       .Histo2D({"h2_data5809_dEdX_wire_corrected","DATA 5809 wire vs dEdX corrected", nBin_wire, binLow_wire, binHigh_wire, nBin_dEdX, binLow_dEdX, binHigh_dEdX}, "reco_beam_calo_wire","cut_corrected_dEdX");
 
    auto h2_data5770_dEdX_wire_uncorrected = filtered_data5770
-      .Histo2D({"h2_data5770_dEdX_wire_uncorrected","DATA 5770 wire vs dEdX uncorrected", nBin_wire, binLow_wire, binHigh_wire, nBin_dEdX, binLow_dEdX, binHigh_dEdX}, "reco_beam_calo_wire_NoSCE","cut_uncorrected_dEdX");
+      .Histo2D({"h2_data5770_dEdX_wire_uncorrected","DATA 5770 wire vs dEdX uncorrected", nBin_wire, binLow_wire, binHigh_wire, nBin_dEdX, binLow_dEdX, binHigh_dEdX}, "reco_beam_calo_wire_no_SCE","cut_uncorrected_dEdX");
    auto h2_data5770_dEdX_wire_corrected = filtered_data5770
       .Histo2D({"h2_data5770_dEdX_wire_corrected","DATA 5770 wire vs dEdX corrected", nBin_wire, binLow_wire, binHigh_wire, nBin_dEdX, binLow_dEdX, binHigh_dEdX}, "reco_beam_calo_wire","cut_corrected_dEdX");
-*/
 
    h2_mc_dEdX_wire_uncorrected->GetYaxis()->SetTitle("dEdX");
    h2_mc_dEdX_wire_corrected->GetYaxis()->SetTitle("dEdX");
@@ -227,7 +215,7 @@ int dEdX_correction_try(const string path1, const string path2 ){
    h2_mc_dEdX_wire_corrected->Write();
    h2_data5387_dEdX_wire_uncorrected->Write();
    h2_data5387_dEdX_wire_corrected->Write();
-/*
+
    h2_data5809_dEdX_wire_uncorrected->GetXaxis()->SetTitle("wire");
    h2_data5809_dEdX_wire_uncorrected->GetYaxis()->SetTitle("dEdX");
    h2_data5809_dEdX_wire_uncorrected->Write();
@@ -235,33 +223,32 @@ int dEdX_correction_try(const string path1, const string path2 ){
 
    h2_data5809_dEdX_wire_corrected->Write();
    h2_data5770_dEdX_wire_corrected->Write();
-*/
+
 
 
    auto h2_mc_pitch_wire_uncorrected = filtered_SCE
-      .Histo2D({"h2_mc_pitch_wire_uncorrected","MC wire vs pitch not corrected for SCE", nBin_wire, binLow_wire, binHigh_wire, nBin_pitch, binLow_pitch, binHigh_pitch}, "reco_beam_calo_wire_NoSCE","reco_beam_TrkPitch_NoSCE");
+      .Histo2D({"h2_mc_pitch_wire_uncorrected","MC wire vs pitch not corrected for SCE", nBin_wire, binLow_wire, binHigh_wire, nBin_pitch, binLow_pitch, binHigh_pitch}, "reco_beam_calo_wire_no_SCE","reco_beam_TrkPitch_no_SCE");
 
    auto h2_mc_pitch_wire_corrected = filtered_SCE
-      .Histo2D({"h2_mc_pitch_wire_corrected","MC wire vs pitch corrected for SCE", nBin_wire, binLow_wire, binHigh_wire, nBin_pitch, binLow_pitch, binHigh_pitch}, "reco_beam_calo_wire","reco_beam_TrkPitch_SCE");
+      .Histo2D({"h2_mc_pitch_wire_corrected","MC wire vs pitch corrected for SCE", nBin_wire, binLow_wire, binHigh_wire, nBin_pitch, binLow_pitch, binHigh_pitch}, "reco_beam_calo_wire","reco_beam_TrkPitch");
 
    auto h2_data5387_pitch_wire_uncorrected = filtered_data5387
-      .Histo2D({"h2_data5387_pitch_wire_uncorrected","DATA 5387 wire vs pitch uncorrected", nBin_wire, binLow_wire, binHigh_wire, nBin_pitch, binLow_pitch, binHigh_pitch}, "reco_beam_calo_wire_NoSCE","reco_beam_TrkPitch_NoSCE");
+      .Histo2D({"h2_data5387_pitch_wire_uncorrected","DATA 5387 wire vs pitch uncorrected", nBin_wire, binLow_wire, binHigh_wire, nBin_pitch, binLow_pitch, binHigh_pitch}, "reco_beam_calo_wire_no_SCE","reco_beam_TrkPitch_no_SCE");
 
    auto h2_data5387_pitch_wire_corrected = filtered_data5387
-      .Histo2D({"h2_data5387_pitch_wire_corrected","DATA 5387 wire vs pitch corrected", nBin_wire, binLow_wire, binHigh_wire, nBin_pitch, binLow_pitch, binHigh_pitch}, "reco_beam_calo_wire","reco_beam_TrkPitch_SCE");
+      .Histo2D({"h2_data5387_pitch_wire_corrected","DATA 5387 wire vs pitch corrected", nBin_wire, binLow_wire, binHigh_wire, nBin_pitch, binLow_pitch, binHigh_pitch}, "reco_beam_calo_wire","reco_beam_TrkPitch");
 
-/*   
    auto h2_data5809_pitch_wire_uncorrected = filtered_data5809
-      .Histo2D({"h2_data5809_pitch_wire_uncorrected","DATA 5809 wire vs pitch uncorrected", nBin_wire, binLow_wire, binHigh_wire, nBin_pitch, binLow_pitch, binHigh_pitch}, "reco_beam_calo_wire_NoSCE","reco_beam_TrkPitch_NoSCE");
+      .Histo2D({"h2_data5809_pitch_wire_uncorrected","DATA 5809 wire vs pitch uncorrected", nBin_wire, binLow_wire, binHigh_wire, nBin_pitch, binLow_pitch, binHigh_pitch}, "reco_beam_calo_wire_no_SCE","reco_beam_TrkPitch_no_SCE");
 
    auto h2_data5809_pitch_wire_corrected = filtered_data5809
-      .Histo2D({"h2_data5809_pitch_wire_corrected","DATA 5809 wire vs pitch corrected", nBin_wire, binLow_wire, binHigh_wire, nBin_pitch, binLow_pitch, binHigh_pitch}, "reco_beam_calo_wire","reco_beam_TrkPitch_SCE");
+      .Histo2D({"h2_data5809_pitch_wire_corrected","DATA 5809 wire vs pitch corrected", nBin_wire, binLow_wire, binHigh_wire, nBin_pitch, binLow_pitch, binHigh_pitch}, "reco_beam_calo_wire","reco_beam_TrkPitch");
 
    auto h2_data5770_pitch_wire_uncorrected = filtered_data5770
-      .Histo2D({"h2_data5770_pitch_wire_uncorrected","DATA 5770 wire vs pitch uncorrected", nBin_wire, binLow_wire, binHigh_wire, nBin_pitch, binLow_pitch, binHigh_pitch}, "reco_beam_calo_wire_NoSCE","reco_beam_TrkPitch_NoSCE");
+      .Histo2D({"h2_data5770_pitch_wire_uncorrected","DATA 5770 wire vs pitch uncorrected", nBin_wire, binLow_wire, binHigh_wire, nBin_pitch, binLow_pitch, binHigh_pitch}, "reco_beam_calo_wire_no_SCE","reco_beam_TrkPitch_no_SCE");
    auto h2_data5770_pitch_wire_corrected = filtered_data5770
-      .Histo2D({"h2_data5770_pitch_wire_corrected","DATA 5770 wire vs pitch corrected", nBin_wire, binLow_wire, binHigh_wire, nBin_pitch, binLow_pitch, binHigh_pitch}, "reco_beam_calo_wire","reco_beam_TrkPitch_SCE");
-*/
+      .Histo2D({"h2_data5770_pitch_wire_corrected","DATA 5770 wire vs pitch corrected", nBin_wire, binLow_wire, binHigh_wire, nBin_pitch, binLow_pitch, binHigh_pitch}, "reco_beam_calo_wire","reco_beam_TrkPitch");
+
 
    h2_mc_pitch_wire_uncorrected->GetYaxis()->SetTitle("pitch");
    h2_mc_pitch_wire_corrected->GetYaxis()->SetTitle("pitch");
@@ -279,7 +266,6 @@ int dEdX_correction_try(const string path1, const string path2 ){
    h2_data5387_pitch_wire_uncorrected->Write();
    h2_data5387_pitch_wire_corrected->Write();
 
-/*   
    h2_data5809_pitch_wire_uncorrected->GetYaxis()->SetTitle("pitch");
    h2_data5809_pitch_wire_corrected->GetYaxis()->SetTitle("pitch");
    h2_data5809_pitch_wire_uncorrected->GetXaxis()->SetTitle("wire");
@@ -289,7 +275,7 @@ int dEdX_correction_try(const string path1, const string path2 ){
    h2_data5770_pitch_wire_uncorrected->Write();
    h2_data5809_pitch_wire_corrected->Write();
    h2_data5770_pitch_wire_corrected->Write();
-*/
+
    auto h_data_cosThetaXZ = filtered_data5387
       .Define("data_cosThetaXZ", "reco_beam_trackDirX * beam_inst_dirX + reco_beam_trackDirY * beam_inst_dirY + reco_beam_trackDirZ * beam_inst_dirZ")
       .Histo1D({"h_data5387_cosThetaXZ", "DATA 5387 cosine Theta XZ", 200,0.5,1.2}, "data_cosThetaXZ");

@@ -1,0 +1,34 @@
+These are instructions on how to run the eSliceMethod_selectedInt.C to perform
+the XS extraction.
+Its also a document to not have Francescas memory forget what the steps are.
+
+
+The relevant macros are in the github https://github.com/calcuttj/PionStudies
+The relevant folder is rDataFrame and rDataFrame/eSliceMethod
+
+------Preparation for eSlice Method -----------
+
+   ---run rDataFrame/eventSelection.C
+      to produce some necessary branches and perform the event selection
+   
+   ---run rDataFrame/dEdX_correction_try.C
+      on the output of the eventSelection (mc_all/data_all)
+      This produces the important h2 histos that contain dEdX
+      calibrated/uncalibrated vs wire within the detector as well as
+      trackPitch vs wire
+   
+   ---run rDataFrame/fit_dEdX_correction_try.C and
+   rDataFrame/fit_dEdX_mc_validation.C
+      this is for data and mc respectively. the above mentioned distributions
+      of dEdX vs wire are fitted for each wire with a landau, the track Pitch
+      vs wire with a gaussian
+      everything is saved to output.root file sthat oyu need to pass on in the
+      next macro
+   
+   ---run rDataFrame/eSliceMethod/eSliceMethod_*.C
+      depending if you want to run the eSliceMethod on selected or true
+      Interactions chose the macro
+      include within the macro the correct fit outputs that you just produced
+      in the step before.
+      the output file of eSliceMethod contains the used h2's and histograms
+      

@@ -41,7 +41,7 @@ int eSliceMethod_selectedInt(const string mcFilepath){
    gStyle->SetNdivisions(1020);
    
    //output file
-   TFile *output = new TFile ("output_eSliceMethod_selectedEvents_primMu.root", "RECREATE");
+   TFile *output = new TFile ("output_eSliceMethod_selectedEvents.root", "RECREATE");
 
    //access Jakes GeantFile in folder
    TFile f1("exclusive_xsec.root");
@@ -50,81 +50,19 @@ int eSliceMethod_selectedInt(const string mcFilepath){
    TGraph *cex_KE = (TGraph*)f1.Get("cex_KE");
    f1.Close();
 
-   TFile f2("fit_mc_Prod4_dEdX_pitch_1_14_21.root");
-   TH1D *fit_dEdX_lifetime_mpv = (TH1D*)f2.Get("dEdX_mpv_lifetime"); //mean value corrected for lifetime
-   TH1D *fit_pitch_mean = (TH1D*)f2.Get("fit_mc_pitch_mean");
-   
-   //TH1D *fit_dEdX_lifetime_mpv = (TH1D*)f2.Get("fit_mc_dEdX_SCEcorr_mpv"); //mean value corrected for lifetime
-   //TH1D *fit_pitch_mean = (TH1D*)f2.Get("fit_mc_pitch_SCEcorr_mean");
-   
-   //Datadriven corrected pitch
-   //TH1D *fit_pitch_mean = (TH1D*)f2.Get("true_pitch_mean_lifetime");
-
-   output->cd();
-   fit_dEdX_lifetime_mpv->Write();
-   fit_pitch_mean->Write();
-
    TMultiGraph *mg = new TMultiGraph();
    mg->Add(totInel_KE);
    mg->Add(abs_KE);
    mg->Add(cex_KE);
    mg->SetTitle("Cross-Section; reco kinetic Energy (MeV); #sigma (mbarn)");
+
+   //switch to output-file
+   output->cd();
    
    //--------------------------------------------------------
-   //Bethe Bloch MPV and Mean
-   //--------------------------------------------------------
-   TH1D* bethe_pi_mpv = new TH1D("betheMPV_pion", "", fit_pitch_mean->GetNbinsX(), 1, fit_pitch_mean->GetNbinsX() );
-   bethe_pi_mpv->GetXaxis()->SetTitle("wire");  bethe_pi_mpv->GetYaxis()->SetTitle("dEdX (MeV/cm)");
-   
-   TH1D* bethe_mu_mpv = new TH1D("betheMPV_muon", "", fit_pitch_mean->GetNbinsX(), 1, fit_pitch_mean->GetNbinsX() );
-   bethe_mu_mpv->GetXaxis()->SetTitle("wire");  bethe_mu_mpv->GetYaxis()->SetTitle("dEdX (MeV/cm)");
-   
-   TH1D* bethe_pi_mean = new TH1D("betheMean_pion", "", fit_pitch_mean->GetNbinsX(), 1, fit_pitch_mean->GetNbinsX() );
-   bethe_pi_mean->GetXaxis()->SetTitle("wire"); bethe_pi_mean->GetYaxis()->SetTitle("dEdX (MeV/cm)");
-   
-   TH1D* bethe_mu_mean = new TH1D("betheMean_muon", "", fit_pitch_mean->GetNbinsX(), 1, fit_pitch_mean->GetNbinsX() );
-   bethe_mu_mean->GetXaxis()->SetTitle("wire"); bethe_mu_mean->GetYaxis()->SetTitle("dEdX (MeV/cm)");
-
-   hist_bethe_mpv( KE_in_pion, mass_pion, fit_pitch_mean, bethe_pi_mpv);
-   hist_bethe_mean( KE_in_pion, mass_pion, fit_pitch_mean, bethe_pi_mean);
-   //hist_bethe_mpv( 885.7, mass_muon, fit_pitch_mean, bethe_mu_mpv); //885.7 is mean of dsitribution of reco_beam_incidentEnergies[0]
-   //hist_bethe_mean( 885.7, mass_muon, fit_pitch_mean, bethe_mu_mean);
-   hist_bethe_mpv( KE_in_muon, mass_muon, fit_pitch_mean, bethe_mu_mpv);
-   hist_bethe_mean( KE_in_muon, mass_muon, fit_pitch_mean, bethe_mu_mean);
-
-   bethe_pi_mpv->Write();
-   bethe_mu_mpv->Write();
-
-   bethe_pi_mean->Write();
-   bethe_mu_mean->Write();
-
-   //--------------------------------------------------------
-   //PREP for INTERACTING ENERGY
-   //Histogram with energy deposit along wire and running sum
+   // Initialise incident and interacting Histograms
    //
-   //Strategy for MPV --> Mean of Data is to multiply fitted MPV (stable fit) by factor of betheMean/betheMPV
-   TH1D* bethe_frac_mu = new TH1D("betheFrac_mu", "", fit_pitch_mean->GetNbinsX(), 1, fit_pitch_mean->GetNbinsX() );
-   bethe_frac_mu->Divide(bethe_mu_mean, bethe_mu_mpv);
-   bethe_frac_mu->Write();
-   
-   TH1D* dEdX_mean_calc_fit_bethe = (TH1D*)bethe_frac_mu->Clone("dEdX_mean_calc_fit_bethe");
-   dEdX_mean_calc_fit_bethe->Multiply(fit_dEdX_lifetime_mpv);
-   dEdX_mean_calc_fit_bethe->Write();
-
-   TH1D dE_product_fit_dEdX_pitch = (*dEdX_mean_calc_fit_bethe) * (*fit_pitch_mean);
-   dE_product_fit_dEdX_pitch.SetName("dE_product_fit_dEdX_pitch");
-
-   TH1D *runningSum_dE = new TH1D("runningSum_dE", "", fit_pitch_mean->GetNbinsX(), 1, fit_pitch_mean->GetNbinsX() );
-
-   double temp = 0;
-   for(int i=1; i <= dE_product_fit_dEdX_pitch.GetNbinsX(); i++){
-      temp += dE_product_fit_dEdX_pitch.GetBinContent(i);
-      runningSum_dE->SetBinContent( i, temp);
-   };
-
-   dE_product_fit_dEdX_pitch.Write();
-   runningSum_dE->Write();
-//--------------------------------------------------------
+   //--------------------------------------------------------
       
    //Incident Histogram and Interacting Histogram, interacting for different Processes
    //Energies are kinetic Energy of beam particle
@@ -151,57 +89,11 @@ int eSliceMethod_selectedInt(const string mcFilepath){
 
 
    //Initial Filters for all events
-   auto frame_filter = frame
-      .Filter("true_beam_endZ > 0")
+   auto mcIncident_selected_primaryPi = frame
       //.Filter("true_beam_PDG == abs(211)")
       .Filter("selected_incidentPion");
-      //.Filter("primary_isBeamType && passBeamCut && passBeamCutBI");    //particles that make it into TPC, couldn't be considered otherwise
-
-
+     
    //Filter for different interaction types
-   //
-   //=====================================================
-   //          SELECTED Interactions, RECO Energies
-   //=====================================================
-   //------------------------------------------------------
-   //Incident selected sample, reconstructed Energy
-   //------------------------------------------------------
-   //
-   //for Interacting energy, the wire the primary particle interacted at should be the last one in reco_beam_calo_wire
-   //
-
-   auto mcIncident_selected_primaryPi = frame_filter      
-      //.Range(3)
-      .Define("true_firstEntryIncident", firstIncident, {"true_beam_incidentEnergies"})
-      .Define("true_KEint_fromEndP", [](double true_beam_endP){
-            true_beam_endP = 1000*true_beam_endP; //convert GeV -> MeV
-            double endKE = sqrt( pow(true_beam_endP,2) + pow(mass_pion,2)  ) - mass_pion;
-            return endKE;}
-            ,{"true_beam_endP"})
-      
-      .Define("reco_firstEntryIncident", firstIncident, {"reco_beam_incidentEnergies"})
-  
-      .Define("reco_interactingKE", [runningSum_dE](const std::vector<double> &reco_beam_calo_wire, double incidentE){
-            double interactingWire = reco_beam_calo_wire[ reco_beam_calo_wire.size() ];
-            double interactingKE;
-            if(interactingWire >= 1 && interactingWire < runningSum_dE->GetNbinsX()){
-               interactingKE = incidentE - runningSum_dE->GetBinContent(interactingWire);
-             }
-            else interactingKE = -999;
-            return interactingKE;
-            }
-            ,{"reco_beam_calo_wire", "reco_firstEntryIncident"})
-
-      .Define("reco_incident_wire", [](std::vector<double> &reco_beam_calo_wire){
-            return reco_beam_calo_wire[ reco_beam_calo_wire[0] ];
-            },{"reco_beam_calo_wire"})
-
-      .Define("reco_interacting_wire", [](std::vector<double> &reco_beam_calo_wire){
-            return reco_beam_calo_wire[ reco_beam_calo_wire.size() ];
-            },{"reco_beam_calo_wire"});
-
-      //.Filter("reco_interactingKE > 0 ");
- 
     auto h2_wire_KEinc = mcIncident_selected_primaryPi
        .Histo2D({"recoKEinc_vs_wire", "reco first incident KEnergy at reco wire", 400,0,800, 200,0,1000}, "reco_interacting_wire", "reco_firstEntryIncident");
 
@@ -279,8 +171,8 @@ int eSliceMethod_selectedInt(const string mcFilepath){
 
 
    auto mcInteracting_selected_abs = mcInteracting_selected_allPrimaryPi
-      //.Filter("selected_abs");
-      .Filter("has_noPion_daughter && !(has_shower_nHits_distance)");
+      .Filter("selected_abs");
+      //.Filter("has_noPion_daughter && !(has_shower_nHits_distance)");
 
    mcInteracting_selected_abs
      .Foreach( [h_selected_abs_interactingTrueE] (double true_beam_interactingEnergy){
@@ -298,15 +190,10 @@ int eSliceMethod_selectedInt(const string mcFilepath){
    h_selected_abs_interactingRecoE->Sumw2(0);
    h_selected_abs_interactingRecoE->Write();
 
-   //DEBUG
-
-   auto h2_reco_true_KE_abs= mcInteracting_selected_abs
-       .Histo2D({"h2_reco_true_KE_abs", "true KE vs reco KE selected ABS", 400,0,1.2, 400,0,1200}, "true_beam_endP", "reco_interactingKE");
-   h2_reco_true_KE_abs->Write();
 
    auto mcInteracting_selected_cex = mcInteracting_selected_allPrimaryPi
-      //.Filter("selected_cex");
-      .Filter("has_noPion_daughter && has_shower_nHits_distance");
+      .Filter("selected_cex");
+      //.Filter("has_noPion_daughter && has_shower_nHits_distance");
 
    mcInteracting_selected_cex
      .Foreach( [h_selected_cex_interactingTrueE] (double true_beam_interactingEnergy){
@@ -347,14 +234,14 @@ int eSliceMethod_selectedInt(const string mcFilepath){
    //            QUESTION: take betheBloch of Pion or Muon?? Comparison to data fits better muon Bethe... 
    //            at hihger momentum ~400-800 they anway are almost the same
    //=====================================================
-   TH1D* h_betheMean_pion = new TH1D("h_betheMean_pion", "Mean Energy Loss", nBin_int, eEnd, eStart);
+   TH1D* h_betheMean_muon = new TH1D("h_betheMean_muon", "Mean Energy Loss", nBin_int, eEnd, eStart);
 
    //fill histo with Mean dEdX of bin center
    for(int i = 1; i <= nBin_int; i++){
-      h_betheMean_pion->SetBinContent(i , betheBloch( eEnd + (i - 0.5)*bin_size_int  , mass_muon) );
+      h_betheMean_muon->SetBinContent(i , betheBloch( eEnd + (i - 0.5)*bin_size_int  , mass_muon) );
    };
 
-   h_betheMean_pion->Write();
+   h_betheMean_muon->Write();
 
    //=====================================================
    //             Computing the XS
@@ -381,7 +268,7 @@ int eSliceMethod_selectedInt(const string mcFilepath){
    dummy_recoE_abs->Add( h_selected_abs_interactingRecoE, -1);
    h_xs_RecoE_selected_abs->Divide( dummy_recoE_abs );
    for(int i = 1; i <= nBin_int; i++) h_xs_RecoE_selected_abs->SetBinContent(i, log( h_xs_RecoE_selected_abs->GetBinContent(i) ));
-   h_xs_RecoE_selected_abs->Multiply( h_betheMean_pion );
+   h_xs_RecoE_selected_abs->Multiply( h_betheMean_muon );
    h_xs_RecoE_selected_abs->Scale( scale_factor );
 
    TH1D* h_xs_TrueE_selected_abs = (TH1D*) h_selected_pion_incidentTrueE->Clone("h_xs_TrueE_selected_abs");
@@ -389,13 +276,13 @@ int eSliceMethod_selectedInt(const string mcFilepath){
    dummy_TrueE_abs->Add( h_selected_abs_interactingTrueE, -1);
    h_xs_TrueE_selected_abs->Divide( dummy_TrueE_abs );
    for(int i = 1; i <= nBin_int; i++) h_xs_TrueE_selected_abs->SetBinContent(i, log( h_xs_TrueE_selected_abs->GetBinContent(i) ));
-   h_xs_TrueE_selected_abs->Multiply( h_betheMean_pion );
+   h_xs_TrueE_selected_abs->Multiply( h_betheMean_muon );
    h_xs_TrueE_selected_abs->Scale( scale_factor );
    
    /* Less Accurate when Nint !<< Ninc
    TH1D* h_xs_RecoE_selected_abs = (TH1D*) h_selected_abs_interactingRecoE->Clone("h_xs_RecoE_selected_abs");
    h_xs_RecoE_selected_abs->Divide( h_selected_pion_incidentRecoE );
-   h_xs_RecoE_selected_abs->Multiply( h_betheMean_pion );
+   h_xs_RecoE_selected_abs->Multiply( h_betheMean_muon );
    h_xs_RecoE_selected_abs->Scale( factor_mbarn*scale_factor );
    */
 
@@ -406,7 +293,7 @@ int eSliceMethod_selectedInt(const string mcFilepath){
 
       double p = h_selected_abs_interactingRecoE->GetBinContent(i) / h_selected_pion_incidentRecoE->GetBinContent(i);
       double nInc_i = h_selected_pion_incidentRecoE->GetBinContent(i);
-      double help_factor = scale_factor*h_betheMean_pion->GetBinContent(i);
+      double help_factor = scale_factor*h_betheMean_muon->GetBinContent(i);
       
       h_xs_RecoE_selected_abs->SetBinError( i , help_factor*sqrt( p*(1-p)/nInc_i ));
    };
@@ -416,7 +303,7 @@ int eSliceMethod_selectedInt(const string mcFilepath){
 
       double p = h_selected_abs_interactingTrueE->GetBinContent(i) / h_selected_pion_incidentTrueE->GetBinContent(i);
       double nInc_i = h_selected_pion_incidentTrueE->GetBinContent(i);
-      double help_factor = scale_factor*h_betheMean_pion->GetBinContent(i);
+      double help_factor = scale_factor*h_betheMean_muon->GetBinContent(i);
       
       h_xs_TrueE_selected_abs->SetBinError( i , help_factor*sqrt( p*(1-p)/nInc_i ));
    };
@@ -433,7 +320,7 @@ int eSliceMethod_selectedInt(const string mcFilepath){
    dummy_recoE_cex->Add( h_selected_cex_interactingRecoE, -1);
    h_xs_RecoE_selected_cex->Divide( dummy_recoE_cex );
    for(int i = 1; i <= nBin_int; i++) h_xs_RecoE_selected_cex->SetBinContent(i, log( h_xs_RecoE_selected_cex->GetBinContent(i) ));
-   h_xs_RecoE_selected_cex->Multiply( h_betheMean_pion );
+   h_xs_RecoE_selected_cex->Multiply( h_betheMean_muon );
    h_xs_RecoE_selected_cex->Scale( scale_factor );
    
    TH1D* h_xs_TrueE_selected_cex = (TH1D*) h_selected_pion_incidentTrueE->Clone("h_xs_TrueE_selected_cex");
@@ -441,13 +328,13 @@ int eSliceMethod_selectedInt(const string mcFilepath){
    dummy_TrueE_cex->Add( h_selected_cex_interactingTrueE, -1);
    h_xs_TrueE_selected_cex->Divide( dummy_TrueE_cex );
    for(int i = 1; i <= nBin_int; i++) h_xs_TrueE_selected_cex->SetBinContent(i, log( h_xs_TrueE_selected_cex->GetBinContent(i) ));
-   h_xs_TrueE_selected_cex->Multiply( h_betheMean_pion );
+   h_xs_TrueE_selected_cex->Multiply( h_betheMean_muon );
    h_xs_TrueE_selected_cex->Scale( scale_factor );
    
    /* Less Accurate when Nint !<< Ninc
    TH1D* h_xs_RecoE_selected_cex = (TH1D*) h_selected_cex_interactingRecoE->Clone("h_xs_RecoE_selected_cex");
    h_xs_RecoE_selected_cex->Divide( h_selected_pion_incidentRecoE );
-   h_xs_RecoE_selected_cex->Multiply( h_betheMean_pion );
+   h_xs_RecoE_selected_cex->Multiply( h_betheMean_muon );
    h_xs_RecoE_selected_cex->Scale( factor_mbarn*scale_factor );
    */
 
@@ -456,7 +343,7 @@ int eSliceMethod_selectedInt(const string mcFilepath){
 
       double p = h_selected_cex_interactingRecoE->GetBinContent(i) / h_selected_pion_incidentRecoE->GetBinContent(i);
       double nInc_i = h_selected_pion_incidentRecoE->GetBinContent(i);
-      double help_factor = scale_factor*h_betheMean_pion->GetBinContent(i);
+      double help_factor = scale_factor*h_betheMean_muon->GetBinContent(i);
       
       h_xs_RecoE_selected_cex->SetBinError( i , help_factor*sqrt( p*(1-p)/nInc_i ));
    };
@@ -466,7 +353,7 @@ int eSliceMethod_selectedInt(const string mcFilepath){
 
       double p = h_selected_cex_interactingTrueE->GetBinContent(i) / h_selected_pion_incidentTrueE->GetBinContent(i);
       double nInc_i = h_selected_pion_incidentTrueE->GetBinContent(i);
-      double help_factor = scale_factor*h_betheMean_pion->GetBinContent(i);
+      double help_factor = scale_factor*h_betheMean_muon->GetBinContent(i);
       
       h_xs_TrueE_selected_cex->SetBinError( i , help_factor*sqrt( p*(1-p)/nInc_i ));
    };
@@ -481,7 +368,7 @@ int eSliceMethod_selectedInt(const string mcFilepath){
    dummy_recoE_totInel->Add( h_selected_totInel_interactingRecoE, -1);
    h_xs_RecoE_selected_totInel->Divide( dummy_recoE_totInel );
    for(int i = 1; i <= nBin_int; i++) h_xs_RecoE_selected_totInel->SetBinContent(i, log( h_xs_RecoE_selected_totInel->GetBinContent(i) ));
-   h_xs_RecoE_selected_totInel->Multiply( h_betheMean_pion );
+   h_xs_RecoE_selected_totInel->Multiply( h_betheMean_muon );
    h_xs_RecoE_selected_totInel->Scale( scale_factor );
 
    TH1D* h_xs_TrueE_selected_totInel = (TH1D*) h_selected_pion_incidentTrueE->Clone("h_xs_TrueE_selected_totInel");
@@ -489,13 +376,13 @@ int eSliceMethod_selectedInt(const string mcFilepath){
    dummy_TrueE_totInel->Add( h_selected_totInel_interactingTrueE, -1);
    h_xs_TrueE_selected_totInel->Divide( dummy_TrueE_totInel );
    for(int i = 1; i <= nBin_int; i++) h_xs_TrueE_selected_totInel->SetBinContent(i, log( h_xs_TrueE_selected_totInel->GetBinContent(i) ));
-   h_xs_TrueE_selected_totInel->Multiply( h_betheMean_pion );
+   h_xs_TrueE_selected_totInel->Multiply( h_betheMean_muon );
    h_xs_TrueE_selected_totInel->Scale( scale_factor );
    
    /* Less Accurate when Nint !<< Ninc
    TH1D* h_xs_RecoE_selected_totInel = (TH1D*) h_selected_totInel_interactingRecoE->Clone("h_xs_RecoE_selected_totInel");
    h_xs_RecoE_selected_totInel->Divide( h_selected_pion_incidentRecoE );
-   h_xs_RecoE_selected_totInel->Multiply( h_betheMean_pion );
+   h_xs_RecoE_selected_totInel->Multiply( h_betheMean_muon );
    h_xs_RecoE_selected_totInel->Scale( factor_mbarn*scale_factor );
    */
 
@@ -504,7 +391,7 @@ int eSliceMethod_selectedInt(const string mcFilepath){
 
       double p = h_selected_totInel_interactingRecoE->GetBinContent(i) / h_selected_pion_incidentRecoE->GetBinContent(i);
       double nInc_i = h_selected_pion_incidentRecoE->GetBinContent(i);
-      double help_factor = scale_factor*h_betheMean_pion->GetBinContent(i);
+      double help_factor = scale_factor*h_betheMean_muon->GetBinContent(i);
       
       h_xs_RecoE_selected_totInel->SetBinError( i , help_factor*sqrt( p*(1-p)/nInc_i ));
    };
@@ -514,7 +401,7 @@ int eSliceMethod_selectedInt(const string mcFilepath){
 
       double p = h_selected_totInel_interactingTrueE->GetBinContent(i) / h_selected_pion_incidentTrueE->GetBinContent(i);
       double nInc_i = h_selected_pion_incidentTrueE->GetBinContent(i);
-      double help_factor = scale_factor*h_betheMean_pion->GetBinContent(i);
+      double help_factor = scale_factor*h_betheMean_muon->GetBinContent(i);
       
       h_xs_TrueE_selected_totInel->SetBinError( i , help_factor*sqrt( p*(1-p)/nInc_i ));
    };

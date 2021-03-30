@@ -75,6 +75,7 @@ void bethe_mean(double E_init, double mass_particle, TH1D* fit_mean, TH1D* mean_
    };
 };
 
+//give in output of dEdX_correction_try.C file
 int fit_dEdX_correction_try(const string file_path) {
 
    //string to const char*

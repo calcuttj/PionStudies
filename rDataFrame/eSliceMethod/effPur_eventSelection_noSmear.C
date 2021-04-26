@@ -38,14 +38,14 @@ using namespace ROOT::VecOps;
 //***********************
 //Main Function
 
-int effPur_eventSelection(const string mcFilepath){
+int effPur_eventSelection_noSmear(const string mcFilepath){
 
    gInterpreter->GenerateDictionary("vector<vector<int>>", "vector");
    ROOT::RDataFrame frame(pionTree, mcFilepath);
 
 
    //output file
-   TFile *output = new TFile ("eSliceMethod_effPur_binByBin_recoE.root", "RECREATE");
+   TFile *output = new TFile ("eSliceMethod_effPur_binByBin_noSmear.root", "RECREATE");
 
    //--------------------------------------------------------
    //
@@ -105,12 +105,15 @@ int effPur_eventSelection(const string mcFilepath){
    //Eff = N True Selected Abs / N True Available Abs in incident Selection
    //Pur = N True Selected Abs / N Selected Abs
    //
+   //--> CONSIDERING only events where trueKEint == recoKEint
+   //
    //--------------------------------------------------------
    //             ABSORPTION
    //
    //--------------------------------------------------------
 
 
+   //only filling now for the selected where trueBin == recoBin
    TH1D* h_evSel_true_abs = new TH1D("h_evSel_true_abs", "Selected Abs, trueAbs", nBin_int, eEnd, eStart);
    TH1D* h_incidentPion_avail_abs = new TH1D("h_incidentPion_avail_abs", "Available Abs after incident Pion, trueAbs", nBin_int, eEnd, eStart);
    TH1D* h_evSel_selected_abs = new TH1D("h_evSel_selected_abs", "Selected Abs", nBin_int, eEnd, eStart);
@@ -124,10 +127,16 @@ int effPur_eventSelection(const string mcFilepath){
             h_incidentPion_avail_abs->Fill(reco_beam_interactingEnergy);}
             ,{"reco_interactingKE"});
 
+
+   //check here that binReco and binTrue are the same for the interacting KE
    abs_select_avail_abs
-      .Foreach( [h_evSel_true_abs] (double reco_beam_interactingEnergy){
-            h_evSel_true_abs->Fill(reco_beam_interactingEnergy);}
-            ,{"reco_interactingKE"});
+      .Foreach( [h_evSel_true_abs] (double true_beam_interactingEnergy, double reco_beam_interactingEnergy){
+
+            int binReco = (int) reco_beam_interactingEnergy / bin_size_int + 1;
+            int binTrue = (int) true_beam_interactingEnergy / bin_size_int + 1;
+
+            if (binReco == binTrue) h_evSel_true_abs->Fill(reco_beam_interactingEnergy); }
+            ,{"true_KEint_fromEndP", "reco_interactingKE"});
 
    selected_abs
       .Foreach( [h_evSel_selected_abs] (double reco_beam_interactingEnergy){
@@ -146,6 +155,7 @@ int effPur_eventSelection(const string mcFilepath){
    //
    //--------------------------------------------------------
 
+   //only filling now for the selected where trueBin == recoBin
    TH1D* h_evSel_true_cex = new TH1D("h_evSel_true_cex", "Selected cex, truecex", nBin_int, eEnd, eStart);
    TH1D* h_incidentPion_avail_cex = new TH1D("h_incidentPion_avail_cex", "Available cex after incident Pion, truecex", nBin_int, eEnd, eStart);
    TH1D* h_evSel_selected_cex = new TH1D("h_evSel_selected_cex", "Selected cex", nBin_int, eEnd, eStart);
@@ -159,10 +169,16 @@ int effPur_eventSelection(const string mcFilepath){
             h_incidentPion_avail_cex->Fill(reco_beam_interactingEnergy);}
             ,{"reco_interactingKE"});
 
+
+   //check here that binReco and binTrue are the same for the interacting KE
    cex_select_avail_cex
-      .Foreach( [h_evSel_true_cex] (double reco_beam_interactingEnergy){
-            h_evSel_true_cex->Fill(reco_beam_interactingEnergy);}
-            ,{"reco_interactingKE"});
+      .Foreach( [h_evSel_true_cex] (double true_beam_interactingEnergy, double reco_beam_interactingEnergy){
+
+            int binReco = (int) reco_beam_interactingEnergy / bin_size_int + 1;
+            int binTrue = (int) true_beam_interactingEnergy / bin_size_int + 1;
+
+            if (binReco == binTrue) h_evSel_true_cex->Fill(reco_beam_interactingEnergy); }
+            ,{"true_KEint_fromEndP", "reco_interactingKE"});
 
    selected_cex
       .Foreach( [h_evSel_selected_cex] (double reco_beam_interactingEnergy){
@@ -180,7 +196,7 @@ int effPur_eventSelection(const string mcFilepath){
    //             totInel
    //
    //--------------------------------------------------------
-
+   //only filling now for the selected where trueBin == recoBin
    TH1D* h_evSel_true_totInel = new TH1D("h_evSel_true_totInel", "Selected totInel, truetotInel", nBin_int, eEnd, eStart);
    TH1D* h_incidentPion_avail_totInel = new TH1D("h_incidentPion_avail_totInel", "Available totInel after incident Pion, truetotInel", nBin_int, eEnd, eStart);
    TH1D* h_evSel_selected_totInel = new TH1D("h_evSel_selected_totInel", "Selected totInel", nBin_int, eEnd, eStart);
@@ -194,10 +210,16 @@ int effPur_eventSelection(const string mcFilepath){
             h_incidentPion_avail_totInel->Fill(reco_beam_interactingEnergy);}
             ,{"reco_interactingKE"});
 
+
+   //check here that binReco and binTrue are the same for the interacting KE
    totInel_select_avail_totInel
-      .Foreach( [h_evSel_true_totInel] (double reco_beam_interactingEnergy){
-            h_evSel_true_totInel->Fill(reco_beam_interactingEnergy);}
-            ,{"reco_interactingKE"});
+      .Foreach( [h_evSel_true_totInel] (double true_beam_interactingEnergy, double reco_beam_interactingEnergy){
+
+            int binReco = (int) reco_beam_interactingEnergy / bin_size_int + 1;
+            int binTrue = (int) true_beam_interactingEnergy / bin_size_int + 1;
+
+            if (binReco == binTrue) h_evSel_true_totInel->Fill(reco_beam_interactingEnergy); }
+            ,{"true_KEint_fromEndP", "reco_interactingKE"});
 
    selected_totInel
       .Foreach( [h_evSel_selected_totInel] (double reco_beam_interactingEnergy){
@@ -211,11 +233,13 @@ int effPur_eventSelection(const string mcFilepath){
    h_eff_interacting_totInel->Write();
    h_pur_interacting_totInel->Write();
 
-
    //--------------------------------------------------------
    //
    //For the incident Histogram Build the efficiency and purity bin-by-bin histo
    //SELECTION EFF AND PUR
+   //
+   //to account for the RecoBin = TrueBin:
+   // find the binRange in reco and binRange in True, only the overlapping range of both entities was filled correctly for the single event. only those count for the N True Selected Inc Pi
    //
    //Eff = N True Selected IncPi / N True Available IncPi after Pandora recognition
    //Pur = N True Selected IncPi / N Selected incPi
@@ -231,11 +255,29 @@ int effPur_eventSelection(const string mcFilepath){
    TH1D* h_pur_incidentPion = new TH1D("h_pur_incidentPion", "Purity incident Abs Histo", nBin_int, eEnd, eStart);
 
 
+   //for Nominator in Eff/Pur calculation, find the overlapping bins between reco and true for the correct bin-by-bin eff and pur estimation
+
    incidentPion_avail_totInel //N true incident pions after incident pion selection
-      .Foreach( [h_incidentPion_true_incPi] (double reco_firstEntryIncident, double reco_beam_interactingEnergy) {
+      .Foreach( [h_incidentPion_true_incPi] (double true_first, double true_int, double reco_first, double reco_int) {
             //bin that energy falls into is (int) energy/nbins + 1
-            int binNumber_initEnergy = (int) reco_firstEntryIncident / bin_size_inc + 1;
-            int binNumber_interEnergy = (int) reco_beam_interactingEnergy / bin_size_inc + 1;
+            //
+            int true_binHigh_init = (int) true_first / bin_size_inc + 1;
+            int reco_binHigh_init = (int) reco_first / bin_size_inc + 1;
+
+            int true_binLow_inter = (int) true_int / bin_size_inc + 1;
+            int reco_binLow_inter = (int) reco_int / bin_size_inc + 1;
+
+            //compare reco bins and true bins, find overlapping area
+            //for initial bin / high bin take the smaller of the two
+            //for interacting bin / lower bin take the higher of the two
+            int binNumber_initEnergy, binNumber_interEnergy;
+            
+            if(true_binHigh_init > reco_binHigh_init) binNumber_initEnergy = reco_binHigh_init;
+            else binNumber_initEnergy = true_binHigh_init;
+
+            if(true_binLow_inter < reco_binLow_inter) binNumber_interEnergy = reco_binLow_inter;
+            else binNumber_interEnergy = true_binLow_inter;
+
             //if(binNumber_initEnergy < 0 || binNumber_interEnergy < 0) return;
             for(int i = binNumber_interEnergy; i <= binNumber_initEnergy; i++){      
             if( i > 0 && i <= nBin_inc){ //make sure we don't go outside of bin range
@@ -244,7 +286,7 @@ int effPur_eventSelection(const string mcFilepath){
             };
             };
             }
-            ,{"reco_firstEntryIncident", "reco_interactingKE"});
+            ,{"true_firstEntryIncident", "true_KEint_fromEndP","reco_firstEntryIncident", "reco_interactingKE"});
 
    incidentPion_all //N selected incident Pions
       .Foreach( [h_selected_incidentPion] (double reco_firstEntryIncident, double reco_beam_interactingEnergy) {

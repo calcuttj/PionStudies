@@ -35,18 +35,19 @@ using namespace ROOT::VecOps;
 //***********************
 //Main Function
 
-int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
+int eSliceMethod_branchPrepData(const string mcFilepath, const string outputName){
 
    gInterpreter->GenerateDictionary("vector<vector<int>>", "vector");
    ROOT::RDataFrame frame(pionTree, mcFilepath);
 
-   TFile f2("fit_mc_Prod4_dEdX_pitch_03_14_21.root", "UPDATE");
+   TFile f2("fit_5387_Prod4_dEdX_pitch_03_14_21.root", "UPDATE");
    TH1D *fit_dEdX_lifetime_mpv = (TH1D*)f2.Get("dEdX_mpv_lifetime"); //mean value corrected for lifetime
-   TH1D *fit_pitch_mean = (TH1D*)f2.Get("fit_mc_pitch_mean");
+   TH1D *fit_pitch_mean = (TH1D*)f2.Get("fit_pitch_mean");
+   
+   TH1D *fit_dEdX_lifetime_mpv_SCEcorr = (TH1D*)f2.Get("fit_dEdX_SCEcorr_mpv"); //mean value corrected for lifetime
+   TH1D *fit_pitch_mean_SCEcorr = (TH1D*)f2.Get("fit_pitch_SCEcorr_mean");
 
-   TH1D *fit_dEdX_lifetime_mpv_SCEcorr = (TH1D*)f2.Get("fit_mc_dEdX_SCEcorr_mpv"); //mean value corrected for lifetime
-   TH1D *fit_pitch_mean_SCEcorr = (TH1D*)f2.Get("fit_mc_pitch_SCEcorr_mean");
-   TFile *output = new TFile ("eSliceMethod_energyDeposit_03_14_21.root", "RECREATE");
+   TFile *output = new TFile ("eSliceMethod_energyDeposit_5387_03_14_21.root", "RECREATE");
 
    output->cd();
    fit_dEdX_lifetime_mpv->Write();
@@ -90,7 +91,7 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
    bethe_frac_mu->Divide(bethe_mu_mean, bethe_mu_mpv);
    bethe_frac_mu->Write();
 
-   //unclibrated
+   //uncalibrated
 
    TH1D* dEdX_mean_calc_fit_bethe = (TH1D*)bethe_frac_mu->Clone("dEdX_mean_calc_fit_bethe");
    dEdX_mean_calc_fit_bethe->Multiply(fit_dEdX_lifetime_mpv);
@@ -129,10 +130,6 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
    dE_product_fit_dEdX_pitch_SCEcorr.Write();
    runningSum_dE_SCEcorr->Write();
    //--------------------------------------------------------
-
-   //Initial Filters for all events
-   auto frame_filter = frame
-      .Filter("true_beam_endZ > 0");
  
 
    //Filter for different interaction types
@@ -145,15 +142,7 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
    //for Interacting energy, the wire the primary particle interacted at should be the last one in reco_beam_calo_wire
    //
 
-   auto mcIncident_selected_primaryPi = frame_filter      
-      //.Range(100)
-      .Define("true_firstEntryIncident", firstIncident, {"true_beam_incidentEnergies"})
-      .Define("true_KEint_fromEndP", [](double true_beam_endP){
-            true_beam_endP = 1000*true_beam_endP; //convert GeV -> MeV
-            double endKE = sqrt( pow(true_beam_endP,2) + pow(mass_pion,2)  ) - mass_pion;
-            return endKE;}
-            ,{"true_beam_endP"})
-      //uncalibrated
+   auto mcIncident_selected_primaryPi = frame  
       .Define("reco_firstEntryIncident", firstIncident, {"reco_beam_incidentEnergies"})
 
       .Define("reco_interactingKE", [runningSum_dE](const std::vector<double> &reco_beam_calo_wire, double incidentE){
@@ -178,7 +167,7 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
             return interactingKE;
             }
             ,{"reco_beam_calo_wire", "reco_firstEntryIncident"})
-
+      
       .Define("reco_incident_wire", [](std::vector<double> &reco_beam_calo_wire){
             return reco_beam_calo_wire[ reco_beam_calo_wire[0] ];
             },{"reco_beam_calo_wire"})

@@ -38,14 +38,14 @@ using namespace ROOT::VecOps;
 //***********************
 //Main Function
 
-int effPur_eventSelection(const string mcFilepath){
+int effPur_eventSelection_SCEcorr(const string mcFilepath){
 
    gInterpreter->GenerateDictionary("vector<vector<int>>", "vector");
    ROOT::RDataFrame frame(pionTree, mcFilepath);
 
 
    //output file
-   TFile *output = new TFile ("eSliceMethod_effPur_binByBin_recoE.root", "RECREATE");
+   TFile *output = new TFile ("eSliceMethod_effPur_binByBin_SCEcorr.root", "RECREATE");
 
    //--------------------------------------------------------
    //
@@ -122,17 +122,17 @@ int effPur_eventSelection(const string mcFilepath){
    incidentPion_avail_abs
       .Foreach( [h_incidentPion_avail_abs] (double reco_beam_interactingEnergy){
             h_incidentPion_avail_abs->Fill(reco_beam_interactingEnergy);}
-            ,{"reco_interactingKE"});
+            ,{"reco_interactingKE_SCEcorr"});
 
    abs_select_avail_abs
       .Foreach( [h_evSel_true_abs] (double reco_beam_interactingEnergy){
             h_evSel_true_abs->Fill(reco_beam_interactingEnergy);}
-            ,{"reco_interactingKE"});
+            ,{"reco_interactingKE_SCEcorr"});
 
    selected_abs
       .Foreach( [h_evSel_selected_abs] (double reco_beam_interactingEnergy){
             h_evSel_selected_abs->Fill(reco_beam_interactingEnergy);}
-            , {"reco_interactingKE"} );
+            , {"reco_interactingKE_SCEcorr"} );
 
    h_eff_interacting_abs->Divide( h_evSel_true_abs, h_incidentPion_avail_abs );
    h_pur_interacting_abs->Divide( h_evSel_true_abs, h_evSel_selected_abs );
@@ -157,17 +157,17 @@ int effPur_eventSelection(const string mcFilepath){
    incidentPion_avail_cex
       .Foreach( [h_incidentPion_avail_cex] (double reco_beam_interactingEnergy){
             h_incidentPion_avail_cex->Fill(reco_beam_interactingEnergy);}
-            ,{"reco_interactingKE"});
+            ,{"reco_interactingKE_SCEcorr"});
 
    cex_select_avail_cex
       .Foreach( [h_evSel_true_cex] (double reco_beam_interactingEnergy){
             h_evSel_true_cex->Fill(reco_beam_interactingEnergy);}
-            ,{"reco_interactingKE"});
+            ,{"reco_interactingKE_SCEcorr"});
 
    selected_cex
       .Foreach( [h_evSel_selected_cex] (double reco_beam_interactingEnergy){
             h_evSel_selected_cex->Fill(reco_beam_interactingEnergy);}
-            , {"reco_interactingKE"} );
+            , {"reco_interactingKE_SCEcorr"} );
 
    h_eff_interacting_cex->Divide( h_evSel_true_cex, h_incidentPion_avail_cex );
    h_pur_interacting_cex->Divide( h_evSel_true_cex, h_evSel_selected_cex );
@@ -192,17 +192,17 @@ int effPur_eventSelection(const string mcFilepath){
    incidentPion_avail_totInel
       .Foreach( [h_incidentPion_avail_totInel] (double reco_beam_interactingEnergy){
             h_incidentPion_avail_totInel->Fill(reco_beam_interactingEnergy);}
-            ,{"reco_interactingKE"});
+            ,{"reco_interactingKE_SCEcorr"});
 
    totInel_select_avail_totInel
       .Foreach( [h_evSel_true_totInel] (double reco_beam_interactingEnergy){
             h_evSel_true_totInel->Fill(reco_beam_interactingEnergy);}
-            ,{"reco_interactingKE"});
+            ,{"reco_interactingKE_SCEcorr"});
 
    selected_totInel
       .Foreach( [h_evSel_selected_totInel] (double reco_beam_interactingEnergy){
             h_evSel_selected_totInel->Fill(reco_beam_interactingEnergy);}
-            , {"reco_interactingKE"} );
+            , {"reco_interactingKE_SCEcorr"} );
 
    h_eff_interacting_totInel->Divide( h_evSel_true_totInel, h_incidentPion_avail_totInel );
    h_pur_interacting_totInel->Divide( h_evSel_true_totInel, h_evSel_selected_totInel );
@@ -244,7 +244,7 @@ int effPur_eventSelection(const string mcFilepath){
             };
             };
             }
-            ,{"reco_firstEntryIncident", "reco_interactingKE"});
+            ,{"reco_firstEntryIncident", "reco_interactingKE_SCEcorr"});
 
    incidentPion_all //N selected incident Pions
       .Foreach( [h_selected_incidentPion] (double reco_firstEntryIncident, double reco_beam_interactingEnergy) {
@@ -259,7 +259,7 @@ int effPur_eventSelection(const string mcFilepath){
             };
             };
             }
-            ,{"reco_firstEntryIncident", "reco_interactingKE"});
+            ,{"reco_firstEntryIncident", "reco_interactingKE_SCEcorr"});
 
    pandora_avail_totinel //N true incident pions available after BeamCuts & Pandora
       .Foreach( [h_available_true_incPi] (double reco_firstEntryIncident, double reco_beam_interactingEnergy) {
@@ -274,7 +274,7 @@ int effPur_eventSelection(const string mcFilepath){
             };
             };
             }
-            ,{"reco_firstEntryIncident", "reco_interactingKE"});
+            ,{"reco_firstEntryIncident", "reco_interactingKE_SCEcorr"});
 
    h_incidentPion_true_incPi->Sumw2(0);
    h_incidentPion_true_incPi->Rebin( bin_size_int/bin_size_inc );

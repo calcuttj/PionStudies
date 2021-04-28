@@ -123,10 +123,13 @@ int effPur_eventSelection_noSmear(const string mcFilepath){
 
 
    incidentPion_avail_abs
-      .Foreach( [h_incidentPion_avail_abs] (double reco_beam_interactingEnergy){
-            h_incidentPion_avail_abs->Fill(reco_beam_interactingEnergy);}
-            ,{"reco_interactingKE"});
+      .Foreach( [h_incidentPion_avail_abs] (double true_beam_interactingEnergy, double reco_beam_interactingEnergy){
 
+            int binReco = (int) reco_beam_interactingEnergy / bin_size_int + 1;
+            int binTrue = (int) true_beam_interactingEnergy / bin_size_int + 1;
+
+            if (binReco == binTrue) h_incidentPion_avail_abs->Fill(reco_beam_interactingEnergy); }
+            ,{"true_KEint_fromEndP", "reco_interactingKE"});
 
    //check here that binReco and binTrue are the same for the interacting KE
    abs_select_avail_abs
@@ -146,6 +149,10 @@ int effPur_eventSelection_noSmear(const string mcFilepath){
    h_eff_interacting_abs->Divide( h_evSel_true_abs, h_incidentPion_avail_abs );
    h_pur_interacting_abs->Divide( h_evSel_true_abs, h_evSel_selected_abs );
 
+   h_evSel_true_abs->Write();
+   h_incidentPion_avail_abs->Write();
+   h_evSel_selected_abs->Write();
+
    output->cd();
    h_eff_interacting_abs->Write();
    h_pur_interacting_abs->Write();
@@ -156,7 +163,7 @@ int effPur_eventSelection_noSmear(const string mcFilepath){
    //--------------------------------------------------------
 
    //only filling now for the selected where trueBin == recoBin
-   TH1D* h_evSel_true_cex = new TH1D("h_evSel_true_cex", "Selected cex, truecex", nBin_int, eEnd, eStart);
+/*   TH1D* h_evSel_true_cex = new TH1D("h_evSel_true_cex", "Selected cex, truecex", nBin_int, eEnd, eStart);
    TH1D* h_incidentPion_avail_cex = new TH1D("h_incidentPion_avail_cex", "Available cex after incident Pion, truecex", nBin_int, eEnd, eStart);
    TH1D* h_evSel_selected_cex = new TH1D("h_evSel_selected_cex", "Selected cex", nBin_int, eEnd, eStart);
 
@@ -232,7 +239,7 @@ int effPur_eventSelection_noSmear(const string mcFilepath){
    output->cd();
    h_eff_interacting_totInel->Write();
    h_pur_interacting_totInel->Write();
-
+*/
    //--------------------------------------------------------
    //
    //For the incident Histogram Build the efficiency and purity bin-by-bin histo
@@ -246,10 +253,10 @@ int effPur_eventSelection_noSmear(const string mcFilepath){
    //
    //--------------------------------------------------------
    //
-   TH1D* h_incidentPion_true_incPi = new TH1D("h_incidentPion_true_incPi", "Selected Incident Pions, true incident Pions", nBin_inc, eEnd, eStart);
-   TH1D* h_selected_incidentPion = new TH1D("h_selected_incidentPion", "Selected Incident Pions", nBin_inc, eEnd, eStart);
+   TH1D* h_incidentPion_true_incPi = new TH1D("h_incidentPion_true_incPi", "Selected Incident Pions, true incident Pions", nBin_int, eEnd, eStart);
+   TH1D* h_selected_incidentPion = new TH1D("h_selected_incidentPion", "Selected Incident Pions", nBin_int, eEnd, eStart);
    //true inc pi available that enter detector and are reconstructed by Pandore
-   TH1D* h_available_true_incPi = new TH1D("h_available_true_incPi", "Available true incident Pions after Pandora Reconstruction", nBin_inc, eEnd, eStart);
+   TH1D* h_available_true_incPi = new TH1D("h_available_true_incPi", "Available true incident Pions after Pandora Reconstruction", nBin_int, eEnd, eStart);
 
    TH1D* h_eff_incidentPion = new TH1D("h_eff_incidentPion", "Efficiency incident Abs Histo", nBin_int, eEnd, eStart);
    TH1D* h_pur_incidentPion = new TH1D("h_pur_incidentPion", "Purity incident Abs Histo", nBin_int, eEnd, eStart);
@@ -261,11 +268,11 @@ int effPur_eventSelection_noSmear(const string mcFilepath){
       .Foreach( [h_incidentPion_true_incPi] (double true_first, double true_int, double reco_first, double reco_int) {
             //bin that energy falls into is (int) energy/nbins + 1
             //
-            int true_binHigh_init = (int) true_first / bin_size_inc + 1;
-            int reco_binHigh_init = (int) reco_first / bin_size_inc + 1;
+            int true_binHigh_init = (int) true_first / bin_size_int + 1;
+            int reco_binHigh_init = (int) reco_first / bin_size_int + 1;
 
-            int true_binLow_inter = (int) true_int / bin_size_inc + 1;
-            int reco_binLow_inter = (int) reco_int / bin_size_inc + 1;
+            int true_binLow_inter = (int) true_int / bin_size_int + 1;
+            int reco_binLow_inter = (int) reco_int / bin_size_int + 1;
 
             //compare reco bins and true bins, find overlapping area
             //for initial bin / high bin take the smaller of the two
@@ -278,12 +285,10 @@ int effPur_eventSelection_noSmear(const string mcFilepath){
             if(true_binLow_inter < reco_binLow_inter) binNumber_interEnergy = reco_binLow_inter;
             else binNumber_interEnergy = true_binLow_inter;
 
-            //if(binNumber_initEnergy < 0 || binNumber_interEnergy < 0) return;
-            for(int i = binNumber_interEnergy; i <= binNumber_initEnergy; i++){      
-            if( i > 0 && i <= nBin_inc){ //make sure we don't go outside of bin range
+                      for(int i = binNumber_interEnergy; i <= binNumber_initEnergy; i++){      
+            if( i > 0 && i <= nBin_int){ //make sure we don't go outside of bin range
             h_incidentPion_true_incPi->SetBinContent( i, h_incidentPion_true_incPi->GetBinContent(i) + 1 ); 
-            //increment previous bin content by one. should handle number of entries in hist. unlike AddBinContent
-            };
+                        };
             };
             }
             ,{"true_firstEntryIncident", "true_KEint_fromEndP","reco_firstEntryIncident", "reco_interactingKE"});
@@ -291,11 +296,11 @@ int effPur_eventSelection_noSmear(const string mcFilepath){
    incidentPion_all //N selected incident Pions
       .Foreach( [h_selected_incidentPion] (double reco_firstEntryIncident, double reco_beam_interactingEnergy) {
             //bin that energy falls into is (int) energy/nbins + 1
-            int binNumber_initEnergy = (int) reco_firstEntryIncident / bin_size_inc + 1;
-            int binNumber_interEnergy = (int) reco_beam_interactingEnergy / bin_size_inc + 1;
+            int binNumber_initEnergy = (int) reco_firstEntryIncident / bin_size_int + 1;
+            int binNumber_interEnergy = (int) reco_beam_interactingEnergy / bin_size_int + 1;
             //if(binNumber_initEnergy < 0 || binNumber_interEnergy < 0) return;
             for(int i = binNumber_interEnergy; i <= binNumber_initEnergy; i++){      
-            if( i > 0 && i <= nBin_inc){ //make sure we don't go outside of bin range
+            if( i > 0 && i <= nBin_int){ //make sure we don't go outside of bin range
             h_selected_incidentPion->SetBinContent( i, h_selected_incidentPion->GetBinContent(i) + 1 ); 
             //increment previous bin content by one. should handle number of entries in hist. unlike AddBinContent
             };
@@ -304,38 +309,41 @@ int effPur_eventSelection_noSmear(const string mcFilepath){
             ,{"reco_firstEntryIncident", "reco_interactingKE"});
 
    pandora_avail_totinel //N true incident pions available after BeamCuts & Pandora
-      .Foreach( [h_available_true_incPi] (double reco_firstEntryIncident, double reco_beam_interactingEnergy) {
+      .Foreach( [h_available_true_incPi] (double true_first, double true_int, double reco_first, double reco_int) {
             //bin that energy falls into is (int) energy/nbins + 1
-            int binNumber_initEnergy = (int) reco_firstEntryIncident / bin_size_inc + 1;
-            int binNumber_interEnergy = (int) reco_beam_interactingEnergy / bin_size_inc + 1;
-            //if(binNumber_initEnergy < 0 || binNumber_interEnergy < 0) return;
-            for(int i = binNumber_interEnergy; i <= binNumber_initEnergy; i++){      
-            if( i > 0 && i <= nBin_inc){ //make sure we don't go outside of bin range
+            //
+            int true_binHigh_init = (int) true_first / bin_size_int + 1;
+            int reco_binHigh_init = (int) reco_first / bin_size_int + 1;
+
+            int true_binLow_inter = (int) true_int / bin_size_int + 1;
+            int reco_binLow_inter = (int) reco_int / bin_size_int + 1;
+
+            //compare reco bins and true bins, find overlapping area
+            //for initial bin / high bin take the smaller of the two
+            //for interacting bin / lower bin take the higher of the two
+            int binNumber_initEnergy, binNumber_interEnergy;
+            
+            if(true_binHigh_init > reco_binHigh_init) binNumber_initEnergy = reco_binHigh_init;
+            else binNumber_initEnergy = true_binHigh_init;
+
+            if(true_binLow_inter < reco_binLow_inter) binNumber_interEnergy = reco_binLow_inter;
+            else binNumber_interEnergy = true_binLow_inter;
+
+                      for(int i = binNumber_interEnergy; i <= binNumber_initEnergy; i++){      
+            if( i > 0 && i <= nBin_int){ //make sure we don't go outside of bin range
             h_available_true_incPi->SetBinContent( i, h_available_true_incPi->GetBinContent(i) + 1 ); 
-            //increment previous bin content by one. should handle number of entries in hist. unlike AddBinContent
-            };
+                        };
             };
             }
-            ,{"reco_firstEntryIncident", "reco_interactingKE"});
-
-   h_incidentPion_true_incPi->Sumw2(0);
-   h_incidentPion_true_incPi->Rebin( bin_size_int/bin_size_inc );
-   h_incidentPion_true_incPi->Scale( 1 / (bin_size_int/bin_size_inc) );
-   h_incidentPion_true_incPi->Sumw2(0);
-   
-   h_selected_incidentPion->Sumw2(0);
-   h_selected_incidentPion->Rebin( bin_size_int/bin_size_inc );
-   h_selected_incidentPion->Scale( 1 / (bin_size_int/bin_size_inc) );
-   h_selected_incidentPion->Sumw2(0);
-  
-   h_available_true_incPi->Sumw2(0);
-   h_available_true_incPi->Rebin( bin_size_int/bin_size_inc );
-   h_available_true_incPi->Scale( 1 / (bin_size_int/bin_size_inc) );
-   h_available_true_incPi->Sumw2(0);
+            ,{"true_firstEntryIncident", "true_KEint_fromEndP","reco_firstEntryIncident", "reco_interactingKE"});
 
 
    h_pur_incidentPion->Divide( h_incidentPion_true_incPi, h_selected_incidentPion );
    h_eff_incidentPion->Divide( h_incidentPion_true_incPi, h_available_true_incPi );
+
+   h_incidentPion_true_incPi->Write();
+   h_selected_incidentPion->Write();
+   h_available_true_incPi->Write();
 
    h_pur_incidentPion->Write();
    h_eff_incidentPion->Write();

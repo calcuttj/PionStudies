@@ -42,8 +42,8 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC){
    gStyle->SetNdivisions(1020);
 
    //output file
-   string outputNameData = "output_eSliceMethod_selectedEvents_DATA_effPur_noSmear.root";
-   string outputNameMC = "output_eSliceMethod_selectedEvents_MC_effPur_noSmear.root";
+   string outputNameData = "output_eSliceMethod_selectedEvents_DATA_effPur_francesco.root";
+   string outputNameMC = "output_eSliceMethod_selectedEvents_MC_effPur_francesco.root";
    string outputName;
    if(isMC) outputName = outputNameMC;
    else outputName = outputNameData;
@@ -59,13 +59,17 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC){
    f1.Close();
 
    //Get Efficiencies and Purities for the selections bin-by-bin
-   TFile f2("eSliceMethod_effPur_binByBin_noSmear.root");
+   TFile f2("eSliceMethod_effPur_binByBin_francesco.root");
    TH1D *h_eff_interacting_abs = (TH1D*)f2.Get("h_eff_interacting_abs");
    TH1D *h_pur_interacting_abs = (TH1D*)f2.Get("h_pur_interacting_abs");
+   TH1D *h_eff_selection_abs = (TH1D*)f2.Get("h_eff_selection_abs");
+
    TH1D *h_eff_interacting_cex = (TH1D*)f2.Get("h_eff_interacting_cex");
    TH1D *h_pur_interacting_cex = (TH1D*)f2.Get("h_pur_interacting_cex");
    TH1D *h_eff_interacting_totInel = (TH1D*)f2.Get("h_eff_interacting_totInel");
    TH1D *h_pur_interacting_totInel = (TH1D*)f2.Get("h_pur_interacting_totInel");
+
+   TH1D *h_eff_selection_incidentPion = (TH1D*)f2.Get("h_eff_selection_incidentPion");
    TH1D *h_eff_incidentPion = (TH1D*)f2.Get("h_eff_incidentPion");
    TH1D *h_pur_incidentPion = (TH1D*)f2.Get("h_pur_incidentPion");
 
@@ -178,7 +182,6 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC){
    h_selected_pion_incidentRecoE->Rebin( bin_size_int/bin_size_inc );
    h_selected_pion_incidentRecoE->Scale( 1 / (bin_size_int/bin_size_inc) );
    h_selected_pion_incidentRecoE->Sumw2(0);
-   h_selected_pion_incidentRecoE->Write();
 
 
 
@@ -213,7 +216,7 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC){
             ,{"reco_interactingKE"});
 
    h_selected_abs_interactingRecoE->Sumw2(0);
-   h_selected_abs_interactingRecoE->Write();
+   //h_selected_abs_interactingRecoE->Write();
 
 
    auto mcInteracting_selected_cex = mcInteracting_selected_allPrimaryPi
@@ -235,7 +238,7 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC){
 
 
    h_selected_cex_interactingRecoE->Sumw2(0);
-   h_selected_cex_interactingRecoE->Write();
+   //h_selected_cex_interactingRecoE->Write();
 
    auto mcInteracting_selected_totInel = mcInteracting_selected_allPrimaryPi;
 
@@ -254,7 +257,7 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC){
 
 
    h_selected_totInel_interactingRecoE->Sumw2(0);
-   h_selected_totInel_interactingRecoE->Write();
+   //h_selected_totInel_interactingRecoE->Write();
 
    //=====================================================
    //            Prepare BetheBloch Mean for each Bin 
@@ -283,13 +286,31 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC){
 
    h_selected_pion_incidentRecoE->Multiply( h_pur_incidentPion );
    h_selected_pion_incidentRecoE->Divide( h_eff_incidentPion );
+   //Take into account the efficiency of losing true pions wrt beamCuts
+   h_selected_pion_incidentRecoE->Divide( h_eff_selection_incidentPion );
 
+   //Take account for purity of TrueE == RecoE and Efficiency from Smearing
    h_selected_abs_interactingRecoE->Multiply( h_pur_interacting_abs );
    h_selected_abs_interactingRecoE->Divide( h_eff_interacting_abs );
-   h_selected_cex_interactingRecoE->Multiply( h_pur_interacting_cex );
-   h_selected_cex_interactingRecoE->Divide( h_eff_interacting_cex );
-   h_selected_totInel_interactingRecoE->Multiply( h_pur_interacting_totInel );
-   h_selected_totInel_interactingRecoE->Divide( h_eff_interacting_totInel );
+   //Take into account efficiency coming from selection, i.e. abs available at incident Pion Sample
+   h_selected_abs_interactingRecoE->Divide( h_eff_selection_abs );
+
+   //h_selected_cex_interactingRecoE->Multiply( h_pur_interacting_cex );
+   //h_selected_cex_interactingRecoE->Divide( h_eff_interacting_cex );
+   //h_selected_totInel_interactingRecoE->Multiply( h_pur_interacting_totInel );
+   //h_selected_totInel_interactingRecoE->Divide( h_eff_interacting_totInel );
+
+   //Write Incident and Interacting AFTER Eff/Pur Scaling
+   //
+   h_selected_pion_incidentRecoE->Sumw2(0);
+   h_selected_pion_incidentRecoE->Write();
+   
+   h_selected_abs_interactingRecoE->Sumw2(0);
+   h_selected_abs_interactingRecoE->Write();
+   h_selected_cex_interactingRecoE->Sumw2(0);
+   h_selected_cex_interactingRecoE->Write();
+   h_selected_totInel_interactingRecoE->Sumw2(0);
+   h_selected_totInel_interactingRecoE->Write();
 
    //=====================================================
    //             Computing the XS

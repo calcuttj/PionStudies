@@ -64,11 +64,6 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC){
    TH1D *h_pur_interacting_abs = (TH1D*)f2.Get("h_pur_interacting_abs");
    TH1D *h_eff_selection_abs = (TH1D*)f2.Get("h_eff_selection_abs");
 
-   TH1D *h_eff_interacting_cex = (TH1D*)f2.Get("h_eff_interacting_cex");
-   TH1D *h_pur_interacting_cex = (TH1D*)f2.Get("h_pur_interacting_cex");
-   TH1D *h_eff_interacting_totInel = (TH1D*)f2.Get("h_eff_interacting_totInel");
-   TH1D *h_pur_interacting_totInel = (TH1D*)f2.Get("h_pur_interacting_totInel");
-
    TH1D *h_eff_selection_incidentPion = (TH1D*)f2.Get("h_eff_selection_incidentPion");
    TH1D *h_eff_incidentPion = (TH1D*)f2.Get("h_eff_incidentPion");
    TH1D *h_pur_incidentPion = (TH1D*)f2.Get("h_pur_incidentPion");
@@ -99,20 +94,12 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC){
 
    TH1D* h_selected_abs_interactingRecoE = new TH1D("h_selected_abs_interactingRecoE", "Interacting Selected ABS Reco Energy", nBin_int, eEnd, eStart);
    h_selected_abs_interactingRecoE->GetXaxis()->SetTitle("Reco KE (MeV)");
-   TH1D* h_selected_cex_interactingRecoE = new TH1D("h_selected_cex_interactingRecoE", "Interacting Selected CEX Reco Energy", nBin_int, eEnd, eStart);
-   h_selected_cex_interactingRecoE->GetXaxis()->SetTitle("Reco KE (MeV)");
-   TH1D* h_selected_totInel_interactingRecoE = new TH1D("h_selected_totInel_interactingRecoE", "Interacting Selected total INEL Reco Energy", nBin_int, eEnd, eStart);
-   h_selected_totInel_interactingRecoE->GetXaxis()->SetTitle("Reco KE (MeV)");
 
       TH1D* h_selected_pion_incidentTrueE = new TH1D("h_selected_pion_incidentTrueE", "Incident Selected Pion", nBin_int, eEnd, eStart);
       h_selected_pion_incidentTrueE->GetXaxis()->SetTitle("True KE (MeV)");
 
       TH1D* h_selected_abs_interactingTrueE = new TH1D("h_selected_abs_interactingTrueE", "Interacting Selected ABS True Energy", nBin_int, eEnd, eStart);
       h_selected_abs_interactingTrueE->GetXaxis()->SetTitle("True KE (MeV)");
-      TH1D* h_selected_cex_interactingTrueE = new TH1D("h_selected_cex_interactingTrueE", "Interacting Selected CEX True Energy", nBin_int, eEnd, eStart);
-      h_selected_cex_interactingTrueE->GetXaxis()->SetTitle("True KE (MeV)");
-      TH1D* h_selected_totInel_interactingTrueE = new TH1D("h_selected_totInel_interactingTrueE", "Interacting Selected total True INEL Energy", nBin_int, eEnd, eStart);
-      h_selected_totInel_interactingTrueE->GetXaxis()->SetTitle("True KE (MeV)");
 
    //Initial Filters for all events
    auto mcIncident_selected_primaryPi = frame
@@ -219,46 +206,6 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC){
    //h_selected_abs_interactingRecoE->Write();
 
 
-   auto mcInteracting_selected_cex = mcInteracting_selected_allPrimaryPi
-      .Filter("selected_cex");
-   //.Filter("has_noPion_daughter && has_shower_nHits_distance");
-   if(isMC){
-      mcInteracting_selected_cex
-         .Foreach( [h_selected_cex_interactingTrueE] (double true_beam_interactingEnergy){
-               h_selected_cex_interactingTrueE->Fill(true_beam_interactingEnergy);}
-               ,{"true_KEint_fromEndP"});
-      h_selected_cex_interactingTrueE->Sumw2(0);
-      h_selected_cex_interactingTrueE->Write();
-   }
-
-   mcInteracting_selected_cex
-      .Foreach( [h_selected_cex_interactingRecoE] (double reco_beam_interactingEnergy){
-            h_selected_cex_interactingRecoE->Fill(reco_beam_interactingEnergy);}
-            ,{"reco_interactingKE"});
-
-
-   h_selected_cex_interactingRecoE->Sumw2(0);
-   //h_selected_cex_interactingRecoE->Write();
-
-   auto mcInteracting_selected_totInel = mcInteracting_selected_allPrimaryPi;
-
-   if(isMC){
-      mcInteracting_selected_totInel
-         .Foreach( [h_selected_totInel_interactingTrueE] (double true_beam_interactingEnergy){
-               h_selected_totInel_interactingTrueE->Fill(true_beam_interactingEnergy);}
-               ,{"true_KEint_fromEndP"});
-      h_selected_totInel_interactingTrueE->Sumw2(0);
-      h_selected_totInel_interactingTrueE->Write();
-   }   
-   mcInteracting_selected_totInel
-      .Foreach( [h_selected_totInel_interactingRecoE] (double reco_beam_interactingEnergy){
-            h_selected_totInel_interactingRecoE->Fill(reco_beam_interactingEnergy);}
-            ,{"reco_interactingKE"});
-
-
-   h_selected_totInel_interactingRecoE->Sumw2(0);
-   //h_selected_totInel_interactingRecoE->Write();
-
    //=====================================================
    //            Prepare BetheBloch Mean for each Bin 
    //            QUESTION: take betheBloch of Pion or Muon?? Comparison to data fits better muon Bethe... 
@@ -294,23 +241,11 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC){
    h_selected_abs_interactingRecoE->Divide( h_eff_interacting_abs );
    //Take into account efficiency coming from selection, i.e. abs available at incident Pion Sample
    h_selected_abs_interactingRecoE->Divide( h_eff_selection_abs );
-
-   //h_selected_cex_interactingRecoE->Multiply( h_pur_interacting_cex );
-   //h_selected_cex_interactingRecoE->Divide( h_eff_interacting_cex );
-   //h_selected_totInel_interactingRecoE->Multiply( h_pur_interacting_totInel );
-   //h_selected_totInel_interactingRecoE->Divide( h_eff_interacting_totInel );
-
-   //Write Incident and Interacting AFTER Eff/Pur Scaling
-   //
    h_selected_pion_incidentRecoE->Sumw2(0);
    h_selected_pion_incidentRecoE->Write();
    
    h_selected_abs_interactingRecoE->Sumw2(0);
    h_selected_abs_interactingRecoE->Write();
-   h_selected_cex_interactingRecoE->Sumw2(0);
-   h_selected_cex_interactingRecoE->Write();
-   h_selected_totInel_interactingRecoE->Sumw2(0);
-   h_selected_totInel_interactingRecoE->Write();
 
    //=====================================================
    //             Computing the XS
@@ -390,139 +325,12 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC){
    }
 
    //------------------------------------------------------
-   //    ChargeExchange,  Selected Interactions, Reco Energy
-   //------------------------------------------------------
-   //
-   string xs_cex_name, xs_cex_title;
-   if(isMC) {
-      xs_cex_name = "h_xs_recoE_selected_cex_mc";
-      xs_cex_title = "ChargeExchange MC";
-   }
-   else {
-      xs_cex_name = "h_xs_recoE_selected_cex_data";
-      xs_cex_title = "ChargeExchange Data";
-   }
-
-   TH1D* h_xs_RecoE_selected_cex = (TH1D*) h_selected_pion_incidentRecoE->Clone(xs_cex_name.c_str());
-   h_xs_RecoE_selected_cex->SetTitle(xs_cex_title.c_str());
-   TH1D* dummy_recoE_cex = (TH1D*) h_selected_pion_incidentRecoE->Clone(xs_cex_name.c_str());
-   dummy_recoE_cex->Add( h_selected_cex_interactingRecoE, -1);
-   h_xs_RecoE_selected_cex->Divide( dummy_recoE_cex );
-   for(int i = 1; i <= nBin_int; i++) h_xs_RecoE_selected_cex->SetBinContent(i, log( h_xs_RecoE_selected_cex->GetBinContent(i) ));
-   h_xs_RecoE_selected_cex->Multiply( h_betheMean_muon );
-   h_xs_RecoE_selected_cex->Scale( scale_factor );
-
-   TH1D* h_xs_TrueE_selected_cex = (TH1D*) h_selected_pion_incidentTrueE->Clone("h_xs_TrueE_selected_cex");
-   h_xs_TrueE_selected_cex->GetXaxis()->SetTitle("True Kinetic Energy (MeV)");
-   TH1D* dummy_TrueE_cex = (TH1D*) h_selected_pion_incidentTrueE->Clone("h_xs_TrueE_selected_cex");
-   
-   if(isMC){
-   dummy_TrueE_cex->Add( h_selected_cex_interactingTrueE, -1);
-   h_xs_TrueE_selected_cex->Divide( dummy_TrueE_cex );
-   for(int i = 1; i <= nBin_int; i++) h_xs_TrueE_selected_cex->SetBinContent(i, log( h_xs_TrueE_selected_cex->GetBinContent(i) ));
-   h_xs_TrueE_selected_cex->Multiply( h_betheMean_muon );
-   h_xs_TrueE_selected_cex->Scale( scale_factor );
-   }
-   /* Less Accurate when Nint !<< Ninc
-      TH1D* h_xs_RecoE_selected_cex = (TH1D*) h_selected_cex_interactingRecoE->Clone("h_xs_RecoE_selected_cex");
-      h_xs_RecoE_selected_cex->Divide( h_selected_pion_incidentRecoE );
-      h_xs_RecoE_selected_cex->Multiply( h_betheMean_muon );
-      h_xs_RecoE_selected_cex->Scale( factor_mbarn*scale_factor );
-      */
-
-   //Bin Errors
-   for(int i=1; i <= nBin_int; i++){
-
-      double p = h_selected_cex_interactingRecoE->GetBinContent(i) / h_selected_pion_incidentRecoE->GetBinContent(i);
-      double nInc_i = h_selected_pion_incidentRecoE->GetBinContent(i);
-      double help_factor = scale_factor*h_betheMean_muon->GetBinContent(i);
-
-      h_xs_RecoE_selected_cex->SetBinError( i , help_factor*sqrt( p*(1-p)/nInc_i ));
-   };
-   h_xs_RecoE_selected_cex->Write();
-
-   if(isMC){
-   for(int i=1; i <= nBin_int; i++){
-
-      double p = h_selected_cex_interactingTrueE->GetBinContent(i) / h_selected_pion_incidentTrueE->GetBinContent(i);
-      double nInc_i = h_selected_pion_incidentTrueE->GetBinContent(i);
-      double help_factor = scale_factor*h_betheMean_muon->GetBinContent(i);
-
-      h_xs_TrueE_selected_cex->SetBinError( i , help_factor*sqrt( p*(1-p)/nInc_i ));
-   };
-   h_xs_TrueE_selected_cex->Write();
-   }
-   //------------------------------------------------------
-   //    Inelastic, Selected Interactions, Reco Energy
-   //------------------------------------------------------
-   //
-   string xs_totInel_name, xs_totInel_title;
-   if(isMC) {
-      xs_totInel_name = "h_xs_recoE_selected_totInel_mc";
-      xs_totInel_title = "Total Inelastic MC";
-   }
-   else {
-      xs_totInel_name = "h_xs_recoE_selected_totInel_data";
-      xs_totInel_title = "Total Inelastic Data";
-   }
-
-   TH1D* h_xs_RecoE_selected_totInel = (TH1D*) h_selected_pion_incidentRecoE->Clone(xs_totInel_name.c_str());
-   h_xs_RecoE_selected_totInel->SetTitle(xs_totInel_title.c_str());
-   TH1D* dummy_recoE_totInel = (TH1D*) h_selected_pion_incidentRecoE->Clone(xs_totInel_name.c_str());
-   dummy_recoE_totInel->Add( h_selected_totInel_interactingRecoE, -1);
-   h_xs_RecoE_selected_totInel->Divide( dummy_recoE_totInel );
-   for(int i = 1; i <= nBin_int; i++) h_xs_RecoE_selected_totInel->SetBinContent(i, log( h_xs_RecoE_selected_totInel->GetBinContent(i) ));
-   h_xs_RecoE_selected_totInel->Multiply( h_betheMean_muon );
-   h_xs_RecoE_selected_totInel->Scale( scale_factor );
-
-   TH1D* h_xs_TrueE_selected_totInel = (TH1D*) h_selected_pion_incidentTrueE->Clone("h_xs_TrueE_selected_totInel");
-   h_xs_TrueE_selected_totInel->GetXaxis()->SetTitle("True Kinetic Energy (MeV)");
-   TH1D* dummy_TrueE_totInel = (TH1D*) h_selected_pion_incidentTrueE->Clone("h_xs_TrueE_selected_totInel");
-   dummy_TrueE_totInel->Add( h_selected_totInel_interactingTrueE, -1);
-   
-   if(isMC){
-   h_xs_TrueE_selected_totInel->Divide( dummy_TrueE_totInel );
-   for(int i = 1; i <= nBin_int; i++) h_xs_TrueE_selected_totInel->SetBinContent(i, log( h_xs_TrueE_selected_totInel->GetBinContent(i) ));
-   h_xs_TrueE_selected_totInel->Multiply( h_betheMean_muon );
-   h_xs_TrueE_selected_totInel->Scale( scale_factor );
-   }
-   /* Less Accurate when Nint !<< Ninc
-      TH1D* h_xs_RecoE_selected_totInel = (TH1D*) h_selected_totInel_interactingRecoE->Clone("h_xs_RecoE_selected_totInel");
-      h_xs_RecoE_selected_totInel->Divide( h_selected_pion_incidentRecoE );
-      h_xs_RecoE_selected_totInel->Multiply( h_betheMean_muon );
-      h_xs_RecoE_selected_totInel->Scale( factor_mbarn*scale_factor );
-      */
-
-   //Bin Errors
-   for(int i=1; i <= nBin_int; i++){
-
-      double p = h_selected_totInel_interactingRecoE->GetBinContent(i) / h_selected_pion_incidentRecoE->GetBinContent(i);
-      double nInc_i = h_selected_pion_incidentRecoE->GetBinContent(i);
-      double help_factor = scale_factor*h_betheMean_muon->GetBinContent(i);
-
-      h_xs_RecoE_selected_totInel->SetBinError( i , help_factor*sqrt( p*(1-p)/nInc_i ));
-   };
-   h_xs_RecoE_selected_totInel->Write();
-
-   if(isMC){
-   for(int i=1; i <= nBin_int; i++){
-
-      double p = h_selected_totInel_interactingTrueE->GetBinContent(i) / h_selected_pion_incidentTrueE->GetBinContent(i);
-      double nInc_i = h_selected_pion_incidentTrueE->GetBinContent(i);
-      double help_factor = scale_factor*h_betheMean_muon->GetBinContent(i);
-
-      h_xs_TrueE_selected_totInel->SetBinError( i , help_factor*sqrt( p*(1-p)/nInc_i ));
-   };
-   h_xs_TrueE_selected_totInel->Write();
-   }
 
    //=====================================================*
    //            Plotting and Style
    //=====================================================
    //
    //h_xs_RecoE_selected_abs->Scale(2);
-   //h_xs_RecoE_selected_cex->Scale(2);
-   //h_xs_RecoE_selected_totInel->Scale(2);
 
    TCanvas *c_RecoE_abs = new TCanvas("c_RecoE_abs", "c_RecoE_abs");
    gPad->SetGrid(1,1);
@@ -545,65 +353,6 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC){
 
    c_RecoE_abs->Write();
 
-/*   TCanvas *c_RecoE_cex = new TCanvas("c_RecoE_cex", "c_RecoE_cex");
-   gPad->SetGrid(1,1);
-   
-   string c_cex_title;
-   if(isMC) c_cex_title = "ChargeExchange MC; Reco kinetic Energy (MeV); #sigma (mbarn)";
-   else c_cex_title = "ChargeExchange Data; Reco kinetic Energy (MeV); #sigma (mbarn)";
-   
-   h_xs_RecoE_selected_cex->SetTitle(c_cex_title.c_str());
-   h_xs_RecoE_selected_cex->GetXaxis()->SetRangeUser(400,900);
-   h_xs_RecoE_selected_cex->GetXaxis()->SetNdivisions(1020);
-   h_xs_RecoE_selected_cex->GetYaxis()->SetNdivisions(1020);
-
-   cex_KE->SetTitle( "Charge Exchange;Reco Kinetic Energy (MeV); #sigma (mb)");
-   cex_KE->GetXaxis()->SetRangeUser(eEnd, eStart);
-   cex_KE->GetYaxis()->SetRangeUser(0, 200);
-   cex_KE->SetLineColor(kRed);
-   cex_KE->SetLineWidth(3);
-   cex_KE->Draw("AC"); 
-   h_xs_RecoE_selected_cex->SetMarkerSize(0.7);
-   h_xs_RecoE_selected_cex->Draw("PE0 SAME");
-
-   c_RecoE_cex->Write();
-
-   TCanvas *c_RecoE_totInel = new TCanvas("c_RecoE_totInel", "c_RecoE_totInel");
-   gPad->SetGrid(1,1);
-   
-   string c_totInel_title;
-   if(isMC) c_totInel_title = "Total Inelastic MC; Reco kinetic Energy (MeV); #sigma (mbarn)";
-   else c_totInel_title = "Total Inelastic Data; Reco kinetic Energy (MeV); #sigma (mbarn)";
-   
-   h_xs_RecoE_selected_totInel->SetTitle(c_totInel_title.c_str());
-   h_xs_RecoE_selected_totInel->GetXaxis()->SetRangeUser(400,900);
-   h_xs_RecoE_selected_totInel->GetXaxis()->SetNdivisions(1020);
-   h_xs_RecoE_selected_totInel->GetYaxis()->SetNdivisions(1020);
-
-   totInel_KE->SetTitle( "Total Inelastic;Reco Kinetic Energy (MeV); #sigma (mb)");
-   totInel_KE->GetXaxis()->SetRangeUser(eEnd, eStart);
-   totInel_KE->SetLineColor(kRed);
-   totInel_KE->SetLineWidth(3);
-   totInel_KE->Draw("AC");
-   h_xs_RecoE_selected_totInel->SetMarkerSize(0.7);
-   h_xs_RecoE_selected_totInel->Draw("PE0 SAME");
-
-   c_RecoE_totInel->Write();
-
-   TCanvas *c_RecoE_all = new TCanvas("c_RecoE_all", "c_RecoE_all");
-   gPad->SetGrid(1,1);
-
-   cex_KE->SetLineColor(kGreen);
-   abs_KE->SetLineColor(kBlue);
-   mg->GetXaxis()->SetRangeUser(0,1100);
-   mg->GetXaxis()->SetNdivisions(1020);
-   mg->Draw("AC");
-   h_xs_RecoE_selected_totInel->Draw("PE0 SAME");
-   h_xs_RecoE_selected_cex->Draw("PE0 SAME");
-   h_xs_RecoE_selected_abs->Draw("PE0 SAME");
-
-   c_RecoE_all->Write();
-*/
    /*
       TCanvas *c_TrueE_abs = new TCanvas("c_TrueE_abs", "c_TrueE_abs");
       gPad->SetGrid(1,1);
@@ -622,55 +371,7 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC){
 
       c_TrueE_abs->Write();
 
-      TCanvas *c_TrueE_cex = new TCanvas("c_TrueE_cex", "c_TrueE_cex");
-      gPad->SetGrid(1,1);
-      h_xs_TrueE_selected_cex->SetTitle( "Selected Charge Exchange;True Kinetic Energy (MeV); #sigma (mb)");
-      h_xs_TrueE_selected_cex->GetXaxis()->SetRangeUser(400,900);
-      h_xs_TrueE_selected_cex->GetXaxis()->SetNdivisions(1020);
-      h_xs_TrueE_selected_cex->GetYaxis()->SetNdivisions(1020);
-
-      cex_KE->SetTitle( "Charge Exchange;True Kinetic Energy (MeV); #sigma (mb)");
-      cex_KE->GetXaxis()->SetRangeUser(eEnd, eStart);
-      cex_KE->GetYaxis()->SetRangeUser(0, 200);
-      cex_KE->SetLineColor(kRed);
-      cex_KE->SetLineWidth(3);
-      cex_KE->Draw("AC"); 
-      h_xs_TrueE_selected_cex->SetMarkerSize(0.7);
-      h_xs_TrueE_selected_cex->Draw("PE0 SAME");
-
-      c_TrueE_cex->Write();
-
-      TCanvas *c_TrueE_totInel = new TCanvas("c_TrueE_totInel", "c_TrueE_totInel");
-      gPad->SetGrid(1,1);
-      h_xs_TrueE_selected_totInel->SetTitle( "Selected Total Inelastic;True Kinetic Energy (MeV); #sigma (mb)");
-      h_xs_TrueE_selected_totInel->GetXaxis()->SetRangeUser(400,900);
-      h_xs_TrueE_selected_totInel->GetXaxis()->SetNdivisions(1020);
-      h_xs_TrueE_selected_totInel->GetYaxis()->SetNdivisions(1020);
-
-      totInel_KE->SetTitle( "Total Inelastic;True Kinetic Energy (MeV); #sigma (mb)");
-      totInel_KE->GetXaxis()->SetRangeUser(eEnd, eStart);
-      totInel_KE->SetLineColor(kRed);
-      totInel_KE->SetLineWidth(3);
-      totInel_KE->Draw("AC");
-      h_xs_TrueE_selected_totInel->SetMarkerSize(0.7);
-      h_xs_TrueE_selected_totInel->Draw("PE0 SAME");
-
-      c_TrueE_totInel->Write();
-
-      TCanvas *c_TrueE_all = new TCanvas("c_TrueE_all", "c_TrueE_all");
-      gPad->SetGrid(1,1);
-
-      cex_KE->SetLineColor(kGreen);
-      abs_KE->SetLineColor(kBlue);
-      mg->GetXaxis()->SetRangeUser(0,1100);
-      mg->GetXaxis()->SetNdivisions(1020);
-      mg->Draw("AC");
-      h_xs_TrueE_selected_totInel->Draw("PE0 SAME");
-      h_xs_TrueE_selected_cex->Draw("PE0 SAME");
-      h_xs_TrueE_selected_abs->Draw("PE0 SAME");
-
-      c_TrueE_all->Write();
-
+  
 */
 
    //output->Write();

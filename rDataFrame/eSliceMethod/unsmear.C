@@ -12,6 +12,8 @@
 #include "TColor.h"
 #include "TLatex.h"
 #include "TMath.h"
+#include "TMatrixDBase.h"
+#include "TArray.h"
 #include "../lambda.h"
 #include "../betheBloch.h"
 #include "eSlice.h"
@@ -62,7 +64,7 @@ int unsmear(const string mcFilepath){
    gStyle->SetNdivisions(1020);
    gStyle->SetPaintTextFormat("3.2f");
 
-   TFile *output = new TFile ( "output_unsmear.root" , "RECREATE");
+   TFile *output = new TFile ( "100MeV/output_unsmear.root" , "RECREATE");
 
    //TrueProcess and TrueE Int and Inc Histos
    TH1D* h_trueE_trueAbs_int = new TH1D("h_trueE_trueAbs_int", "", nBin_int, eEnd, eStart);
@@ -75,15 +77,12 @@ int unsmear(const string mcFilepath){
    TH1D* h_help_unsmear_inc = new TH1D("h_help_unsmear_inc", "", nBin_int, eEnd, eStart);
 
    TH1D* h_unsmeared_int = new TH1D("h_unsmeared_int", "", nBin_int, eEnd, eStart);
-   TH1D* h_unsmeared_inc = new TH1D("h_unsmeared_inc", "", nBin_int, eEnd, eStart);
-
    //From evSel --> back to Reco MC Nj --> Nj'
    TH1D* h_pur_removeBG_int = new TH1D("h_pur_removeBG_int", "", nBin_int, eEnd, eStart);
    TH1D* h_eff_eventSel_int = new TH1D("h_eff_eventSel_int", "", nBin_int, eEnd, eStart);
 
    TH1D* h_pur_removeBG_inc = new TH1D("h_pur_removeBG_inc", "", nBin_int, eEnd, eStart);
    TH1D* h_eff_eventSel_inc = new TH1D("h_eff_eventSel_inc", "", nBin_int, eEnd, eStart);
-   TH1D* h_eff_recoE_trueE_inc = new TH1D("h_eff_recoE_trueE_inc", "", nBin_int, eEnd, eStart);
 
    //Build the True Process and TrueE Int and Inc Histograms that we need to compare unsmeared things to
    //
@@ -228,13 +227,6 @@ int unsmear(const string mcFilepath){
 
    h_pur_removeBG_int->Write();
    h_eff_eventSel_int->Write();
-   //========================================================
-   // Incident doesn't need a smearing matrix, but an efficiency matrix doing the reco --> true transition at beamCut level
-   //---------
-   
-   h_eff_recoE_trueE_inc->Divide( h_recoE_beamCut_truePion_inc, h_trueE_truePion_inc );
-   h_eff_recoE_trueE_inc->Write();
-
    //------------------------------------------------------------
    //
    //  Now build Inverse Smearing Matrix to translate back to recoE j --> trueE i
@@ -245,6 +237,161 @@ int unsmear(const string mcFilepath){
    //
 
    TH2D* h2_smearing_interacting = new TH2D("h2_smearing_interacting", "", nBin_int, eEnd, eStart, nBin_int, eEnd, eStart);
+   TH2D* h2_smearing_incident_initE = new TH2D("h2_smearing_incident_initE", "", nBin_int, eEnd, eStart, nBin_int, eEnd, eStart);
+   TH2D* h2_smearing_incident_interE = new TH2D("h2_smearing_incident_interE", "", nBin_int, eEnd, eStart, nBin_int, eEnd, eStart);
+
+   h2_smearing_interacting->SetTitle("Smearing Matrix for trueAbs in Sample after BeamCuts; reco Energy [MeV]; true Energy [MeV]");
+   h2_smearing_incident_initE->SetTitle("Smearing Matrix for truePi initialE in Sample after BeamCuts; reco Energy [MeV]; true Energy [MeV]");
+   h2_smearing_incident_interE->SetTitle("Smearing Matrix for truePi interE in Sample after BeamCuts; reco Energy [MeV]; true Energy [MeV]");
+   
+   TH2D* h2_inverse_smearing_interacting = new TH2D("h2_inverse_smearing_interacting", "", nBin_int, eEnd, eStart, nBin_int, eEnd, eStart);
+   TH2D* h2_inverse_smearing_incident_initE = new TH2D("h2_inverse_smearing_incident_initE", "", nBin_int, eEnd, eStart, nBin_int, eEnd, eStart);
+   TH2D* h2_inverse_smearing_incident_interE = new TH2D("h2_inverse_smearing_incident_interE", "", nBin_int, eEnd, eStart, nBin_int, eEnd, eStart);
+
+   h2_inverse_smearing_interacting->SetTitle("Inverse smearing Matrix for trueAbs in Sample after BeamCuts; true Energy [MeV]; reco Energy [MeV]");
+   h2_inverse_smearing_incident_initE->SetTitle("Inverse smearing Matrix for truePi initialE in Sample after BeamCuts; true Energy [MeV]; reco Energy [MeV]");
+   h2_inverse_smearing_incident_interE->SetTitle("Inverse smearing Matrix for truePi interE in Sample after BeamCuts; true Energy [MeV]; reco Energy [MeV]");
+
+   //Fill smearing matrix with entry 1 on the diagonal to avoid them being "uninvertible"
+   for(int i = 1; i <= nBin_int; i++){
+      h2_smearing_incident_initE->SetBinContent(i,i,1);
+      h2_smearing_incident_interE->SetBinContent(i,i,1);
+      h2_smearing_interacting->SetBinContent(i,i,1);
+   }
+
+   //========================================================
+   //Build the smearing Incident Histogram initE
+   //---------
+
+   eventSel_post_beamCut 
+      .Filter("true_primPionInel")
+      .Foreach( [h2_smearing_incident_initE] (double true_initE, double reco_initE){
+
+            h2_smearing_incident_initE->Fill( reco_initE, true_initE );}
+
+            ,{"true_firstEntryIncident", "reco_firstEntryIncident"}); 
+
+   //NORMALISATION Normalise to trueE row
+   //
+
+   for(int i = 1; i <= nBin_int; i++){
+
+      //sum for same x (recoBin
+      int sum_true_i = h2_smearing_incident_initE->Integral( 1, nBin_int, i, i ); //sum up all recoE signals for one trueE signal
+
+      if(sum_true_i !=0){
+         for(int j = 1; j <= nBin_int; j++){
+
+            h2_smearing_incident_initE->SetBinContent( j , i, h2_smearing_incident_initE->GetBinContent(j,i) / sum_true_i);
+
+         };
+      }
+   };
+
+   h2_smearing_incident_initE->Sumw2(0);
+   h2_smearing_incident_initE->Write();
+
+   //TMatrix
+   //have to exclude underflow and overflowbin bc otherwise matrix is singular
+   TMatrixD matrix_smearing_incident_initE_pre(nBin_int + 2, nBin_int + 2, h2_smearing_incident_initE->GetArray(), "D");
+   TMatrixD matrix_smearing_incident_initE = matrix_smearing_incident_initE_pre.GetSub(1, nBin_int, 1, nBin_int); //avoid underflow and overflowbin
+
+   //matrix_smearing_incident_initE.Print();
+
+   Double_t det1;
+   TMatrixD matrix_inverse_smearing_incident_initE = matrix_smearing_incident_initE;
+   matrix_inverse_smearing_incident_initE.Invert(&det1);
+
+   TMatrixD U1(matrix_inverse_smearing_incident_initE, TMatrixD::kMult, matrix_smearing_incident_initE);
+   TMatrixDDiag diag1(U1); diag1 = 0.0;
+   const Double_t U1_max_offdiag = (U1.Abs()).Max();
+   std::cout << "  Maximum off-diagonal = " << U1_max_offdiag << std::endl;
+   std::cout << "  Determinant          = " << det1 << std::endl;   
+
+   //put inverse into TH2
+   for (int i = 1; i <= nBin_int; i++){
+      for (int j= 1; j <= nBin_int; j++){
+         h2_inverse_smearing_incident_initE->SetBinContent(j, i, matrix_inverse_smearing_incident_initE(i-1,j-1)); //vector indices style for matrix 
+      };
+   };
+
+   h2_inverse_smearing_incident_initE->Write();
+
+   //Check that matrix and inverse are unity
+   TMatrixD unity_smearing_incident_initE = matrix_inverse_smearing_incident_initE * matrix_smearing_incident_initE ;
+   TH2D* h2_prod_smearing_incident_initE = new TH2D("h2_prod_smearing_incident_initE", "", nBin_int, eEnd, eStart, nBin_int, eEnd, eStart);
+   for (int i = 1; i <= nBin_int; i++){
+      for (int j= 1; j <= nBin_int; j++){
+         h2_prod_smearing_incident_initE->SetBinContent(j, i, unity_smearing_incident_initE(i-1,j-1)); 
+      }
+   }
+
+   h2_prod_smearing_incident_initE->Write();
+
+   //========================================================
+   //Build the smearing Incident Histogram initE
+   //---------
+
+   eventSel_post_beamCut 
+      .Filter("true_primPionInel")
+      .Foreach( [h2_smearing_incident_interE] (double true_interE, double reco_interE){
+
+            h2_smearing_incident_interE->Fill( reco_interE, true_interE );}
+
+            ,{"true_KEint_fromEndP", "reco_interactingKE"}); 
+
+
+   for(int i = 1; i <= nBin_int; i++){
+
+      int sum_true_i = h2_smearing_incident_interE->Integral( 1, nBin_int, i, i); //sum up all recoE signals for one trueE signal
+      if(sum_true_i !=0){
+         for(int j = 1; j <= nBin_int; j++){
+
+            h2_smearing_incident_interE->SetBinContent( j , i, h2_smearing_incident_interE->GetBinContent(j,i) / sum_true_i);
+
+         };
+      }
+   };
+
+   h2_smearing_incident_interE->Sumw2(0);
+   h2_smearing_incident_interE->Write();
+
+   //TMatrix
+   //have to exclude underflow and overflowbin bc otherwise matrix is singular
+   TMatrixD matrix_smearing_incident_interE_pre(nBin_int + 2, nBin_int + 2, h2_smearing_incident_interE->GetArray(), "D");
+   TMatrixD matrix_smearing_incident_interE = matrix_smearing_incident_interE_pre.GetSub(1, nBin_int, 1, nBin_int); //avoid underflow and overflowbin
+
+   //matrix_smearing_incident_interE.Print();
+
+   Double_t det3;
+   TMatrixD matrix_inverse_smearing_incident_interE = matrix_smearing_incident_interE;
+   matrix_inverse_smearing_incident_interE.Invert(&det3);
+
+   TMatrixD U3(matrix_inverse_smearing_incident_interE, TMatrixD::kMult, matrix_smearing_incident_interE);
+   TMatrixDDiag diag3(U3); diag3 = 0.0;
+   const Double_t U3_max_offdiag = (U3.Abs()).Max();
+   std::cout << "  Maximum off-diagonal = " << U3_max_offdiag << std::endl;
+   std::cout << "  Determinant          = " << det3 << std::endl;   
+
+   //put inverse into TH2
+   for (int i = 1; i <= nBin_int; i++){
+      for (int j= 1; j <= nBin_int; j++){
+         h2_inverse_smearing_incident_interE->SetBinContent(j, i, matrix_inverse_smearing_incident_interE(i-1,j-1)); //vector indices style for matrix 
+      };
+   };
+
+   h2_inverse_smearing_incident_interE->Write();
+
+   //Check that matrix and inverse are unity
+   TMatrixD unity_smearing_incident_interE = matrix_inverse_smearing_incident_interE * matrix_smearing_incident_interE ;
+   TH2D* h2_prod_smearing_incident_interE = new TH2D("h2_prod_smearing_incident_interE", "", nBin_int, eEnd, eStart, nBin_int, eEnd, eStart);
+   for (int i = 1; i <= nBin_int; i++){
+      for (int j= 1; j <= nBin_int; j++){
+         h2_prod_smearing_incident_interE->SetBinContent(j, i, unity_smearing_incident_interE(i-1,j-1)); 
+      }
+   }
+
+   h2_prod_smearing_incident_interE->Write();
 
 
    //========================================================
@@ -260,24 +407,59 @@ int unsmear(const string mcFilepath){
             ,{"true_KEint_fromEndP", "reco_interactingKE"}); 
 
    //NORMALISATION Normalise to recoE column
-   //
    //Go through true columns and normalise the entries 
    for(int i = 1; i <= nBin_int; i++){
 
-      int sum_true_i = h2_smearing_interacting->Integral( i, i ,1,nBin_int); //sum up all smeared trueSignals by integrating on 1TrueBin(x) over allReco Bins(y)
+      int sum_true_i = h2_smearing_interacting->Integral( 1 , nBin_int, i, i ) ; //sum up all recoE signals for one trueE signal
 
       if(sum_true_i !=0){
          for(int j = 1; j <= nBin_int; j++){
 
-            h2_smearing_interacting->SetBinContent( i , j, h2_smearing_interacting->GetBinContent(i,j) / sum_true_i);
+            h2_smearing_interacting->SetBinContent( j, i, h2_smearing_interacting->GetBinContent(j,i) / sum_true_i);
 
          };
       }
    };
 
    h2_smearing_interacting->Sumw2(0);
-   h2_smearing_interacting->SetTitle("Smearing Matrix for trueAbs in Sample after BeamCuts; reco Energy [MeV]; true Energy [MeV]");
    h2_smearing_interacting->Write();
+
+
+   //have to exclude underflow and overflowbin bc otherwise matrix is singular
+   TMatrixD matrix_smearing_interacting_pre(nBin_int + 2, nBin_int + 2, h2_smearing_interacting->GetArray(), "D");
+   TMatrixD matrix_smearing_interacting = matrix_smearing_interacting_pre.GetSub(1, nBin_int, 1, nBin_int); //avoid underflow and overflowbin
+
+   //matrix_smearing_interacting.Print();
+
+   Double_t det2;
+   TMatrixD matrix_inverse_smearing_interacting = matrix_smearing_interacting;
+   matrix_inverse_smearing_interacting.Invert(&det2);
+
+   TMatrixD U2(matrix_inverse_smearing_interacting, TMatrixD::kMult, matrix_smearing_interacting);
+   TMatrixDDiag diag2(U2); diag2 = 0.0;
+   const Double_t U2_max_offdiag = (U2.Abs()).Max();
+   std::cout << "  Maximum off-diagonal = " << U2_max_offdiag << std::endl;
+   std::cout << "  Determinant          = " << det2 << std::endl;   
+
+   //put inverse into TH2
+   for (int i = 1; i <= nBin_int; i++){
+      for (int j= 1; j <= nBin_int; j++){
+         h2_inverse_smearing_interacting->SetBinContent(j, i, matrix_inverse_smearing_interacting(i-1,j-1)); //vector indices style for matrix 
+      };
+   };
+
+   h2_inverse_smearing_interacting->Write();
+
+   //Check that matrix and inverse are unity
+   TMatrixD unity_smearing_interacting = matrix_inverse_smearing_interacting * matrix_smearing_interacting ;
+   TH2D* h2_prod_smearing_interacting = new TH2D("h2_prod_smearing_interacting", "", nBin_int, eEnd, eStart, nBin_int, eEnd, eStart);
+   for (int i = 1; i <= nBin_int; i++){
+      for (int j= 1; j <= nBin_int; j++){
+         h2_prod_smearing_interacting->SetBinContent(j, i, unity_smearing_interacting(i-1,j-1)); 
+      }
+   }
+
+   h2_prod_smearing_interacting->Write();
 
    //=====================================================
    //------------------------------------------------------
@@ -289,7 +471,55 @@ int unsmear(const string mcFilepath){
    h_help_unsmear_inc->Multiply(h_recoE_selPion_inc, h_pur_removeBG_inc );
    h_help_unsmear_inc->Divide( h_eff_eventSel_inc );
 
-   h_unsmeared_inc->Divide( h_help_unsmear_inc , h_eff_recoE_trueE_inc );
+   //to apply smearing matrix for the initial energy and interacting energy I have to take the derivative of histo.
+   //i.e derivative[x] = hist[x+1] - hist[x]
+   //apply both smearing matrices, and then integrate back
+   TH1D* incident_derivative = new TH1D("incident_derivative", "", nBin_int, eEnd, eStart);
+   TH1D* incident_unsmear_derivative_initE = new TH1D("incident_unsmear_derivative_initE", "", nBin_int, eEnd, eStart);
+   TH1D* incident_unsmear_derivative_interE = new TH1D("incident_unsmear_derivative_interE", "", nBin_int, eEnd, eStart);
+
+   //have to go backWards from upper bin to lowest bin
+   for(int i = 1; i <= nBin_int; i++){
+      double diff = h_help_unsmear_inc->GetBinContent(i + 1) - h_help_unsmear_inc->GetBinContent(i);
+      incident_derivative->SetBinContent( i, diff );
+   };
+
+    //------------------------------------------------------
+   // For NOW Exclude unsmearing in incident Energy, weird shift in energy reco <--> true, to be investigated
+   //------------------------------------------------------
+   //Loop through inverse smearing matrix, do initE and interE AFTER each other!
+   
+   /*for(int i=1; i<= nBin_int; i++){
+
+      double help_sum = 0;
+      for(int j=1; j <= nBin_int; j++){
+         help_sum += incident_derivative->GetBinContent(j) * h2_inverse_smearing_incident_initE->GetBinContent( i, j );
+      };
+
+      incident_unsmear_derivative_initE->SetBinContent( i , help_sum);
+   };*/ 
+   
+   //SECOND smearing MATRIX interE on the one that was unsmeared in initE
+   for(int i=1; i<= nBin_int; i++){
+
+      double help_sum = 0;
+      for(int j=1; j <= nBin_int; j++){
+         help_sum += incident_derivative->GetBinContent(j) * h2_inverse_smearing_incident_interE->GetBinContent( i, j );
+      };
+
+      incident_unsmear_derivative_interE->SetBinContent( i , help_sum);
+   }; 
+
+   //Now rebuild the incident histogram from unsmeared derivative... runningSum
+   //TH1* h_temp_interE = incident_unsmear_derivative_interE->GetCumulative();
+   //TH1* h_temp_initE = incident_unsmear_derivative_initE->GetCumulative();
+   //h_temp_interE->Add(h_temp_initE);
+   //TH1* h_unsmeared_inc = h_temp_interE;
+   
+   TH1* h_unsmeared_inc = incident_unsmear_derivative_interE->GetCumulative();
+   h_unsmeared_inc->SetName("h_unsmeared_inc");
+
+
    h_unsmeared_inc->Sumw2(0);
    h_unsmeared_inc->Write();
 
@@ -308,13 +538,13 @@ int unsmear(const string mcFilepath){
    //Loop through smearing matrix Interacting
    for(int i = 1; i <= nBin_int; i++){
       double help_sum = 0;
-      //columns
+      //rows
       for(int j = 1; j <= nBin_int; j++){
-         help_sum = help_sum + h2_smearing_interacting->GetBinContent( j , i ) * h_help_unsmear_int->GetBinContent(j) ;
+         help_sum += h_help_unsmear_int->GetBinContent(j)*h2_inverse_smearing_interacting->GetBinContent( i, j);
       }; 
       h_unsmeared_int->SetBinContent( i , help_sum);
    };
-
+   
    h_unsmeared_int->Write();
 
    //------------------------------------------------------

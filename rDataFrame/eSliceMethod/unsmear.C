@@ -68,21 +68,31 @@ int unsmear(const string mcFilepath){
 
    //TrueProcess and TrueE Int and Inc Histos
    TH1D* h_trueE_trueAbs_int = new TH1D("h_trueE_trueAbs_int", "", nBin_int, eEnd, eStart);
-   TH1D* h_trueE_truePion_inc = new TH1D("h_trueE_truePion_inc", "", nBin_int, eEnd, eStart);
+   TH1D* h_trueE_truePion_inc_initE = new TH1D("h_trueE_truePion_inc_initE", "", nBin_int, eEnd, eStart);
+   TH1D* h_trueE_truePion_inc_interE = new TH1D("h_trueE_truePion_inc_interE", "", nBin_int, eEnd, eStart);
+   TH1D* h_trueE_truePion_incident = new TH1D("h_trueE_truePion_incident", "", nBin_int, eEnd, eStart);
    //Selected Process and RecoE Int and Inc Histos
    TH1D* h_recoE_selAbs_int = new TH1D("h_recoE_selAbs_int", "", nBin_int, eEnd, eStart);
-   TH1D* h_recoE_selPion_inc = new TH1D("h_recoE_selPion_inc", "", nBin_int, eEnd, eStart);
+   TH1D* h_recoE_selPion_inc_initE = new TH1D("h_recoE_selPion_inc_initE", "", nBin_int, eEnd, eStart);
+   TH1D* h_recoE_selPion_inc_interE = new TH1D("h_recoE_selPion_inc_interE", "", nBin_int, eEnd, eStart);
+   TH1D* h_recoE_selPion_incident = new TH1D("h_recoE_selPion_incident", "", nBin_int, eEnd, eStart);
    //Unsmeared Histo, compare to h_trueE_trueProc
    TH1D* h_help_unsmear_int = new TH1D("h_help_unsmear_int", "", nBin_int, eEnd, eStart);
-   TH1D* h_help_unsmear_inc = new TH1D("h_help_unsmear_inc", "", nBin_int, eEnd, eStart);
+   TH1D* h_help_unsmear_inc_initE = new TH1D("h_help_unsmear_inc_initE", "", nBin_int, eEnd, eStart);
+   TH1D* h_help_unsmear_inc_interE = new TH1D("h_help_unsmear_inc_interE", "", nBin_int, eEnd, eStart);
 
    TH1D* h_unsmeared_int = new TH1D("h_unsmeared_int", "", nBin_int, eEnd, eStart);
+   TH1D* h_unsmeared_inc_initE = new TH1D("h_unsmeared_inc_initE", "", nBin_int, eEnd, eStart);
+   TH1D* h_unsmeared_inc_interE = new TH1D("h_unsmeared_inc_interE", "", nBin_int, eEnd, eStart);
+   TH1D* h_unsmeared_incident = new TH1D("h_unsmeared_incident", "", nBin_int, eEnd, eStart);
    //From evSel --> back to Reco MC Nj --> Nj'
    TH1D* h_pur_removeBG_int = new TH1D("h_pur_removeBG_int", "", nBin_int, eEnd, eStart);
    TH1D* h_eff_eventSel_int = new TH1D("h_eff_eventSel_int", "", nBin_int, eEnd, eStart);
 
-   TH1D* h_pur_removeBG_inc = new TH1D("h_pur_removeBG_inc", "", nBin_int, eEnd, eStart);
-   TH1D* h_eff_eventSel_inc = new TH1D("h_eff_eventSel_inc", "", nBin_int, eEnd, eStart);
+   TH1D* h_pur_removeBG_inc_initE = new TH1D("h_pur_removeBG_inc_initE", "", nBin_int, eEnd, eStart);
+   TH1D* h_eff_eventSel_inc_initE = new TH1D("h_eff_eventSel_inc_initE", "", nBin_int, eEnd, eStart);
+   TH1D* h_pur_removeBG_inc_interE = new TH1D("h_pur_removeBG_inc_interE", "", nBin_int, eEnd, eStart);
+   TH1D* h_eff_eventSel_inc_interE = new TH1D("h_eff_eventSel_inc_interE", "", nBin_int, eEnd, eStart);
 
    //Build the True Process and TrueE Int and Inc Histograms that we need to compare unsmeared things to
    //
@@ -102,23 +112,35 @@ int unsmear(const string mcFilepath){
    //this is what should be achieved after unsmearing the selected&reco histos
    //
    //------------------------------------------------------------
-   //Incident Histo
+   //Incident Histo InitE
    eventSel_post_beamCut
       .Filter("true_primPionInel") //should also take into account pions that decay
 
-      .Foreach( [h_trueE_truePion_inc] (double true_firstEntryIncident, double true_beam_interactingEnergy) {
-            //bin that energy falls into is (int) energy/nbins + 1
-            int binNumber_initEnergy = (int) true_firstEntryIncident / bin_size_int + 1;
-            int binNumber_interEnergy = (int) true_beam_interactingEnergy / bin_size_int + 1;
-            for(int i = binNumber_interEnergy; i <= binNumber_initEnergy; i++){                 
-
-            if(i <= nBin_int){
-            h_trueE_truePion_inc->SetBinContent( i, h_trueE_truePion_inc->GetBinContent(i) + 1 ); 
-            };
-            };
+      .Foreach( [h_trueE_truePion_inc_initE] (double true_firstEntryIncident) { 
+            h_trueE_truePion_inc_initE->Fill( true_firstEntryIncident ); 
             }
-            ,{"true_firstEntryIncident", "true_KEint_fromEndP"});
+            ,{"true_firstEntryIncident"});
 
+   eventSel_post_beamCut
+      .Filter("true_primPionInel") //should also take into account pions that decay
+
+      .Foreach( [h_trueE_truePion_inc_interE] (double true_beam_interactingEnergy) { 
+            h_trueE_truePion_inc_interE->Fill( true_beam_interactingEnergy ); 
+            }
+            ,{"true_KEint_fromEndP"});
+
+   //Build trueIncident for comparison
+    TH1* h_cum_trueE_initE = h_trueE_truePion_inc_initE->GetCumulative(false);
+    TH1* h_cum_trueE_interE = h_trueE_truePion_inc_interE->GetCumulative(false);
+    //h_cum_trueE_initE->Write();
+    //h_cum_trueE_interE->Write();
+    h_trueE_truePion_incident->SetBinContent(nBin_int, h_cum_trueE_initE->GetBinContent(nBin_int));
+    for(int i=nBin_int; i > 1; i--){
+       double diff = h_cum_trueE_initE->GetBinContent(i-1) - h_cum_trueE_interE->GetBinContent(i);
+       h_trueE_truePion_incident->SetBinContent( i-1, diff);
+    };
+
+    h_trueE_truePion_incident->Write();
 
    //Interacting Histo
    eventSel_post_beamCut
@@ -129,7 +151,8 @@ int unsmear(const string mcFilepath){
             ,{"true_KEint_fromEndP"});
 
    h_trueE_trueAbs_int->Write();
-   h_trueE_truePion_inc->Write();
+   h_trueE_truePion_inc_initE->Write();
+   h_trueE_truePion_inc_interE->Write();
    //------------------------------------------------------------
    //
    //Create the selected and Reco histos that need to be unsmeared back
@@ -138,33 +161,75 @@ int unsmear(const string mcFilepath){
    //------------------------------------------------------------
    //
    eventSel_incidentPion
-      .Foreach( [h_recoE_selPion_inc] (double reco_firstEntryIncident, double reco_beam_interactingEnergy) {
-            int binNumber_initEnergy = (int) reco_firstEntryIncident / bin_size_int + 1;
-            int binNumber_interEnergy = (int) reco_beam_interactingEnergy / bin_size_int + 1;
-            for(int i = binNumber_interEnergy; i <= binNumber_initEnergy; i++){      
-
-            if( i > 0 && i <= nBin_int){ //make sure we don't go outside of bin range
-            h_recoE_selPion_inc->SetBinContent( i, h_recoE_selPion_inc->GetBinContent(i) + 1 ); 
-            };
-            };
+      .Foreach( [h_recoE_selPion_inc_initE] (double reco_firstEntryIncident) {
+            h_recoE_selPion_inc_initE->Fill( reco_firstEntryIncident );            
             }
-            ,{"reco_firstEntryIncident", "reco_interactingKE"});
+            ,{"reco_firstEntryIncident"});
+
+   eventSel_incidentPion
+      .Foreach( [h_recoE_selPion_inc_interE] (double reco_beam_interactingEnergy) {
+            h_recoE_selPion_inc_interE->Fill( reco_beam_interactingEnergy );  
+            }
+            ,{"reco_interactingKE"});
+
+   //Build recoIncident for comparison
+    TH1* h_cum_recoE_initE = h_recoE_selPion_inc_initE->GetCumulative(false);
+    TH1* h_cum_recoE_interE = h_recoE_selPion_inc_interE->GetCumulative(false);
+    //h_cum_recoE_initE->Write();
+    //h_cum_recoE_interE->Write();
+    h_recoE_selPion_incident->SetBinContent(nBin_int, h_cum_recoE_initE->GetBinContent(nBin_int));
+    for(int i=nBin_int; i > 1; i--){
+       double diff = h_cum_recoE_initE->GetBinContent(i-1) - h_cum_recoE_interE->GetBinContent(i);
+       h_recoE_selPion_incident->SetBinContent( i-1, diff);
+    };
+
+    h_recoE_selPion_incident->Write();
 
    eventSel_abs
       .Foreach( [h_recoE_selAbs_int] (double reco_beam_interactingEnergy){
-            h_recoE_selAbs_int->Fill(reco_beam_interactingEnergy);}
+            h_recoE_selAbs_int->Fill(reco_beam_interactingEnergy);
+            }
             ,{"reco_interactingKE"});
 
-   h_recoE_selPion_inc->Write();
+
+   h_recoE_selPion_inc_interE->Write();
+   h_recoE_selPion_inc_initE->Write();
    h_recoE_selAbs_int->Write();
+
+   //------------------------------------------------------------
+   //
+   //    Test to get back original incident histo
+   //------------------------------------------------------------
+
+
+   // TH1* h_trueE_cum_initE = h_trueE_truePion_inc_initE->GetCumulative(false);
+   // TH1* h_trueE_cum_interE = h_trueE_truePion_inc_interE->GetCumulative(false);
+   // h_trueE_cum_initE->Write();
+   // h_trueE_cum_interE->Write();
+
+   // TH1D* h_trueE_inc_cumWay = new TH1D("h_trueE_inc_cumWay", "", nBin_int, eEnd, eStart);
+
+   // h_trueE_inc_cumWay->SetBinContent(nBin_int, h_trueE_cum_initE->GetBinContent(nBin_int));
+   // for(int i=nBin_int; i > 1; i--){
+   //    double diff = h_trueE_cum_initE->GetBinContent(i-1) - h_trueE_cum_interE->GetBinContent(i);
+   //    h_trueE_inc_cumWay->SetBinContent( i-1, diff);
+   // };
+
+   // h_trueE_inc_cumWay->Write();
+
+
+
+
    //------------------------------------------------------------
    //
    //Start creating the efficiencies and purities to subtract the BG and account 
    //for lost events from eventSelection
    //
    //------------------------------------------------------------
-   TH1D* h_recoE_incidentPion_truePion_inc = new TH1D("h_recoE_incidentPion_truePion_inc", "", nBin_int, eEnd, eStart);
-   TH1D* h_recoE_beamCut_truePion_inc = new TH1D("h_recoE_beamCut_truePion_inc", "", nBin_int, eEnd, eStart);
+   TH1D* h_recoE_incidentPion_truePion_inc_initE = new TH1D("h_recoE_incidentPion_truePion_inc_initE", "", nBin_int, eEnd, eStart);
+   TH1D* h_recoE_beamCut_truePion_inc_initE = new TH1D("h_recoE_beamCut_truePion_inc_initE", "", nBin_int, eEnd, eStart);
+   TH1D* h_recoE_incidentPion_truePion_inc_interE = new TH1D("h_recoE_incidentPion_truePion_inc_interE", "", nBin_int, eEnd, eStart);
+   TH1D* h_recoE_beamCut_truePion_inc_interE = new TH1D("h_recoE_beamCut_truePion_inc_interE", "", nBin_int, eEnd, eStart);
 
    TH1D* h_recoE_selAbs_trueAbs_int = new TH1D("h_recoE_selAbs_trueAbs_int", "", nBin_int, eEnd, eStart);
    TH1D* h_recoE_beamCut_trueAbs_int = new TH1D("h_recoE_beamCut_trueAbs_int", "", nBin_int, eEnd, eStart);
@@ -172,30 +237,34 @@ int unsmear(const string mcFilepath){
    //True Pions available after beamCuts
    eventSel_post_beamCut
       .Filter("true_primPionInel")
-      .Foreach( [h_recoE_beamCut_truePion_inc] (double reco_firstEntryIncident, double reco_beam_interactingEnergy) {
-            int binNumber_initEnergy = (int) reco_firstEntryIncident / bin_size_int + 1;
-            int binNumber_interEnergy = (int) reco_beam_interactingEnergy / bin_size_int + 1;
-            for(int i = binNumber_interEnergy; i <= binNumber_initEnergy; i++){      
-            if( i > 0 && i <= nBin_int){ //make sure we don't go outside of bin range
-            h_recoE_beamCut_truePion_inc->SetBinContent( i, h_recoE_beamCut_truePion_inc->GetBinContent(i) + 1 ); 
-            };
-            };
+      .Foreach( [h_recoE_beamCut_truePion_inc_initE] (double reco_firstEntryIncident) {
+            h_recoE_beamCut_truePion_inc_initE->Fill( reco_firstEntryIncident );            
             }
-            ,{"reco_firstEntryIncident", "reco_interactingKE"});
+            ,{"reco_firstEntryIncident"});
+
+   eventSel_post_beamCut
+      .Filter("true_primPionInel")
+      .Foreach( [h_recoE_beamCut_truePion_inc_interE] (double reco_beam_interactingEnergy) {
+            h_recoE_beamCut_truePion_inc_interE->Fill( reco_beam_interactingEnergy );            
+            }
+            ,{"reco_interactingKE"});
 
    //True Pions in selected incident
    eventSel_incidentPion
       .Filter("true_primPionInel")
-      .Foreach( [h_recoE_incidentPion_truePion_inc] (double reco_firstEntryIncident, double reco_beam_interactingEnergy) {
-            int binNumber_initEnergy = (int) reco_firstEntryIncident / bin_size_int + 1;
-            int binNumber_interEnergy = (int) reco_beam_interactingEnergy / bin_size_int + 1;
-            for(int i = binNumber_interEnergy; i <= binNumber_initEnergy; i++){      
-            if( i > 0 && i <= nBin_int){ //make sure we don't go outside of bin range
-            h_recoE_incidentPion_truePion_inc->SetBinContent( i, h_recoE_incidentPion_truePion_inc->GetBinContent(i) + 1 ); 
-            };
-            };
+      .Foreach( [h_recoE_incidentPion_truePion_inc_initE] (double reco_firstEntryIncident) {
+            h_recoE_incidentPion_truePion_inc_initE->Fill( reco_firstEntryIncident );            
             }
-            ,{"reco_firstEntryIncident", "reco_interactingKE"});
+            ,{"reco_firstEntryIncident"});
+
+   eventSel_incidentPion
+      .Filter("true_primPionInel")
+      .Foreach( [h_recoE_incidentPion_truePion_inc_interE] (double reco_beam_interactingEnergy) {
+            h_recoE_incidentPion_truePion_inc_interE->Fill( reco_beam_interactingEnergy );            
+            }
+            ,{"reco_interactingKE"});
+
+
 
    //True Abs available after beamCuts
    eventSel_post_beamCut
@@ -216,14 +285,19 @@ int unsmear(const string mcFilepath){
    //  Compute eff and Purities for first unsmearing Step
    //------------------------------------------------------------
    //
-   h_pur_removeBG_inc->Divide( h_recoE_incidentPion_truePion_inc, h_recoE_selPion_inc );
-   h_eff_eventSel_inc->Divide( h_recoE_incidentPion_truePion_inc, h_recoE_beamCut_truePion_inc );
+   h_pur_removeBG_inc_initE->Divide( h_recoE_incidentPion_truePion_inc_initE, h_recoE_selPion_inc_initE );
+   h_eff_eventSel_inc_initE->Divide( h_recoE_incidentPion_truePion_inc_initE, h_recoE_beamCut_truePion_inc_initE );
+
+   h_pur_removeBG_inc_interE->Divide( h_recoE_incidentPion_truePion_inc_interE, h_recoE_selPion_inc_interE );
+   h_eff_eventSel_inc_interE->Divide( h_recoE_incidentPion_truePion_inc_interE, h_recoE_beamCut_truePion_inc_interE );
 
    h_pur_removeBG_int->Divide( h_recoE_selAbs_trueAbs_int, h_recoE_selAbs_int );
    h_eff_eventSel_int->Divide( h_recoE_selAbs_trueAbs_int, h_recoE_beamCut_trueAbs_int );
 
-   h_pur_removeBG_inc->Write();
-   h_eff_eventSel_inc->Write();
+   h_pur_removeBG_inc_initE->Write();
+   h_eff_eventSel_inc_initE->Write();
+   h_pur_removeBG_inc_interE->Write();
+   h_eff_eventSel_inc_interE->Write();
 
    h_pur_removeBG_int->Write();
    h_eff_eventSel_int->Write();
@@ -243,7 +317,7 @@ int unsmear(const string mcFilepath){
    h2_smearing_interacting->SetTitle("Smearing Matrix for trueAbs in Sample after BeamCuts; reco Energy [MeV]; true Energy [MeV]");
    h2_smearing_incident_initE->SetTitle("Smearing Matrix for truePi initialE in Sample after BeamCuts; reco Energy [MeV]; true Energy [MeV]");
    h2_smearing_incident_interE->SetTitle("Smearing Matrix for truePi interE in Sample after BeamCuts; reco Energy [MeV]; true Energy [MeV]");
-   
+
    TH2D* h2_inverse_smearing_interacting = new TH2D("h2_inverse_smearing_interacting", "", nBin_int, eEnd, eStart, nBin_int, eEnd, eStart);
    TH2D* h2_inverse_smearing_incident_initE = new TH2D("h2_inverse_smearing_incident_initE", "", nBin_int, eEnd, eStart, nBin_int, eEnd, eStart);
    TH2D* h2_inverse_smearing_incident_interE = new TH2D("h2_inverse_smearing_incident_interE", "", nBin_int, eEnd, eStart, nBin_int, eEnd, eStart);
@@ -273,7 +347,6 @@ int unsmear(const string mcFilepath){
 
    //NORMALISATION Normalise to trueE row
    //
-
    for(int i = 1; i <= nBin_int; i++){
 
       //sum for same x (recoBin
@@ -329,7 +402,7 @@ int unsmear(const string mcFilepath){
    h2_prod_smearing_incident_initE->Write();
 
    //========================================================
-   //Build the smearing Incident Histogram initE
+   //Build the smearing Incident Histogram interE
    //---------
 
    eventSel_post_beamCut 
@@ -463,65 +536,69 @@ int unsmear(const string mcFilepath){
 
    //=====================================================
    //------------------------------------------------------
-   //Start Unsmearing Incident
+   //Start Unsmearing Incident Init E
    //------------------------------------------------------
    //
    //    Remove the BGs and eventSelection inefficiency
    //    multiply by purity and divide by efficency
-   h_help_unsmear_inc->Multiply(h_recoE_selPion_inc, h_pur_removeBG_inc );
-   h_help_unsmear_inc->Divide( h_eff_eventSel_inc );
+   h_help_unsmear_inc_initE->Multiply(h_recoE_selPion_inc_initE, h_pur_removeBG_inc_initE );
+   h_help_unsmear_inc_initE->Divide( h_eff_eventSel_inc_initE );
 
-   //to apply smearing matrix for the initial energy and interacting energy I have to take the derivative of histo.
-   //i.e derivative[x] = hist[x+1] - hist[x]
-   //apply both smearing matrices, and then integrate back
-   TH1D* incident_derivative = new TH1D("incident_derivative", "", nBin_int, eEnd, eStart);
-   TH1D* incident_unsmear_derivative_initE = new TH1D("incident_unsmear_derivative_initE", "", nBin_int, eEnd, eStart);
-   TH1D* incident_unsmear_derivative_interE = new TH1D("incident_unsmear_derivative_interE", "", nBin_int, eEnd, eStart);
-
-   //have to go backWards from upper bin to lowest bin
+   //   Undo the smearing by multiplying Tij*Nj, so every row of true percentage with every entry of help_unsmeared
+   //   Row's are i(y), columns are j(x) 
+   //
+   //Loop through smearing matrix Interacting
    for(int i = 1; i <= nBin_int; i++){
-      double diff = h_help_unsmear_inc->GetBinContent(i + 1) - h_help_unsmear_inc->GetBinContent(i);
-      incident_derivative->SetBinContent( i, diff );
+      double help_sum = 0;
+      //rows
+      for(int j = 1; j <= nBin_int; j++){
+         help_sum += h_help_unsmear_inc_initE->GetBinContent(j)*h2_inverse_smearing_incident_initE->GetBinContent( i, j);
+      }; 
+      h_unsmeared_inc_initE->SetBinContent( i , help_sum);
    };
 
-    //------------------------------------------------------
-   // For NOW Exclude unsmearing in incident Energy, weird shift in energy reco <--> true, to be investigated
+   h_unsmeared_inc_initE->Write();
+
    //------------------------------------------------------
-   //Loop through inverse smearing matrix, do initE and interE AFTER each other!
-   
-   /*for(int i=1; i<= nBin_int; i++){
+   //Start Unsmearing Incident inter E
+   //------------------------------------------------------
+   //
+   //    Remove the BGs and eventSelection inefficiency
+   //    multiply by purity and divide by efficency
+   h_help_unsmear_inc_interE->Multiply(h_recoE_selPion_inc_interE, h_pur_removeBG_inc_interE );
+   h_help_unsmear_inc_interE->Divide( h_eff_eventSel_inc_interE );
 
+   //   Undo the smearing by multiplying Tij*Nj, so every row of true percentage with every entry of help_unsmeared
+   //   Row's are i(y), columns are j(x) 
+   //
+   //Loop through smearing matrix Interacting
+   for(int i = 1; i <= nBin_int; i++){
       double help_sum = 0;
-      for(int j=1; j <= nBin_int; j++){
-         help_sum += incident_derivative->GetBinContent(j) * h2_inverse_smearing_incident_initE->GetBinContent( i, j );
-      };
+      //rows
+      for(int j = 1; j <= nBin_int; j++){
+         help_sum += h_help_unsmear_inc_interE->GetBinContent(j)*h2_inverse_smearing_incident_interE->GetBinContent( i, j);
+      }; 
+      h_unsmeared_inc_interE->SetBinContent( i , help_sum);
+   };
 
-      incident_unsmear_derivative_initE->SetBinContent( i , help_sum);
-   };*/ 
-   
-   //SECOND smearing MATRIX interE on the one that was unsmeared in initE
-   for(int i=1; i<= nBin_int; i++){
+   h_unsmeared_inc_interE->Write();
 
-      double help_sum = 0;
-      for(int j=1; j <= nBin_int; j++){
-         help_sum += incident_derivative->GetBinContent(j) * h2_inverse_smearing_incident_interE->GetBinContent( i, j );
-      };
+   //=====================================================
+   //    Rebuild from initial and interacting Distribution the full incident unsmeared histogram
+   //=====================================================
 
-      incident_unsmear_derivative_interE->SetBinContent( i , help_sum);
-   }; 
+    TH1* h_cum_initE = h_unsmeared_inc_initE->GetCumulative(false);
+    TH1* h_cum_interE = h_unsmeared_inc_interE->GetCumulative(false);
+    //h_cum_initE->Write();
+    //h_cum_interE->Write();
 
-   //Now rebuild the incident histogram from unsmeared derivative... runningSum
-   //TH1* h_temp_interE = incident_unsmear_derivative_interE->GetCumulative();
-   //TH1* h_temp_initE = incident_unsmear_derivative_initE->GetCumulative();
-   //h_temp_interE->Add(h_temp_initE);
-   //TH1* h_unsmeared_inc = h_temp_interE;
-   
-   TH1* h_unsmeared_inc = incident_unsmear_derivative_interE->GetCumulative();
-   h_unsmeared_inc->SetName("h_unsmeared_inc");
+    h_unsmeared_incident->SetBinContent(nBin_int, h_cum_initE->GetBinContent(nBin_int));
+    for(int i=nBin_int; i > 1; i--){
+       double diff = h_cum_initE->GetBinContent(i-1) - h_cum_interE->GetBinContent(i);
+       h_unsmeared_incident->SetBinContent( i-1, diff);
+    };
 
-
-   h_unsmeared_inc->Sumw2(0);
-   h_unsmeared_inc->Write();
+    h_unsmeared_incident->Write();
 
    //------------------------------------------------------
    //Start Unsmearing Interacting
@@ -544,7 +621,7 @@ int unsmear(const string mcFilepath){
       }; 
       h_unsmeared_int->SetBinContent( i , help_sum);
    };
-   
+
    h_unsmeared_int->Write();
 
    //------------------------------------------------------
@@ -587,33 +664,32 @@ int unsmear(const string mcFilepath){
 
    TCanvas *c_comp_inc = new TCanvas("c_comp_inc", "");
 
-   h_trueE_truePion_inc->SetLineColor(kBlue);
-   h_trueE_truePion_inc->SetLineWidth(2);
-   h_trueE_truePion_inc->SetMarkerColor(kBlue);
-   h_trueE_truePion_inc->SetMarkerSize(0.8);
-   h_trueE_truePion_inc->SetBarOffset(0.5);
-   h_trueE_truePion_inc->GetXaxis()->SetTitle("KE (MeV)");
+   h_trueE_truePion_incident->SetLineColor(kBlue);
+   h_trueE_truePion_incident->SetLineWidth(2);
+   h_trueE_truePion_incident->SetMarkerColor(kBlue);
+   h_trueE_truePion_incident->SetMarkerSize(0.8);
+   h_trueE_truePion_incident->SetBarOffset(0.5);
+   h_trueE_truePion_incident->GetXaxis()->SetTitle("KE (MeV)");
 
-   h_unsmeared_inc->SetLineColor(kRed);
-   h_unsmeared_inc->SetLineWidth(2);
-   h_unsmeared_inc->SetFillColorAlpha( kRed, 0.2);
-   h_unsmeared_inc->SetMarkerColor(kRed);
-   h_unsmeared_inc->SetBarOffset(-0.5);
+   h_unsmeared_incident->SetLineColor(kRed);
+   h_unsmeared_incident->SetLineWidth(2);
+   h_unsmeared_incident->SetFillColorAlpha( kRed, 0.2);
+   h_unsmeared_incident->SetMarkerColor(kRed);
+   h_unsmeared_incident->SetBarOffset(-0.5);
 
-   h_recoE_selPion_inc->SetLineStyle(2);
-   h_recoE_selPion_inc->SetLineWidth(3);
-   h_recoE_selPion_inc->SetFillColorAlpha(kBlack, 0.1);
+   h_recoE_selPion_incident->SetLineStyle(2);
+   h_recoE_selPion_incident->SetLineWidth(3);
+   h_recoE_selPion_incident->SetFillColorAlpha(kBlack, 0.1);
 
-   h_trueE_truePion_inc->Draw("HIST TEXT00");
-   h_unsmeared_inc->Draw("HIST SAME");
-   h_recoE_selPion_inc->Draw("HIST SAME");
+   h_trueE_truePion_incident->Draw("HIST TEXT00");
+   h_unsmeared_incident->Draw("HIST SAME");
+   h_recoE_selPion_incident->Draw("HIST SAME");
 
    auto legend_inc = new TLegend(0.1,0.7,0.48,0.9);
-   legend_inc->AddEntry(h_trueE_truePion_inc,"True Pions, trueE, after BeamCuts");
-   legend_inc->AddEntry(h_unsmeared_inc,"Unsmeared Incident");
-   legend_inc->AddEntry(h_recoE_selPion_inc,"Selected Incident");
+   legend_inc->AddEntry(h_trueE_truePion_incident,"True Pions, trueE, after BeamCuts");
+   legend_inc->AddEntry(h_unsmeared_incident,"Unsmeared Incident");
+   legend_inc->AddEntry(h_recoE_selPion_incident,"Selected Incident");
    legend_inc->Draw();
-
 
    return 0;
 }

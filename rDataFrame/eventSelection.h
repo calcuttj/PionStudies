@@ -28,6 +28,8 @@ using namespace ROOT::VecOps;
 //Some Cut Values
 double cutAPA3_Z = 226.;
 double cut_trackScore = 0.3;
+double cut_michelScore = 0.55;
+double cut_michelScore_ajib = 0.5;
 double cut_dEdX = 3.8;
 int cut_nHits_shower_low = 40;
 //daughter Distance cut
@@ -221,6 +223,7 @@ auto beam_cut_MC_BI = [](double startX,
   return true;
 };
 
+
 //for marking cutflow in rows only needs condition before and tested
 auto cutFlow = [](bool a, bool b){
   return (a && b);
@@ -268,20 +271,22 @@ auto compute_distanceVertex = [](double beam_endX,
 };
 
 
-//Using dQdX like Libo AND trackScore
-/*auto secondary_noPion_test= [](const std::vector<double> &track_score, 
-                           const std::vector<int> &trackID,
-                           const std::vector<double> &dQdX) {
-  for( size_t i = 0; i < track_score.size(); ++i ) {
-    if ((trackID[i] != -1) && (track_score[i] > cut_trackScore) &&
-        (dQdX[i] >= 250  ) && (dQdX[i] <= 400)) {
-      return false;
-    }
-  }
 
-  return true;
+//Removing primaryMuons in the Incident Pion sample
+//by looking for MichelElectron with CNN score
+
+auto candidate_primaryMuon = []( const std::vector<double> &michelScore){
+
+   if(michelScore.empty()) return false;
+
+   for(auto i : michelScore){
+      if(i > cut_michelScore) return true; //there is a michel candidate
+   };
+
+   return false;
 };
-*/
+
+
 
 //Using dEdX truncated mean and trackscore
 auto secondary_noPion= [](
@@ -398,6 +403,7 @@ auto is_pi0_shower = [](const std::vector<double> &track_score,
 
   return results;
 };
+
 
 
 auto leading_proton_momentum = [](const std::vector<double> & daughter_p,

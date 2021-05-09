@@ -59,8 +59,9 @@ auto betheBloch_mpv = [](double energy, double mass_particle){
     A = 39.948;
     I = pow(10,-6)*10.5*18; //MeV
     j = 0.2;
-    pitch = 9*rho; //0.5*rho; // g*cm^-2
+    pitch = 0.51*rho; // g*cm^-2
     me = 0.51; //MeV me*c^2
+    //0.51 is the pitch wrt beam angle for beam particles
     
     //momentum = sqrt( pow(energy,2) - pow(mass_particle,2));
     //beta = momentum/sqrt(pow(mass_particle,2) + pow(momentum,2));

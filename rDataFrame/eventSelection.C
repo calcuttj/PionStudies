@@ -34,9 +34,6 @@ using namespace ROOT::VecOps;
 
 using namespace std::chrono; 
 
-std::string default_data = 
-    "/Users/fstocker/cernbox/pionAnalyzer/pionAnalyzerTree/pionana_5387_1GeV_1_27_20.root";
-
 
 //***********************
 //Main Function
@@ -44,6 +41,9 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
                    std::string tree_name = "pionana/beamana",
                    bool doCounting = true, bool doBatch = false) {
   std::cout << "Tree name: " << tree_name << std::endl;
+//int eventSelection_primMu(const string mcFile, const string dataFile,
+//                           bool doBatch = false) {
+
   //This prevents the canvas from being draw at the end
   //Useful for when on the gpvms 
   gROOT->SetBatch(doBatch);
@@ -106,7 +106,7 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
 
     //necessary Reco Values
     //FRANCESCA: not using distance anymore.. kick out?
-    .Define("daughter_distance3D", compute_distanceVertex,
+    /*.Define("daughter_distance3D", compute_distanceVertex,
             {"reco_beam_endX", "reco_beam_endY", "reco_beam_endZ", 
              "reco_daughter_allTrack_startX", "reco_daughter_allTrack_startY",
              "reco_daughter_allTrack_startZ", "reco_daughter_allTrack_endX",
@@ -118,7 +118,7 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
             {"reco_beam_endX", "reco_beam_endY", "reco_beam_endZ",
              "reco_daughter_allShower_startX", "reco_daughter_allShower_startY",
              "reco_daughter_allShower_startZ", "reco_daughter_allShower_startX",
-             "reco_daughter_allShower_startY", "reco_daughter_allShower_startZ"})
+             "reco_daughter_allShower_startY", "reco_daughter_allShower_startZ"})*/
 
     
     //dQdX values Libo truncated mean Libo keeping dQdX median +- 1sigma 
@@ -150,6 +150,7 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
   auto data_all = data_frame
     .Define("beamPID", data_beam_PID, {"beam_inst_PDG_candidates"})
     
+   /*
     //FRANCESCA: not using distance anymore.. kick out?
     .Define("daughter_distance3D", compute_distanceVertex,
             {"reco_beam_endX", "reco_beam_endY", "reco_beam_endZ",
@@ -164,6 +165,7 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
              "reco_daughter_allShower_startX", "reco_daughter_allShower_startY", 
              "reco_daughter_allShower_startZ", "reco_daughter_allShower_startX", 
              "reco_daughter_allShower_startY", "reco_daughter_allShower_startZ"})
+   */
 
        
     //dQdX values Libo truncated mean Libo keeping dQdX median +- 1sigma 
@@ -200,7 +202,9 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
              "reco_beam_trackDirX", "reco_beam_trackDirY", "reco_beam_trackDirZ",
              "beam_inst_X", "beam_inst_Y", "beam_inst_dirX", "beam_inst_dirY",
              "beam_inst_dirZ", "beam_inst_nMomenta", "beam_inst_nTracks"})
-
+    
+    .Define("isPrimaryMuonCandidate", candidate_primaryMuon, {"reco_daughter_PFP_michelScore"})
+ 
     .Define("primary_ends_inAPA3", endAPA3, {"reco_beam_endZ"})
 
     .Define("has_noPion_daughter", secondary_noPion,
@@ -243,22 +247,31 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
     .Define("selection_ID", selection_ID,
             {"primary_isBeamType", "primary_ends_inAPA3", "has_noPion_daughter",
              "passBeamCut",
-            /*"has_shower_nHits_distance"*/"has_shower_dist_energy"});
+            /*"has_shower_nHits_distance"*/"has_shower_dist_energy"})
+     .Define("selected_incidentPion", "primary_isBeamType && passBeamCut && passBeamCutBI && !isPrimaryMuonCandidate")
+     
+     .Define("selected_abs", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && !has_shower_nHits_distance")
+     
+     .Define("selected_cex", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && has_shower_nHits_distance");
     
   // DATA
   data_all/*_cutValues*/ = data_all
-    .Define("primary_ends_inAPA3", endAPA3, {"reco_beam_endZ"})
- 
     .Define("primary_isBeamType", isBeamType, {"reco_beam_type"})
+    
     .Define("passBeamQuality", data_BI_quality,
             {"beam_inst_nMomenta", "beam_inst_nTracks"})
+    
     .Define("passBeamCut", manual_beamPos_data,
             {"reco_beam_startX", "reco_beam_startY", "reco_beam_startZ",
              "reco_beam_trackDirX", "reco_beam_trackDirY", "reco_beam_trackDirZ",
              "beam_inst_X", "beam_inst_Y", "beam_inst_dirX", "beam_inst_dirY",
              "beam_inst_dirZ", "beam_inst_nMomenta", "beam_inst_nTracks"})
 
-     .Define("has_noPion_daughter", secondary_noPion,
+    .Define("isPrimaryMuonCandidate", candidate_primaryMuon, {"reco_daughter_PFP_michelScore"}) 
+    
+    .Define("primary_ends_inAPA3", endAPA3, {"reco_beam_endZ"})
+ 
+    .Define("has_noPion_daughter", secondary_noPion,
             {"reco_daughter_PFP_trackScore_collection",
              "reco_daughter_allTrack_ID", 
              "reco_daughter_allTrack_truncLibo_dEdX_pos",
@@ -299,7 +312,13 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
      .Define("selection_ID", selection_ID,
              {"primary_isBeamType", "primary_ends_inAPA3", "has_noPion_daughter",
              "passBeamCut",
-             /*"has_shower_nHits_distance"*/"has_shower_dist_energy"});
+             /*"has_shower_nHits_distance"*/"has_shower_dist_energy"}),
+     
+     .Define("selected_incidentPion", "primary_isBeamType && passBeamCut && passBeamQuality && !isPrimaryMuonCandidate")
+     
+     .Define("selected_abs", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && !has_shower_nHits_distance")
+     
+     .Define("selected_cex", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && has_shower_nHits_distance");
 
   //Label within MC files who passed which CUT (this can help to see when what drops out)
   auto mc_output_with_label = mc_all/*_cutValues*/;
@@ -336,7 +355,7 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
 
   ////Make sure the beam track ends before APA2
   //auto mcCUT_endAPA3 = mcCUT_beamCut.Filter("primary_ends_inAPA3");
-  auto mcCUT_endAPA3 = mcCUT_beamType.Filter("primary_ends_inAPA3 && passBeamCut");
+  auto mcCUT_endAPA3 = mcCUT_beamType.Filter("primary_ends_inAPA3 && passBeamCut && !(isPrimaryMuonCandidate)");
   auto time2 = high_resolution_clock::now();
   std::cout << "MC APA3 cut: " <<
                duration_cast<seconds>(time2 - time1).count() <<
@@ -391,6 +410,7 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
 
   //Ends before APA2
   //auto dataCUT_endAPA3 = dataCUT_beamQuality.Filter("primary_ends_inAPA3 && passBeamCut");
+  //auto dataCUT_endAPA3 = dataCUT_beamQuality.Filter("primary_ends_inAPA3 && passBeamCut && !(isPrimaryMuonCandidate)");
   
   /* ****** COMBINED SAMPLE ******/
 

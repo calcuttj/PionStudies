@@ -22,13 +22,6 @@ parser.add_argument( "--chi2", type=float, help='Which beam chi2 cut', default=-
 args = parser.parse_args()
 
 
-def test_good_reco(e):
-  if (e.quality_reco_view_2_wire_backtrack > 15. or e.quality_reco_view_1_wire_backtrack > 15. or e.quality_reco_view_0_wire_backtrack > 15.): return 0
-  elif (e.quality_reco_view_2_max_segment > 15. or e.quality_reco_view_1_max_segment > 15. or e.quality_reco_view_0_max_segment > 15.): return 0
-
-  return 1
-
-
 f = RT.TFile( args.i )
 tree = f.Get("pionana/beamana")
 
@@ -69,7 +62,6 @@ run = array("i", [0])
 beamTrackID = array("i", [0])
 daughterTrackID = array("i", [0])
 daughterPFPID = array("i", [0])
-good_reco = array("i", [0])
 
 nHits = array("i", [0])
 
@@ -111,7 +103,6 @@ outtree.Branch("shower_len_per_dR", shower_len_per_dR, "shower_len_per_dR/D")
 outtree.Branch("shower_Energy", shower_Energy, "shower_Energy/D")
 outtree.Branch("shower_Energy_per_hit", shower_Energy_per_hit, "shower_Energy_per_hit/D")
 outtree.Branch("shower_cos", shower_cos, "shower_cos/D")
-outtree.Branch("good_reco", good_reco, "good_reco/I")
 outtree.Branch("is_track", is_track, "is_track/I")
 outtree.Branch("is_shower", is_shower, "is_shower/I")
 outtree.Branch("deltaZ", deltaZ, "deltaZ/D")
@@ -144,7 +135,6 @@ for e in tree:
   if( e.reco_beam_endZ > 226. ): continue
   if( args.chi2 > 0. ):
     if( e.reco_beam_Chi2_proton / e.reco_beam_Chi2_ndof < args.chi2): continue
-  good_reco[0] = test_good_reco(e)
 
   #if e.MC: vertex_type[0] = vt(e, 5., 3)
   event[0] = e.event

@@ -129,6 +129,8 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
           {"libo_low", "libo_high", "reco_daughter_allTrack_dQdX_SCE"})
     .Define("reco_daughter_allTrack_truncLibo_dEdX",truncatedMean, 
           {"libo_low", "libo_high", "reco_daughter_allTrack_calibrated_dEdX_SCE"} )
+    .Define("reco_daughter_allTrack_truncLibo_dEdX_pos",truncatedMean_pos, 
+          {"libo_low", "libo_high", "reco_daughter_allTrack_calibrated_dEdX_SCE"} )
     //.Define("interaction_topology", interaction_topology,
     //        {"reco_beam_true_byHits_origin", "true_beam_PDG", "true_beam_ID",
     //         "true_beam_endZ", "true_beam_endProcess", "true_daughter_nPi0",
@@ -172,10 +174,11 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
           {"libo_low", "libo_high", "reco_daughter_allTrack_dQdX_SCE"})
     .Define("reco_daughter_allTrack_truncLibo_dEdX",truncatedMean, 
           {"libo_low", "libo_high", "reco_daughter_allTrack_calibrated_dEdX_SCE"} )
-
-
+    .Define("reco_daughter_allTrack_truncLibo_dEdX_pos",truncatedMean_pos, 
+          {"libo_low", "libo_high", "reco_daughter_allTrack_calibrated_dEdX_SCE"} )
     .Filter("beamPID == true"); //Looks for just the events passing the beam line
                                 //PID
+    std::cout << *(data_all.Count()) << std::endl;
 
   std::cout << "Data: Defined and filtered all events" << std::endl;
 
@@ -203,14 +206,44 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
     .Define("has_noPion_daughter", secondary_noPion,
             {"reco_daughter_PFP_trackScore_collection",
              "reco_daughter_allTrack_ID", 
-             "reco_daughter_allTrack_truncLibo_dEdX"})
-   
+             "reco_daughter_allTrack_truncLibo_dEdX_pos",
+             "reco_daughter_allTrack_Chi2_proton",
+             "reco_daughter_allTrack_Chi2_ndof"})
+     .Define("is_secondary_pion", is_secondary_pion,
+            {"reco_daughter_PFP_trackScore_collection",
+             "reco_daughter_allTrack_ID", 
+             "reco_daughter_allTrack_truncLibo_dEdX_pos",
+             "reco_daughter_allTrack_Chi2_proton",
+             "reco_daughter_allTrack_Chi2_ndof"})
+    .Define("n_track_daughters", n_track_daughters,
+            {"reco_daughter_PFP_trackScore_collection",
+            "reco_daughter_allTrack_ID"})
+    .Define("n_shower_daughters", n_shower_daughters,
+            {"reco_daughter_PFP_trackScore_collection",
+            "reco_daughter_allShower_ID"}) 
     .Define("has_shower_nHits_distance", has_shower_nHits,
             {"reco_daughter_PFP_trackScore_collection",
              "reco_daughter_PFP_nHits"})
+    .Define("has_shower_dist_energy", has_shower_dist_energy,
+            {"reco_daughter_PFP_trackScore_collection",
+             "reco_daughter_allShower_startX",
+             "reco_daughter_allShower_startY",
+             "reco_daughter_allShower_startZ",
+             "reco_daughter_allShower_energy",
+             "reco_beam_endX", "reco_beam_endY", "reco_beam_endZ"
+             })
+    .Define("is_pi0_shower", is_pi0_shower,
+            {"reco_daughter_PFP_trackScore_collection",
+             "reco_daughter_allShower_startX",
+             "reco_daughter_allShower_startY",
+             "reco_daughter_allShower_startZ",
+             "reco_daughter_allShower_energy",
+             "reco_beam_endX", "reco_beam_endY", "reco_beam_endZ"
+             })
     .Define("selection_ID", selection_ID,
-            {"primary_ends_inAPA3", "has_noPion_daughter", "passBeamCut",
-            "has_shower_nHits_distance"});
+            {"primary_isBeamType", "primary_ends_inAPA3", "has_noPion_daughter",
+             "passBeamCut",
+            /*"has_shower_nHits_distance"*/"has_shower_dist_energy"});
     
   // DATA
   data_all/*_cutValues*/ = data_all
@@ -228,20 +261,52 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
      .Define("has_noPion_daughter", secondary_noPion,
             {"reco_daughter_PFP_trackScore_collection",
              "reco_daughter_allTrack_ID", 
-             "reco_daughter_allTrack_truncLibo_dEdX"})
+             "reco_daughter_allTrack_truncLibo_dEdX_pos",
+             "reco_daughter_allTrack_Chi2_proton",
+             "reco_daughter_allTrack_Chi2_ndof"})
+     .Define("is_secondary_pion", is_secondary_pion,
+            {"reco_daughter_PFP_trackScore_collection",
+             "reco_daughter_allTrack_ID", 
+             "reco_daughter_allTrack_truncLibo_dEdX_pos",
+             "reco_daughter_allTrack_Chi2_proton",
+             "reco_daughter_allTrack_Chi2_ndof"})
+    .Define("n_track_daughters", n_track_daughters,
+            {"reco_daughter_PFP_trackScore_collection",
+            "reco_daughter_allTrack_ID"}) 
+    .Define("n_shower_daughters", n_shower_daughters,
+            {"reco_daughter_PFP_trackScore_collection",
+            "reco_daughter_allShower_ID"}) 
      
      .Define("has_shower_nHits_distance", has_shower_nHits,
             {"reco_daughter_PFP_trackScore_collection",
              "reco_daughter_PFP_nHits"})
+    .Define("has_shower_dist_energy", has_shower_dist_energy,
+            {"reco_daughter_PFP_trackScore_collection",
+             "reco_daughter_allShower_startX",
+             "reco_daughter_allShower_startY",
+             "reco_daughter_allShower_startZ",
+             "reco_daughter_allShower_energy",
+             "reco_beam_endX", "reco_beam_endY", "reco_beam_endZ"
+             })
+    .Define("is_pi0_shower", is_pi0_shower,
+            {"reco_daughter_PFP_trackScore_collection",
+             "reco_daughter_allShower_startX",
+             "reco_daughter_allShower_startY",
+             "reco_daughter_allShower_startZ",
+             "reco_daughter_allShower_energy",
+             "reco_beam_endX", "reco_beam_endY", "reco_beam_endZ"
+             })
      .Define("selection_ID", selection_ID,
-             {"primary_ends_inAPA3", "has_noPion_daughter", "passBeamCut",
-             "has_shower_nHits_distance"});
+             {"primary_isBeamType", "primary_ends_inAPA3", "has_noPion_daughter",
+             "passBeamCut",
+             /*"has_shower_nHits_distance"*/"has_shower_dist_energy"});
 
   //Label within MC files who passed which CUT (this can help to see when what drops out)
   auto mc_output_with_label = mc_all/*_cutValues*/;
 
   //Create branches to be created in output file
   auto data_output_with_label = data_all/*_cutValues*/;
+  //std::cout << "N data: " << data_output_with_label.GetEntries() << std::endl;
 
   //*******************
   //Start Cutting MC
@@ -283,6 +348,7 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
 
   /* ****** COMBINED SAMPLE ******/
 
+/*
   //no  Pion-like daughter objects 
   auto mcCUT_noPionDaughter = mcCUT_endAPA3.Filter("has_noPion_daughter");
 
@@ -308,6 +374,7 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
   auto mc_snap_pion_daughter = mcCUT_PionDaughter.Snapshot(
       tree_name, "eventSelection_mc_rejected.root");
                         
+  */
 
   //Start Cutting DATA
   //******************
@@ -323,11 +390,12 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
       tree_name, "eventSelection_data_BeamQuality.root");
 
   //Ends before APA2
-  auto dataCUT_endAPA3 = dataCUT_beamQuality.Filter("primary_ends_inAPA3 && passBeamCut");
+  //auto dataCUT_endAPA3 = dataCUT_beamQuality.Filter("primary_ends_inAPA3 && passBeamCut");
   
   /* ****** COMBINED SAMPLE ******/
 
   //no  Pion-like daughter objects 
+  /*
   auto dataCUT_noPionDaughter = dataCUT_endAPA3.Filter("has_noPion_daughter");
 
   auto data_COMBINED_Signal = dataCUT_noPionDaughter;
@@ -350,6 +418,7 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
   auto dataCUT_PionDaughter = dataCUT_endAPA3.Filter("!has_noPion_daughter");
   auto data_snap_rejected = dataCUT_PionDaughter.Snapshot(
       tree_name, "eventSelection_data_rejected.root");
+  */
   return 0;
 }
 

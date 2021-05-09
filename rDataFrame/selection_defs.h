@@ -68,11 +68,13 @@ auto new_interaction_topology = [](int pdg, double endZ,
   int topology = -1;
   if (pdg == 211) {
     //Before FV
-    if (!incidentEnergies.size()) {
+    //if (!incidentEnergies.size()) {
+    if (endZ < -.49375) {
       topology = 4;
     }
     //After FV
-    else if (endZ > 226.) {
+    //else if (endZ > 226.) {
+    else if (endZ > 225.94353) {
       topology = 6;
     }
     else if (process == "pi+Inelastic") {
@@ -80,7 +82,7 @@ auto new_interaction_topology = [](int pdg, double endZ,
       bool has_pion_above_threshold = false;
       for (size_t i = 0; i < true_daughter_startP.size(); ++i) {
         if (abs(true_daughter_pdg[i]) == 211 &&
-            true_daughter_startP[i] > /*.150*/0.) {
+            true_daughter_startP[i] > .150) {
           has_pion_above_threshold = true;
           break;
         }
@@ -111,8 +113,12 @@ auto new_interaction_topology = [](int pdg, double endZ,
 
 };
 
-auto selection_ID = [](bool ends_in_APA3, bool no_pion_daughter,
+auto selection_ID = [](bool beam_is_track, bool ends_in_APA3,
+                       bool no_pion_daughter,
                        bool beam_cuts, bool has_shower) {
+  if (!beam_is_track) {
+    return 6;
+  }
 
   if (!beam_cuts) {
     return 5;

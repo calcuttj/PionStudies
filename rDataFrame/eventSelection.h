@@ -287,17 +287,54 @@ auto compute_distanceVertex = [](double beam_endX,
 auto secondary_noPion= [](
                            const std::vector<double> &track_score, 
                            const std::vector<int> &trackID,
-                           const std::vector<double> &dEdX) {
+                           const std::vector<double> &dEdX,
+                           const std::vector<double> &chi2,
+                           const std::vector<int> &ndof) {
   for( size_t i = 0; i < track_score.size(); ++i ) {
-    if ((trackID[i] != -1) && (track_score[i] > cut_trackScore) &&
-        (dEdX[i] <= cut_dEdX)) {
-      return false;
+    if ((trackID[i] != -999) && (track_score[i] > cut_trackScore)) {
+      //if (dEdX[i] <= cut_dEdX)) {
+      if (dEdX[i] < 2.8 && dEdX[i] > 0.5) {
+        return false;
+      }
+      else if (dEdX[i] > 2.8 && dEdX[i] < 3.4) {
+        if (ndof[i] > 0 && chi2[i]/ndof[i] > 70.) {
+          return false;
+        }
+      }
     }
   }
 
   return true;
 };
 
+auto is_secondary_pion= [](
+                           const std::vector<double> &track_score, 
+                           const std::vector<int> &trackID,
+                           const std::vector<double> &dEdX,
+                           const std::vector<double> &chi2,
+                           const std::vector<int> &ndof) {
+  std::vector<bool> results;
+  for( size_t i = 0; i < track_score.size(); ++i ) {
+    if ((trackID[i] != -999) && (track_score[i] > cut_trackScore)) {
+      //if (dEdX[i] <= cut_dEdX)) {
+      if (dEdX[i] < 2.8 && dEdX[i] > 0.5) {
+        results.push_back(true);
+      }
+      else if (dEdX[i] > 2.8 && dEdX[i] < 3.4) {
+        if (ndof[i] > 0 && chi2[i]/ndof[i] > 70.) {
+          results.push_back(true);
+        }
+      }
+      else {
+        results.push_back(false);
+      }
+    }
+    else {
+      results.push_back(false);
+    }
+  }
+  return results;
+};
 
 
 auto has_shower_nHits = [](const std::vector<double> &track_score,
@@ -314,6 +351,52 @@ auto has_shower_nHits = [](const std::vector<double> &track_score,
   }
 
   return false;
+};
+
+auto has_shower_dist_energy = [](const std::vector<double> &track_score,
+                                 const std::vector<double> &shower_x,
+                                 const std::vector<double> &shower_y,
+                                 const std::vector<double> &shower_z,
+                                 const std::vector<double> &energy,
+                                 double & x, double & y, double & z) {
+  for(size_t i = 0; i < track_score.size(); ++i){
+     double dist = sqrt(std::pow((shower_x[i] - x), 2) +
+                        std::pow((shower_y[i] - y), 2) +
+                        std::pow((shower_z[i] - z), 2));
+     if ((track_score[i] < cut_trackScore) &&
+         (track_score[i] > 0.) &&
+         (dist > 5. && dist < 1000.) &&
+         (energy[i] > 80. && energy[i] < 1000.)) {
+       return true;
+     }
+  }
+
+  return false;
+};
+
+auto is_pi0_shower = [](const std::vector<double> &track_score,
+                                 const std::vector<double> &shower_x,
+                                 const std::vector<double> &shower_y,
+                                 const std::vector<double> &shower_z,
+                                 const std::vector<double> &energy,
+                                 double & x, double & y, double & z) {
+  std::vector<bool> results;
+  for(size_t i = 0; i < track_score.size(); ++i){
+    double dist = sqrt(std::pow((shower_x[i] - x), 2) +
+                       std::pow((shower_y[i] - y), 2) +
+                       std::pow((shower_z[i] - z), 2));
+    if ((track_score[i] < cut_trackScore) &&
+        (track_score[i] > 0.) &&
+        (dist > 5. && dist < 1000.) &&
+        (energy[i] > 80. && energy[i] < 1000.)) {
+      results.push_back(true);
+    }
+    else {
+     results.push_back(false);
+    }
+  }
+
+  return results;
 };
 
 
@@ -350,6 +433,28 @@ auto leading_proton_det_theta = [](const std::vector<double> & daughter_p,
   }
 
   return max_theta;
+};
+
+auto n_track_daughters = [](const std::vector<double> &track_score, 
+                            const std::vector<int> &trackID) {
+  int results = 0;
+  for (size_t i = 0; i < track_score.size(); ++i) {
+    if ((trackID[i] != -999) && (track_score[i] > cut_trackScore)) {
+      ++results; 
+    }
+  }
+  return results;
+};
+
+auto n_shower_daughters = [](const std::vector<double> &track_score, 
+                             const std::vector<int> &showerID) {
+  int results = 0;
+  for (size_t i = 0; i < track_score.size(); ++i) {
+    if ((showerID[i] != -999) && (track_score[i] < cut_trackScore)) {
+      ++results; 
+    }
+  }
+  return results;
 };
 
 auto leading_proton_det_phi = [](const std::vector<double> & daughter_p,

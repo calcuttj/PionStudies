@@ -191,6 +191,11 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
    delete fit_pitch_mean;
    mcIncident_selected_primaryPi.Snapshot("pionana/beamana", outputName);
    
+   mcIncident_selected_primaryPi.Range(0,31700).Snapshot("pionana/beamana", "eSliceMethod_Prod4_mc_1GeV_part1_03_14_21.root");
+   mcIncident_selected_primaryPi.Range(31701,0).Snapshot("pionana/beamana", "eSliceMethod_Prod4_mc_1GeV_part2_03_14_21.root");
+
+
+   
 
    f2.Close();
 

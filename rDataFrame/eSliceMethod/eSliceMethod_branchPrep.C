@@ -40,13 +40,13 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
    gInterpreter->GenerateDictionary("vector<vector<int>>", "vector");
    ROOT::RDataFrame frame(pionTree, mcFilepath);
 
-   TFile f2("fit_mc_Prod4_dEdX_pitch_03_14_21.root", "UPDATE");
+   TFile f2("fit_mc_Prod4_dEdX_pitch_05_19_21.root", "UPDATE");
    TH1D *fit_dEdX_lifetime_mpv = (TH1D*)f2.Get("dEdX_mpv_lifetime"); //mean value corrected for lifetime
    TH1D *fit_pitch_mean = (TH1D*)f2.Get("fit_mc_pitch_mean");
 
    TH1D *fit_dEdX_lifetime_mpv_SCEcorr = (TH1D*)f2.Get("fit_mc_dEdX_SCEcorr_mpv"); //mean value corrected for lifetime
    TH1D *fit_pitch_mean_SCEcorr = (TH1D*)f2.Get("fit_mc_pitch_SCEcorr_mean");
-   TFile *output = new TFile ("eSliceMethod_energyDeposit_03_14_21.root", "RECREATE");
+   TFile *output = new TFile ("eSliceMethod_energyDeposit_05_19_21.root", "RECREATE");
 
    output->cd();
    fit_dEdX_lifetime_mpv->Write();
@@ -191,8 +191,8 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
    delete fit_pitch_mean;
    mcIncident_selected_primaryPi.Snapshot("pionana/beamana", outputName);
    
-   mcIncident_selected_primaryPi.Range(0,31700).Snapshot("pionana/beamana", "eSliceMethod_Prod4_mc_1GeV_part1_03_14_21.root");
-   mcIncident_selected_primaryPi.Range(31701,0).Snapshot("pionana/beamana", "eSliceMethod_Prod4_mc_1GeV_part2_03_14_21.root");
+   mcIncident_selected_primaryPi.Range(0,31700).Snapshot("pionana/beamana", "eSliceMethod_Prod4_mc_1GeV_part1_05_19_21.root");
+   mcIncident_selected_primaryPi.Range(31701,0).Snapshot("pionana/beamana", "eSliceMethod_Prod4_mc_1GeV_part2_05_19_21.root");
 
 
    

@@ -59,7 +59,9 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC, bool doUnsmear)
    f1.Close();
 
    //Get Efficiencies and Purities for the selections bin-by-bin
-   string unsmearFile = "unsmear_halfMC_" + std::to_string((int) bin_size_int) + "MeV.root";
+   string unsmearFile;
+   if(isMC) unsmearFile = "unsmear_" + std::to_string((int) bin_size_int) + "MeV.root";
+   else unsmearFile = "unsmear_" + std::to_string((int) bin_size_int) + "MeV.root";
    TFile f2(unsmearFile.c_str());
 
    TH1D *h_eff_eventSel_int = (TH1D*)f2.Get("h_eff_eventSel_int");
@@ -243,7 +245,7 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC, bool doUnsmear)
 
    //Unsmear the start Pion Distribution with the inverse matrix
    //Loop through smearing matrix Incident
-   if(!doUnsmear){
+   if(doUnsmear){
       for(int i = 1; i <= nBin_int; i++){
          double help_sum = 0;
          //rows
@@ -497,6 +499,8 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC, bool doUnsmear)
 
       h_xs_RecoE_selected_totInel->SetBinError( i , help_factor*sqrt( p*(1-p)/nInc_i ));
    };
+   h_recoE_unsmeared_inc_interE->Write();
+   //h_recoE_unsmeared_incident->Write();
    h_xs_RecoE_selected_totInel->Write();
    //------------------------------------------------------
 
@@ -509,7 +513,7 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC, bool doUnsmear)
    TCanvas *c_RecoE_abs = new TCanvas("c_RecoE_abs", "c_RecoE_abs");
    gPad->SetGrid(1,1);
    h_xs_RecoE_selected_abs->SetTitle( "Selected Absorption; Reco Kinetic Energy (MeV); #sigma (mb)");
-   h_xs_RecoE_selected_abs->GetXaxis()->SetRangeUser(400,900);
+   h_xs_RecoE_selected_abs->GetXaxis()->SetRangeUser(300,1000);
    h_xs_RecoE_selected_abs->GetXaxis()->SetNdivisions(1020);
    h_xs_RecoE_selected_abs->GetYaxis()->SetNdivisions(1020);
 
@@ -531,7 +535,7 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC, bool doUnsmear)
       TCanvas *c_trueE_abs = new TCanvas("c_trueE_abs", "c_trueE_abs");
       gPad->SetGrid(1,1);
       h_xs_trueE_selected_abs->SetTitle( "Selected Absorption;true Kinetic Energy (MeV); #sigma (mb)");
-      h_xs_trueE_selected_abs->GetXaxis()->SetRangeUser(400,900);
+      h_xs_trueE_selected_abs->GetXaxis()->SetRangeUser(300,1000);
       h_xs_trueE_selected_abs->GetXaxis()->SetNdivisions(1020);
       h_xs_trueE_selected_abs->GetYaxis()->SetNdivisions(1020);
 
@@ -550,7 +554,7 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC, bool doUnsmear)
    TCanvas *c_RecoE_totInel = new TCanvas("c_RecoE_totInel", "c_RecoE_totInel");
    gPad->SetGrid(1,1);
    h_xs_RecoE_selected_totInel->SetTitle( "Selected Total Inelastic; Reco Kinetic Energy (MeV); #sigma (mb)");
-   h_xs_RecoE_selected_totInel->GetXaxis()->SetRangeUser(400,900);
+   h_xs_RecoE_selected_totInel->GetXaxis()->SetRangeUser(300,1000);
    h_xs_RecoE_selected_totInel->GetXaxis()->SetNdivisions(1020);
    h_xs_RecoE_selected_totInel->GetYaxis()->SetNdivisions(1020);
 
@@ -572,7 +576,7 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC, bool doUnsmear)
       TCanvas *c_trueE_totInel = new TCanvas("c_trueE_totInel", "c_trueE_totInel");
       gPad->SetGrid(1,1);
       h_xs_trueE_selected_totInel->SetTitle( "Selected Total Inelastic; true Kinetic Energy (MeV); #sigma (mb)");
-      h_xs_trueE_selected_totInel->GetXaxis()->SetRangeUser(400,900);
+      h_xs_trueE_selected_totInel->GetXaxis()->SetRangeUser(300,1000);
       h_xs_trueE_selected_totInel->GetXaxis()->SetNdivisions(1020);
       h_xs_trueE_selected_totInel->GetYaxis()->SetNdivisions(1020);
 

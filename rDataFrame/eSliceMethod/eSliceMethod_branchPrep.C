@@ -147,14 +147,19 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
 
    auto mcIncident_selected_primaryPi = frame_filter      
       //.Range(100)
-      .Define("true_firstEntryIncident", firstIncident, {"true_beam_incidentEnergies"})
-      .Define("true_KEint_fromEndP", [](double true_beam_endP){
+      .Define("true_firstEntryIncident", [](std::vector<double> &trajKE){
+            return trajKE[0] - eLoss_mc_trueE;
+            }
+      ,{"true_beam_traj_KE"})
+      
+      .Define("true_interactingKE", [](double true_beam_endP){
             true_beam_endP = 1000*true_beam_endP; //convert GeV -> MeV
             double endKE = sqrt( pow(true_beam_endP,2) + pow(mass_pion,2)  ) - mass_pion;
             return endKE;}
             ,{"true_beam_endP"})
       //uncalibrated
       .Define("reco_firstEntryIncident", firstIncident, {"reco_beam_incidentEnergies"})
+      //For now in Reco not subtratcting any energy Loss... can do later on if needed
 
       .Define("reco_interactingKE", [runningSum_dE](const std::vector<double> &reco_beam_calo_wire, double incidentE){
             double interactingWire = reco_beam_calo_wire[ reco_beam_calo_wire.size() ];

@@ -197,7 +197,7 @@ int eventSelection(const string mcFile, const string dataFile,
              "beam_inst_X", "beam_inst_Y", "beam_inst_dirX", "beam_inst_dirY",
              "beam_inst_dirZ", "beam_inst_nMomenta", "beam_inst_nTracks"})
     
-    .Define("isPrimaryMuonCandidate", candidate_primaryMuon, {"reco_daughter_PFP_michelScore"})
+    .Define("isPrimaryMuonCandidate", candidate_primaryMuon, {"reco_beam_vertex_michel_score", "reco_beam_vertex_nHits"}) 
  
     .Define("primary_ends_inAPA3", endAPA3, {"reco_beam_endZ"})
 
@@ -236,7 +236,7 @@ int eventSelection(const string mcFile, const string dataFile,
              "beam_inst_X", "beam_inst_Y", "beam_inst_dirX", "beam_inst_dirY",
              "beam_inst_dirZ", "beam_inst_nMomenta", "beam_inst_nTracks"})
 
-    .Define("isPrimaryMuonCandidate", candidate_primaryMuon, {"reco_daughter_PFP_michelScore"}) 
+    .Define("isPrimaryMuonCandidate", candidate_primaryMuon, {"reco_beam_vertex_michel_score", "reco_beam_vertex_nHits"}) 
     
     .Define("primary_ends_inAPA3", endAPA3, {"reco_beam_endZ"})
  

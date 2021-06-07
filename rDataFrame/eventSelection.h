@@ -393,7 +393,7 @@ auto candidate_primaryMuon = []( double michelScore, int nhits){
 
    if(michelScore == -999.) return false; //there is no michel score available keep event
 
-   if( michelScore./nhits > cut_michelScore) return true; //there is a michel candidate
+   if( michelScore/nhits > cut_michelScore) return true; //there is a michel candidate
 
 
    return false;

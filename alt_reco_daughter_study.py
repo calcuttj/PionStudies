@@ -1,6 +1,6 @@
-from ROOT import * 
+import ROOT as RT
 from array import array
-from vertex_type import vertex_type as vt
+#from vertex_type import vertex_type as vt
 from defcuts import ang_pos_test_cut, data_ang_pos_test_cut
 from math import sqrt
 #from chi2 import chi2 as do_chi2
@@ -22,21 +22,14 @@ parser.add_argument( "--chi2", type=float, help='Which beam chi2 cut', default=-
 args = parser.parse_args()
 
 
-def test_good_reco(e):
-  if (e.quality_reco_view_2_wire_backtrack > 15. or e.quality_reco_view_1_wire_backtrack > 15. or e.quality_reco_view_0_wire_backtrack > 15.): return 0
-  elif (e.quality_reco_view_2_max_segment > 15. or e.quality_reco_view_1_max_segment > 15. or e.quality_reco_view_0_max_segment > 15.): return 0
-
-  return 1
-
-
-f = TFile( args.i )
+f = RT.TFile( args.i )
 tree = f.Get("pionana/beamana")
 
-template_file = TFile("dEdxrestemplates.root")
+template_file = RT.TFile("dEdxrestemplates.root")
 profile = template_file.Get("dedx_range_pro")
 
-fout = TFile( args.o, "RECREATE" )
-outtree = TTree("tree","")
+fout = RT.TFile( args.o, "RECREATE" )
+outtree = RT.TTree("tree","")
 
 dR = array("d", [0.])
 shower_dR = array("d", [0.])
@@ -69,7 +62,6 @@ run = array("i", [0])
 beamTrackID = array("i", [0])
 daughterTrackID = array("i", [0])
 daughterPFPID = array("i", [0])
-good_reco = array("i", [0])
 
 nHits = array("i", [0])
 
@@ -111,7 +103,6 @@ outtree.Branch("shower_len_per_dR", shower_len_per_dR, "shower_len_per_dR/D")
 outtree.Branch("shower_Energy", shower_Energy, "shower_Energy/D")
 outtree.Branch("shower_Energy_per_hit", shower_Energy_per_hit, "shower_Energy_per_hit/D")
 outtree.Branch("shower_cos", shower_cos, "shower_cos/D")
-outtree.Branch("good_reco", good_reco, "good_reco/I")
 outtree.Branch("is_track", is_track, "is_track/I")
 outtree.Branch("is_shower", is_shower, "is_shower/I")
 outtree.Branch("deltaZ", deltaZ, "deltaZ/D")
@@ -123,9 +114,9 @@ outtree.Branch("vertex_type", vertex_type, "vertex_type/I")
 
 outtree.Branch("nHits", nHits, "nHits/I")
 
-gROOT.SetBatch(1)
+RT.gROOT.SetBatch(1)
 
-print "Entries:", tree.GetEntries()
+#print "Entries:", tree.GetEntries()
 
 isMC = 0
 for e in tree:
@@ -144,9 +135,8 @@ for e in tree:
   if( e.reco_beam_endZ > 226. ): continue
   if( args.chi2 > 0. ):
     if( e.reco_beam_Chi2_proton / e.reco_beam_Chi2_ndof < args.chi2): continue
-  good_reco[0] = test_good_reco(e)
 
-  if e.MC: vertex_type[0] = vt(e, 5., 3)
+  #if e.MC: vertex_type[0] = vt(e, 5., 3)
   event[0] = e.event
   subrun[0] = e.subrun
   run[0] = e.run
@@ -292,18 +282,18 @@ if isMC:
     ]
     
     colors = {
-      "Cosmic": kRed+2,
-      "pi0Gamma": kSpring-8,
-      "Pi": kTeal,
-      "Mu": kRed,
-      "Proton": kViolet-3,
-      "Gamma": kOrange+1,
-      "Nuc": kOrange+10,
-      "Other": kBlack,
-      "GDaughter": kMagenta,
-      "GGDaughter": kOrange,
-      "Michel": kPink,
-      "Self": kBlue
+      "Cosmic": RT.kRed+2,
+      "pi0Gamma": RT.kSpring-8,
+      "Pi": RT.kTeal,
+      "Mu": RT.kRed,
+      "Proton": RT.kViolet-3,
+      "Gamma": RT.kOrange+1,
+      "Nuc": RT.kOrange+10,
+      "Other": RT.kBlack,
+      "GDaughter": RT.kMagenta,
+      "GGDaughter": RT.kOrange,
+      "Michel": RT.kPink,
+      "Self": RT.kBlue
     }
 
     leg_names = {
@@ -343,13 +333,13 @@ if isMC:
     ]
     
     colors = {
-      "Gamma": kSpring-8,
-      "Pi": kTeal,
-      "Mu": kRed,
-      "Proton": kViolet-3,
-      "Nuc": kOrange,
-      "Other": kBlack,
-      "e": kBlue
+      "Gamma": RT.kSpring-8,
+      "Pi": RT.kTeal,
+      "Mu": RT.kRed,
+      "Proton": RT.kViolet-3,
+      "Nuc": RT.kOrange,
+      "Other": RT.kBlack,
+      "e": RT.kBlue
     }
     
     
@@ -397,10 +387,10 @@ cnn_michel_hists = dict()
 track_nHits_hists = dict()
 shower_nHits_hists = dict()
 
-leg = TLegend(.6,.6,.85,.85)
+leg = RT.TLegend(.6,.6,.85,.85)
 
 
-print outtree.GetEntries()
+#print outtree.GetEntries()
 
 do_vertex_type = False
 if args.v:
@@ -422,107 +412,107 @@ for i in range(0, nVT):
 
     theCut = cuts[cat] 
     if do_vertex_type:
-      print "doing cut"
+      #print "doing cut"
       theCut = theCut + " && vertex_type == " + str(i)
 
 
-    print cuts[cat] + " && vertex_type == " + str(i) 
+    #print cuts[cat] + " && vertex_type == " + str(i) 
     outtree.Draw("dR>>h" + cat + str(i) + "(175,0,350)", theCut + " && " + cnn_str + " > " + cnn_cut + " && is_track")
-    dR_hists[cat + str(i)] = gDirectory.Get("h"+cat + str(i))
-    print dR_hists[cat + str(i)].Integral()
+    dR_hists[cat + str(i)] = RT.gDirectory.Get("h"+cat + str(i))
+    #print dR_hists[cat + str(i)].Integral()
     dR_hists[cat + str(i)].SetLineColor(colors[cat])
     if isMC: dR_hists[cat + str(i)].SetFillColor(colors[cat])
-    print cat, dR_hists[cat + str(i)].Integral()
+    #print cat, dR_hists[cat + str(i)].Integral()
 
     outtree.Draw("shower_dR>>h_shower_" + cat + str(i) + "(350,0,350)", theCut + " && " + cnn_str + " < " + cnn_cut + " && is_shower")
-    shower_dR_hists[cat + str(i)] = gDirectory.Get("h_shower_"+cat + str(i))
+    shower_dR_hists[cat + str(i)] = RT.gDirectory.Get("h_shower_"+cat + str(i))
     shower_dR_hists[cat + str(i)].SetLineColor(colors[cat])
     if isMC: shower_dR_hists[cat + str(i)].SetFillColor(colors[cat])
 
     outtree.Draw("shower_len_per_dR>>h_shower_lendr" + cat + str(i) + "(500,0,20)", theCut + " && " + cnn_str + " < " + cnn_cut + " && is_shower")
-    shower_len_per_dR_hists[cat + str(i)] = gDirectory.Get("h_shower_lendr"+cat + str(i))
+    shower_len_per_dR_hists[cat + str(i)] = RT.gDirectory.Get("h_shower_lendr"+cat + str(i))
     shower_len_per_dR_hists[cat + str(i)].SetLineColor(colors[cat])
     if isMC: shower_len_per_dR_hists[cat + str(i)].SetFillColor(colors[cat])
 
     outtree.Draw("shower_Energy>>h_shower_Energy" + cat + str(i) + "(50,0,500)", theCut + " && " + cnn_str + " < " + cnn_cut + " && is_shower")
-    shower_Energy_hists[cat + str(i)] = gDirectory.Get("h_shower_Energy" + cat + str(i))
+    shower_Energy_hists[cat + str(i)] = RT.gDirectory.Get("h_shower_Energy" + cat + str(i))
     shower_Energy_hists[cat + str(i)].SetLineColor(colors[cat])
     if isMC: shower_Energy_hists[cat + str(i)].SetFillColor(colors[cat])
 
     outtree.Draw("shower_Energy_per_hit>>h_shower_Energy_per_hit" + cat + str(i) + "(50,0,5)", theCut + " && " + cnn_str + " < " + cnn_cut + " && is_shower")
-    shower_Energy_per_hit_hists[cat + str(i)] = gDirectory.Get("h_shower_Energy_per_hit" + cat + str(i))
+    shower_Energy_per_hit_hists[cat + str(i)] = RT.gDirectory.Get("h_shower_Energy_per_hit" + cat + str(i))
     shower_Energy_per_hit_hists[cat + str(i)].SetLineColor(colors[cat])
     if isMC: shower_Energy_per_hit_hists[cat + str(i)].SetFillColor(colors[cat])
 
     outtree.Draw("shower_cos>>h_shower_cos" + cat + str(i) + "(50, -1., 1.)", theCut + " && " + cnn_str + " < " + cnn_cut + " && is_shower")
-    shower_cos_hists[cat + str(i)] = gDirectory.Get("h_shower_cos" + cat + str(i))
+    shower_cos_hists[cat + str(i)] = RT.gDirectory.Get("h_shower_cos" + cat + str(i))
     shower_cos_hists[cat + str(i)].SetLineColor(colors[cat])
     if isMC: shower_cos_hists[cat + str(i)].SetFillColor(colors[cat])
 
     outtree.Draw("deltaZ>>h_deltaZ_" + cat + str(i) + "(175,-175,175)", theCut + " && " + cnn_str + " > " + cnn_cut + " && is_track")
-    deltaZ_hists[cat + str(i)] = gDirectory.Get("h_deltaZ_"+cat + str(i))
+    deltaZ_hists[cat + str(i)] = RT.gDirectory.Get("h_deltaZ_"+cat + str(i))
     deltaZ_hists[cat + str(i)].SetLineColor(colors[cat])
     if isMC: deltaZ_hists[cat + str(i)].SetFillColor(colors[cat])
 
     outtree.Draw("shower_deltaZ>>h_shower_deltaZ_" + cat + str(i) + "(175,-175,175)", theCut + " && " + cnn_str + " < " + cnn_cut + " && is_shower")
-    shower_deltaZ_hists[cat + str(i)] = gDirectory.Get("h_shower_deltaZ_"+cat + str(i))
+    shower_deltaZ_hists[cat + str(i)] = RT.gDirectory.Get("h_shower_deltaZ_"+cat + str(i))
     shower_deltaZ_hists[cat + str(i)].SetLineColor(colors[cat])
     if isMC: shower_deltaZ_hists[cat + str(i)].SetFillColor(colors[cat])
 
   
     outtree.Draw( "vertex_slice - daughter_slice>>hSlice" + cat + str(i) + "(600,0,600)", theCut )
-    slice_hists[cat + str(i)] = gDirectory.Get("hSlice"+cat + str(i))
+    slice_hists[cat + str(i)] = RT.gDirectory.Get("hSlice"+cat + str(i))
     slice_hists[cat + str(i)].SetLineColor(colors[cat])
     if isMC: slice_hists[cat + str(i)].SetFillColor(colors[cat])
   
     chi2_cut = cuts[cat]  + " && vertex_type == " + str(i)
 
     outtree.Draw( "chi2>>hChi2" + cat + str(i) + "(100,0,500)", theCut + " && " + cnn_str + " > " + cnn_cut + " && is_track" )
-    chi2_hists[cat + str(i)] = gDirectory.Get("hChi2"+cat + str(i))
+    chi2_hists[cat + str(i)] = RT.gDirectory.Get("hChi2"+cat + str(i))
     chi2_hists[cat + str(i)].SetLineColor(colors[cat])
     if isMC: chi2_hists[cat + str(i)].SetFillColor(colors[cat])
 
     outtree.Draw( "cnn>>hCNN" + cat + str(i) + "(100,0,1)", theCut)
-    cnn_hists[cat + str(i)] = gDirectory.Get("hCNN"+cat + str(i))
+    cnn_hists[cat + str(i)] = RT.gDirectory.Get("hCNN"+cat + str(i))
     cnn_hists[cat + str(i)].SetLineColor(colors[cat])
     if isMC: cnn_hists[cat + str(i)].SetFillColor(colors[cat])
 
     outtree.Draw( "cnn_collection>>hCNN_collection" + cat + str(i) + "(100,0,1)", theCut)
-    cnn_collection_hists[cat + str(i)] = gDirectory.Get("hCNN_collection"+cat + str(i))
+    cnn_collection_hists[cat + str(i)] = RT.gDirectory.Get("hCNN_collection"+cat + str(i))
     cnn_collection_hists[cat + str(i)].SetLineColor(colors[cat])
     if isMC: cnn_collection_hists[cat + str(i)].SetFillColor(colors[cat])
 
     outtree.Draw( "cnn_michel>>hCNN_michel" + cat + str(i) + "(100,0,1)", theCut  )
-    cnn_michel_hists[cat + str(i)] = gDirectory.Get("hCNN_michel"+cat + str(i))
+    cnn_michel_hists[cat + str(i)] = RT.gDirectory.Get("hCNN_michel"+cat + str(i))
     cnn_michel_hists[cat + str(i)].SetLineColor(colors[cat])
     if isMC: cnn_michel_hists[cat + str(i)].SetFillColor(colors[cat])
 
     outtree.Draw("nHits>>h_shower_nHits" + cat + str(i) + "(500,0,2000)", theCut + " && " + cnn_str + " < " + cnn_cut + " && is_shower")
-    shower_nHits_hists[cat + str(i)] = gDirectory.Get("h_shower_nHits"+cat + str(i))
+    shower_nHits_hists[cat + str(i)] = RT.gDirectory.Get("h_shower_nHits"+cat + str(i))
     shower_nHits_hists[cat + str(i)].SetLineColor(colors[cat])
     if isMC: shower_nHits_hists[cat + str(i)].SetFillColor(colors[cat])
 
     outtree.Draw("nHits>>h_track_nHits" + cat + str(i) + "(100,0,2000)", theCut + " && " + cnn_str + " > " + cnn_cut + " && is_track")
-    track_nHits_hists[cat + str(i)] = gDirectory.Get("h_track_nHits"+cat + str(i))
+    track_nHits_hists[cat + str(i)] = RT.gDirectory.Get("h_track_nHits"+cat + str(i))
     track_nHits_hists[cat + str(i)].SetLineColor(colors[cat])
     if isMC: track_nHits_hists[cat + str(i)].SetFillColor(colors[cat])
 
   
-  dR_stack = THStack("dR_stack" + str(i), "")
-  shower_dR_stack = THStack("shower_dR_stack" + str(i), "")
-  shower_len_per_dR_stack = THStack("shower_len_per_dR_stack" + str(i), "")
-  shower_Energy_per_hit_stack = THStack("shower_Energy_per_hit_stack" + str(i), "")
-  shower_Energy_stack = THStack("shower_Energy_stack" + str(i), "")
-  shower_cos_stack = THStack("shower_cos_stack" + str(i), "")
-  shower_deltaZ_stack = THStack("shower_deltaZ_stack" + str(i), "")
-  deltaZ_stack = THStack("deltaZ_stack" + str(i), "")
-  slice_stack = THStack("slice_stack" + str(i), "")
-  chi2_stack = THStack("chi2_stack" + str(i), "")
-  cnn_stack = THStack("cnn_stack" + str(i), "") 
-  cnn_collection_stack = THStack("cnn_collection_stack" + str(i), "") 
-  cnn_michel_stack = THStack("cnn_michel_stack" + str(i), "") 
-  shower_nHits_stack = THStack("shower_nHits_stack" + str(i), "")
-  track_nHits_stack  = THStack("track_nHits_stack" + str(i), "")
+  dR_stack = RT.THStack("dR_stack" + str(i), "")
+  shower_dR_stack = RT.THStack("shower_dR_stack" + str(i), "")
+  shower_len_per_dR_stack = RT.THStack("shower_len_per_dR_stack" + str(i), "")
+  shower_Energy_per_hit_stack = RT.THStack("shower_Energy_per_hit_stack" + str(i), "")
+  shower_Energy_stack = RT.THStack("shower_Energy_stack" + str(i), "")
+  shower_cos_stack = RT.THStack("shower_cos_stack" + str(i), "")
+  shower_deltaZ_stack = RT.THStack("shower_deltaZ_stack" + str(i), "")
+  deltaZ_stack = RT.THStack("deltaZ_stack" + str(i), "")
+  slice_stack = RT.THStack("slice_stack" + str(i), "")
+  chi2_stack = RT.THStack("chi2_stack" + str(i), "")
+  cnn_stack = RT.THStack("cnn_stack" + str(i), "") 
+  cnn_collection_stack = RT.THStack("cnn_collection_stack" + str(i), "") 
+  cnn_michel_stack = RT.THStack("cnn_michel_stack" + str(i), "") 
+  shower_nHits_stack = RT.THStack("shower_nHits_stack" + str(i), "")
+  track_nHits_stack  = RT.THStack("track_nHits_stack" + str(i), "")
 
   for cat in cats:
     dR_stack.Add(dR_hists[cat + str(i)])

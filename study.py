@@ -1,30 +1,46 @@
-from ROOT import * 
+import ROOT as RT#from ROOT import * 
 import sys
 from defcuts import defcuts, testcuts, testcuts_FS, ang_pos_test_cut, ang_cut_str, pos_cut_str
 from array import array
 
 
 
-gROOT.SetBatch(1)
+RT.gROOT.SetBatch(1)
 
-f = TFile( sys.argv[1] )
+f = RT.TFile( sys.argv[1] )
 
 tree = f.Get("pionana/beamana")
 
 base_cut = " && reco_beam_type == 13 && (true_beam_PDG == -13 || true_beam_PDG == 211)"
 
-fout = TFile( sys.argv[2], "RECREATE" )
+fout = RT.TFile( sys.argv[2], "RECREATE" )
 
 cuts = defcuts()
 
 lenhists = dict()
 endZhists = dict()
+endYhists = dict()
 startZhists = dict()
 startXhists = dict()
 startYhists = dict()
+trackDirZhists = dict()
+trackDirXhists = dict()
+trackDirYhists = dict()
+caloDirZhists = dict()
+caloDirXhists = dict()
+caloDirYhists = dict()
+caloZhists = dict()
+caloXhists = dict()
+caloYhists = dict()
 deltaXhists = dict()
 deltaYhists = dict()
 coshists = dict()
+cosSCEhists = dict()
+beamXhists = dict()
+beamYhists = dict()
+beam_dirXhists = dict()
+beam_dirYhists = dict()
+beam_dirZhists = dict()
 chi2hists   = dict()
 cnnhists   = dict()
 cnn_collectionhists = dict()
@@ -67,102 +83,172 @@ title_map = {
 }
 
 tree.Draw( "reco_beam_len>>lenhist(40,0,500.)", "1 " + base_cut )
-lenhist = gDirectory.Get("lenhist")
-print "Total:", lenhist.Integral()
+lenhist = RT.gDirectory.Get("lenhist")
+#print("Total:", lenhist.Integral())
 #for name,cut in cuts.iteritems():
 
 cut_total = 0
 for name in names:
   cut = cuts[name]
-  #print name, cut
+  ##print name, cut
 
   tree.Draw( "reco_beam_len>>len"+name+"(40,0.,500.)", cut  + base_cut )
-  lenhists[name] = gDirectory.Get("len"+name)
+  lenhists[name] = RT.gDirectory.Get("len"+name)
 
-  print name+":",lenhists[name].Integral()
+  ##print(name+":",lenhists[name].Integral())
   cut_total = cut_total + lenhists[name].Integral()
 
   tree.Draw( "reco_beam_endZ>>endZ"+name+"(40,0.,500.)", cut  + base_cut )
-  endZhists[name] = gDirectory.Get("endZ"+name)
+  endZhists[name] = RT.gDirectory.Get("endZ"+name)
+
+  tree.Draw( "reco_beam_endY>>endY"+name+"(40,0.,500.)", cut  + base_cut )
+  endYhists[name] = RT.gDirectory.Get("endY"+name)
 
   tree.Draw( "reco_beam_startX>>startX"+name+"(40,-100.,100.)", cut  + base_cut )
-  startXhists[name] = gDirectory.Get("startX"+name)
+  startXhists[name] = RT.gDirectory.Get("startX"+name)
 
   tree.Draw( "reco_beam_startY>>startY"+name+"(40,380.,500.)", cut  + base_cut )
-  startYhists[name] = gDirectory.Get("startY"+name)
+  startYhists[name] = RT.gDirectory.Get("startY"+name)
 
-  tree.Draw( "reco_beam_startZ>>startZ"+name+"(40,0.,100.)", cut  + base_cut )
-  startZhists[name] = gDirectory.Get("startZ"+name)
+  tree.Draw( "reco_beam_startZ>>startZ"+name+"(50,0.,50.)", cut  + base_cut )
+  startZhists[name] = RT.gDirectory.Get("startZ"+name)
+
+  tree.Draw( "reco_beam_trackDirX>>trackDirX"+name+"(40, -.75, .5)", cut  + base_cut )
+  trackDirXhists[name] = RT.gDirectory.Get("trackDirX"+name)
+
+  tree.Draw( "reco_beam_trackDirY>>trackDirY"+name+"(40, -.75, .25)", cut  + base_cut )
+  trackDirYhists[name] = RT.gDirectory.Get("trackDirY"+name)
+
+  tree.Draw( "reco_beam_trackDirZ>>trackDirZ"+name+"(20, .75, 1.)", cut  + base_cut )
+  trackDirZhists[name] = RT.gDirectory.Get("trackDirZ"+name)
+
+  tree.Draw( "reco_beam_calo_startDirX[0]>>caloDirX"+name+"(40, -.75, .5)", cut  + base_cut )
+  caloDirXhists[name] = RT.gDirectory.Get("caloDirX"+name)
+
+  tree.Draw( "reco_beam_calo_startDirY[0]>>caloDirY"+name+"(40, -.75, .25)", cut  + base_cut )
+  caloDirYhists[name] = RT.gDirectory.Get("caloDirY"+name)
+
+  tree.Draw( "reco_beam_calo_startDirZ[0]>>caloDirZ"+name+"(20, .75, 1.)", cut  + base_cut )
+  caloDirZhists[name] = RT.gDirectory.Get("caloDirZ"+name)
+
+  tree.Draw( "reco_beam_calo_startX[0]>>caloX"+name+"(40, -100., 100.)", cut  + base_cut )
+  caloXhists[name] = RT.gDirectory.Get("caloX"+name)
+
+  tree.Draw( "reco_beam_calo_startY[0]>>caloY"+name+"(40, 380., 500.)", cut  + base_cut )
+  caloYhists[name] = RT.gDirectory.Get("caloY"+name)
+
+  tree.Draw( "reco_beam_calo_startZ[0]>>caloZ"+name+"(20, -20., 20.)", cut  + base_cut )
+  caloZhists[name] = RT.gDirectory.Get("caloZ"+name)
+
+  tree.Draw( "data_BI_X>>beamX"+name+"(40,-100.,100.)", cut  + base_cut )
+  beamXhists[name] = RT.gDirectory.Get("beamX"+name)
+
+  tree.Draw( "data_BI_Y>>beamY"+name+"(40,380.,500.)", cut  + base_cut )
+  beamYhists[name] = RT.gDirectory.Get("beamY"+name)
+
+  tree.Draw( "data_BI_dirX>>beam_dirX"+name+"(100, -.3, -.1)", cut  + base_cut )
+  beam_dirXhists[name] = RT.gDirectory.Get("beam_dirX"+name)
+
+  tree.Draw( "data_BI_dirY>>beam_dirY"+name+"(100, -.3, -.1)", cut  + base_cut )
+  beam_dirYhists[name] = RT.gDirectory.Get("beam_dirY"+name)
+
+  tree.Draw( "data_BI_dirZ>>beam_dirZ"+name+"(100, .9, 1.)", cut  + base_cut )
+  beam_dirZhists[name] = RT.gDirectory.Get("beam_dirZ"+name)
 
   #tree.Draw( "reco_beam_startX - (true_beam_startX + -1.*true_beam_startZ*(true_beam_startDirX/true_beam_startDirZ))>>deltaX"+name+"(50,-100.,100.)", cut  + base_cut )
-  #deltaXhists[name] = gDirectory.Get("deltaX"+name)
+  #deltaXhists[name] = RT.gDirectory.Get("deltaX"+name)
 
   #tree.Draw( "reco_beam_startY - (true_beam_startY + -1.*true_beam_startZ*(true_beam_startDirY/true_beam_startDirZ))>>deltaY"+name+"(50,-100.,100.)", cut  + base_cut )
-  #deltaYhists[name] = gDirectory.Get("deltaY"+name)
+  #deltaYhists[name] = RT.gDirectory.Get("deltaY"+name)
 
-  tree.Draw( "reco_beam_startY - data_BI_Y>>deltaY"+name+"(50,-100.,100.)", cut  + base_cut )
-  deltaYhists[name] = gDirectory.Get("deltaY"+name)
+  tree.Draw( "reco_beam_startY - data_BI_Y>>deltaY"+name+"(50,-50.,50.)", cut  + base_cut )
+  deltaYhists[name] = RT.gDirectory.Get("deltaY"+name)
 
-  tree.Draw( "reco_beam_startX - data_BI_X>>deltaX"+name+"(50,-100.,100.)", cut  + base_cut )
-  deltaXhists[name] = gDirectory.Get("deltaX"+name)
+  tree.Draw( "reco_beam_startX - data_BI_X>>deltaX"+name+"(50,-50.,50.)", cut  + base_cut )
+  deltaXhists[name] = RT.gDirectory.Get("deltaX"+name)
 
   tree.Draw( "(reco_beam_trackDirX*data_BI_dirX + reco_beam_trackDirY*data_BI_dirY + reco_beam_trackDirZ*data_BI_dirZ)>>cos"+name+"(50, .75, 1.)", cut  + base_cut )
-  coshists[name] = gDirectory.Get("cos"+name)
+  coshists[name] = RT.gDirectory.Get("cos"+name)
+
+  tree.Draw( "(reco_beam_calo_startDirX[0]*data_BI_dirX + reco_beam_calo_startDirY[0]*data_BI_dirY + reco_beam_calo_startDirZ[0]*data_BI_dirZ)>>cosSCE"+name+"(50, .75, 1.)", cut  + base_cut )
+  cosSCEhists[name] = RT.gDirectory.Get("cosSCE"+name)
+
+ # tree.Draw( "(reco_beam_calo_startDirX[1]*data_BI_dirX + reco_beam_calo_startDirY[1]*data_BI_dirY + reco_beam_calo_startDirZ[1]*data_BI_dirZ)>>cosSCE1"+name+"(50, .75, 1.)", cut  + base_cut )
+ # cosSCE1hists[name] = RT.gDirectory.Get("cosSCE1"+name)
+
+ # tree.Draw( "(reco_beam_calo_startDirX[2]*data_BI_dirX + reco_beam_calo_startDirY[2]*data_BI_dirY + reco_beam_calo_startDirZ[2]*data_BI_dirZ)>>cosSCE2"+name+"(50, .75, 1.)", cut  + base_cut )
+ # cosSCE2hists[name] = RT.gDirectory.Get("cosSCE2"+name)
 
   tree.Draw( "reco_beam_Chi2_proton/reco_beam_Chi2_ndof>>chi2"+name+"(100,0,400)", cut + base_cut)
-  chi2hists[name] = gDirectory.Get("chi2"+name)
+  chi2hists[name] = RT.gDirectory.Get("chi2"+name)
 
   tree.Draw( "reco_beam_PFP_trackScore>>cnn"+name+"(100,0,1.)", cut + base_cut)
-  cnnhists[name] = gDirectory.Get("cnn"+name)
+  cnnhists[name] = RT.gDirectory.Get("cnn"+name)
 
   tree.Draw( "reco_beam_PFP_trackScore_collection>>cnn_collection"+name+"(100,0,1.)", cut + " && ( true_beam_PDG == 211 || true_beam_PDG == -13)")
-  cnn_collectionhists[name] = gDirectory.Get("cnn_collection"+name)
+  cnn_collectionhists[name] = RT.gDirectory.Get("cnn_collection"+name)
 
 
   fout.cd()
   #lenhists[name].Write()
-  #print
+  ##print
 
 
-print cut_total
+#print(cut_total)
 
 colors = {
-  "PrimaryMuon": (kOrange+1),
-  "PrimaryPion": (kBlue-4),
-  #"PrimaryProton": (kTeal+2),
-  #"PrimaryElectron": (kViolet-7),
-  "PrimaryBeamNotTrig": (kRed+2),
-  "Cosmic": (kSpring-8),
-  #"UpstreamIntToPiPlus": (kViolet-3),
-  #"UpstreamIntToPiMinus": (kCyan-2),
-  "UpstreamIntToPion": (kViolet-3),
-  "UpstreamIntToProton": (kTeal),
-  "UpstreamIntToKaon": (kYellow-6),
-  "UpstreamIntToNuc": (kOrange+10),
+  "PrimaryMuon": (RT.kOrange+1),
+  "PrimaryPion": (RT.kBlue-4),
+  #"PrimaryProton": (RT.kTeal+2),
+  #"PrimaryElectron": (RT.kViolet-7),
+  "PrimaryBeamNotTrig": (RT.kRed+2),
+  "Cosmic": (RT.kSpring-8),
+  #"UpstreamIntToPiPlus": (RT.kViolet-3),
+  #"UpstreamIntToPiMinus": (RT.kCyan-2),
+  "UpstreamIntToPion": (RT.kViolet-3),
+  "UpstreamIntToProton": (RT.kTeal),
+  "UpstreamIntToKaon": (RT.kYellow-6),
+  "UpstreamIntToNuc": (RT.kOrange+10),
   #"PionInelToPiPlus",
   #"PionInelToPiMinus",
   #"PionInelToProton",
   #"PionInelToKaon",
   #"PionInelToNuc",
   #"UpstreamInt",
-  "Other":(kMagenta-10),
-  "Decay":(kOrange-7)
+  "Other":(RT.kMagenta-10),
+  "Decay":(RT.kOrange-7)
 }
 
-leg = TLegend(.15,.5,.45,.8)
+leg = RT.TLegend(.15,.5,.45,.8)
 
 
-lenstack = THStack("lenstack","")
-endZstack = THStack("endZstack","")
-startXstack = THStack("startXstack","")
-startYstack = THStack("startYstack","")
-startZstack = THStack("startZstack","")
-deltaXstack = THStack("deltaXstack","")
-deltaYstack = THStack("deltaYstack","")
-cosstack = THStack("cosstack","")
-chi2stack   = THStack("chi2stack","")
-cnnstack   = THStack("cnnstack","")
-cnn_collectionstack   = THStack("cnn_collectionstack","")
+lenstack = RT.THStack("lenstack","")
+endZstack = RT.THStack("endZstack","")
+endYstack = RT.THStack("endYstack","")
+startXstack = RT.THStack("startXstack","")
+startYstack = RT.THStack("startYstack","")
+startZstack = RT.THStack("startZstack","")
+trackDirXstack = RT.THStack("trackDirXstack","")
+trackDirYstack = RT.THStack("trackDirYstack","")
+trackDirZstack = RT.THStack("trackDirZstack","")
+caloDirXstack = RT.THStack("caloDirXstack","")
+caloDirYstack = RT.THStack("caloDirYstack","")
+caloDirZstack = RT.THStack("caloDirZstack","")
+caloXstack = RT.THStack("caloXstack","")
+caloYstack = RT.THStack("caloYstack","")
+caloZstack = RT.THStack("caloZstack","")
+deltaXstack = RT.THStack("deltaXstack","")
+deltaYstack = RT.THStack("deltaYstack","")
+cosstack = RT.THStack("cosstack","")
+cosSCEstack = RT.THStack("cosSCEstack","")
+beamXstack = RT.THStack("beamXstack","")
+beamYstack = RT.THStack("beamYstack","")
+beam_dirXstack = RT.THStack("beam_dirXstack","")
+beam_dirYstack = RT.THStack("beam_dirYstack","")
+beam_dirZstack = RT.THStack("beam_dirZstack","")
+chi2stack   = RT.THStack("chi2stack","")
+cnnstack   = RT.THStack("cnnstack","")
+cnn_collectionstack   = RT.THStack("cnn_collectionstack","")
 for name in names:
 
 
@@ -175,6 +261,11 @@ for name in names:
   endZhist.SetFillColor(colors[name]) 
   endZhist.SetLineColor(colors[name]) 
   endZstack.Add(endZhist)
+
+  endYhist = endYhists[name]
+  endYhist.SetFillColor(colors[name]) 
+  endYhist.SetLineColor(colors[name]) 
+  endYstack.Add(endYhist)
 
   startXhist = startXhists[name]
   startXhist.SetFillColor(colors[name]) 
@@ -192,6 +283,51 @@ for name in names:
   startZstack.Add(startZhist)
   leg.AddEntry( startZhist, title_map[name], "f")
 
+  trackDirXhist = trackDirXhists[name]
+  trackDirXhist.SetFillColor(colors[name]) 
+  trackDirXhist.SetLineColor(colors[name]) 
+  trackDirXstack.Add(trackDirXhist)
+
+  trackDirYhist = trackDirYhists[name]
+  trackDirYhist.SetFillColor(colors[name]) 
+  trackDirYhist.SetLineColor(colors[name]) 
+  trackDirYstack.Add(trackDirYhist)
+
+  trackDirZhist = trackDirZhists[name]
+  trackDirZhist.SetFillColor(colors[name]) 
+  trackDirZhist.SetLineColor(colors[name]) 
+  trackDirZstack.Add(trackDirZhist)
+
+  caloDirXhist = caloDirXhists[name]
+  caloDirXhist.SetFillColor(colors[name]) 
+  caloDirXhist.SetLineColor(colors[name]) 
+  caloDirXstack.Add(caloDirXhist)
+
+  caloDirYhist = caloDirYhists[name]
+  caloDirYhist.SetFillColor(colors[name]) 
+  caloDirYhist.SetLineColor(colors[name]) 
+  caloDirYstack.Add(caloDirYhist)
+
+  caloDirZhist = caloDirZhists[name]
+  caloDirZhist.SetFillColor(colors[name]) 
+  caloDirZhist.SetLineColor(colors[name]) 
+  caloDirZstack.Add(caloDirZhist)
+
+  caloXhist = caloXhists[name]
+  caloXhist.SetFillColor(colors[name]) 
+  caloXhist.SetLineColor(colors[name]) 
+  caloXstack.Add(caloXhist)
+
+  caloYhist = caloYhists[name]
+  caloYhist.SetFillColor(colors[name]) 
+  caloYhist.SetLineColor(colors[name]) 
+  caloYstack.Add(caloYhist)
+
+  caloZhist = caloZhists[name]
+  caloZhist.SetFillColor(colors[name]) 
+  caloZhist.SetLineColor(colors[name]) 
+  caloZstack.Add(caloZhist)
+
   deltaXhist = deltaXhists[name]
   deltaXhist.SetFillColor(colors[name]) 
   deltaXhist.SetLineColor(colors[name]) 
@@ -206,6 +342,11 @@ for name in names:
   coshist.SetFillColor(colors[name]) 
   coshist.SetLineColor(colors[name]) 
   cosstack.Add(coshist)
+
+  cosSCEhist = cosSCEhists[name]
+  cosSCEhist.SetFillColor(colors[name]) 
+  cosSCEhist.SetLineColor(colors[name]) 
+  cosSCEstack.Add(cosSCEhist)
 
   chi2hist = chi2hists[name]
   chi2hist.SetFillColor(colors[name]) 
@@ -222,18 +363,57 @@ for name in names:
   cnn_collectionhist.SetLineColor(colors[name]) 
   cnn_collectionstack.Add(cnn_collectionhist)
 
+  beamXhist = beamXhists[name]
+  beamXhist.SetFillColor(colors[name]) 
+  beamXhist.SetLineColor(colors[name]) 
+  beamXstack.Add(beamXhist)
 
+  beamYhist = beamYhists[name]
+  beamYhist.SetFillColor(colors[name]) 
+  beamYhist.SetLineColor(colors[name]) 
+  beamYstack.Add(beamYhist)
+
+  beam_dirXhist = beam_dirXhists[name]
+  beam_dirXhist.SetFillColor(colors[name]) 
+  beam_dirXhist.SetLineColor(colors[name]) 
+  beam_dirXstack.Add(beam_dirXhist)
+
+  beam_dirYhist = beam_dirYhists[name]
+  beam_dirYhist.SetFillColor(colors[name]) 
+  beam_dirYhist.SetLineColor(colors[name]) 
+  beam_dirYstack.Add(beam_dirYhist)
+
+  beam_dirZhist = beam_dirZhists[name]
+  beam_dirZhist.SetFillColor(colors[name]) 
+  beam_dirZhist.SetLineColor(colors[name]) 
+  beam_dirZstack.Add(beam_dirZhist)
 
 leg.Write("leg")
 
 lenstack.Write()
 endZstack.Write()
+endYstack.Write()
 startZstack.Write()
 startYstack.Write()
 startXstack.Write()
+trackDirZstack.Write()
+trackDirYstack.Write()
+trackDirXstack.Write()
+caloDirZstack.Write()
+caloDirYstack.Write()
+caloDirXstack.Write()
+caloZstack.Write()
+caloYstack.Write()
+caloXstack.Write()
 deltaYstack.Write()
 deltaXstack.Write()
 cosstack.Write()
+cosSCEstack.Write()
+beamYstack.Write()
+beamXstack.Write()
+beam_dirYstack.Write()
+beam_dirZstack.Write()
+beam_dirXstack.Write()
 chi2stack.Write()
 cnn_collectionstack.Write()
 cnnstack.Write()
@@ -244,37 +424,37 @@ cnnstack.Write()
 
 
 colors = {
-  #"PrimaryPionDecay": (kTeal+3),
-  #"PrimaryPionFastScint": (kRed-4),
-  #"PrimaryPionInteract": (kBlue-4),
-  "PrimaryPion": (kBlue-4),
-  "PrimaryMuon": (kOrange+1),
-  #"PrimaryProton": (kTeal+2),
-  #"PrimaryElectron": (kViolet-7),
-  "PrimaryBeamNotTrig": (kRed+2),
-  "Cosmic": (kSpring-8),
-  #"UpstreamIntToPiPlus": (kViolet-3),
-  #"UpstreamIntToPiMinus": (kCyan-2),
-  "UpstreamIntToPion": (kViolet-3),
-  "UpstreamIntToProton": (kTeal),
-  "UpstreamIntToKaon": (kYellow-6),
-  "UpstreamIntToNuc": (kOrange+10),
+  "PrimaryPionDecay": (RT.kTeal+3),
+  #"PrimaryPionFastScint": (RT.kRed-4),
+  "PrimaryPionInteract": (RT.kBlue-4),
+  #"PrimaryPion": (RT.kBlue-4),
+  "PrimaryMuon": (RT.kOrange+1),
+  #"PrimaryProton": (RT.kTeal+2),
+  #"PrimaryElectron": (RT.kViolet-7),
+  "PrimaryBeamNotTrig": (RT.kRed+2),
+  "Cosmic": (RT.kSpring-8),
+  #"UpstreamIntToPiPlus": (RT.kViolet-3),
+  #"UpstreamIntToPiMinus": (RT.kCyan-2),
+  "UpstreamIntToPion": (RT.kViolet-3),
+  "UpstreamIntToProton": (RT.kTeal),
+  "UpstreamIntToKaon": (RT.kYellow-6),
+  "UpstreamIntToNuc": (RT.kOrange+10),
   #"PionInelToPiPlus",
   #"PionInelToPiMinus",
   #"PionInelToProton",
   #"PionInelToKaon",
   #"PionInelToNuc",
   #"UpstreamInt",
-  "Other":(kMagenta-10),
-  "Decay":(kOrange-7)
+  "Other":(RT.kMagenta-10),
+  "Decay":(RT.kOrange-7)
 }
 
-leg = TLegend(.6,.6,.85,.85)
+leg = RT.TLegend(.6,.6,.85,.85)
 names = [
-  #"PrimaryPionDecay",
+  "PrimaryPionDecay",
   #"PrimaryPionFastScint",
-  #"PrimaryPionInteract",
-  "PrimaryPion",
+  "PrimaryPionInteract",
+  #"PrimaryPion",
   "PrimaryMuon",
   #"PrimaryProton",
   #"PrimaryElectron",
@@ -324,22 +504,23 @@ titles = [
 
 lenhists = dict()
 endZhists = dict()
+endYhists = dict()
 
 endP_hists = dict()
-endP_stack = THStack("endPstack","")
+endP_stack = RT.THStack("endPstack","")
 
 for name in names:
   cut = cuts[name]
-  print name, cut
+  #print name, cut
 
   tree.Draw( "reco_beam_len>>len_FS_"+name+"(40,0.,500.)", cut  + base_cut )
-  lenhists[name] = gDirectory.Get("len_FS_"+name)
+  lenhists[name] = RT.gDirectory.Get("len_FS_"+name)
   fout.cd()
   #lenhists[name].Write()
-  print
+  #print
 
   tree.Draw( "reco_beam_true_byHits_endP>>endP_"+name+"(40,0.,1.2)", cut  + base_cut)
-  endP_hists[name] = gDirectory.Get("endP_"+name)
+  endP_hists[name] = RT.gDirectory.Get("endP_"+name)
   #endP_hists[name].Write()
 
   endP_hists[name].SetFillColor(colors[name]) 
@@ -347,14 +528,18 @@ for name in names:
   endP_stack.Add(endP_hists[name])
 
   tree.Draw( "reco_beam_endZ>>endZ_FS_"+name+"(40,0.,500.)", cut  + base_cut )
-  endZhists[name] = gDirectory.Get("endZ_FS_"+name)
+  endZhists[name] = RT.gDirectory.Get("endZ_FS_"+name)
+
+  tree.Draw( "reco_beam_endY>>endY_FS_"+name+"(40,0.,500.)", cut  + base_cut )
+  endYhists[name] = RT.gDirectory.Get("endY_FS_"+name)
 
 
 endP_stack.Write()
 
-leg = TLegend(.6,.6,.85,.85)
-lenstack = THStack("lenstack_FS","")
-endZstack = THStack("endZstack_FS","")
+leg = RT.TLegend(.6,.6,.85,.85)
+lenstack = RT.THStack("lenstack_FS","")
+endZstack = RT.THStack("endZstack_FS","")
+endYstack = RT.THStack("endYstack_FS","")
 
 for name,title in zip(names,titles):
 
@@ -369,23 +554,29 @@ for name,title in zip(names,titles):
   endZhist.SetLineColor(colors[name]) 
   endZstack.Add(endZhist)
 
+  endYhist = endYhists[name]
+  endYhist.SetFillColor(colors[name]) 
+  endYhist.SetLineColor(colors[name]) 
+  endYstack.Add(endYhist)
+
 leg.Write("leg_FS")
 
 lenstack.Write()
 endZstack.Write()
+endYstack.Write()
 
 
 endhists = dict()
 
 for name in names:
   cut = cuts[name]
-  print name, cut
+  #print name, cut
 
   tree.Draw( "true_beam_endZ:reco_beam_endZ>>reco_beam_endZ"+name+"(40,0.,500.,40,0.,500.)", cut  + base_cut, "colz" )
-  endhists[name] = gDirectory.Get("endZ"+name)
+  endhists[name] = RT.gDirectory.Get("endZ"+name)
   fout.cd()
   #endhists[name].Write()
-  print
+  #print
 
 
 
@@ -395,21 +586,21 @@ z_pos_dir = fout.mkdir( "z_pos_dir", "track z position" )
 z_pos_dir.cd()
 
 zhists = dict()
-zstack = THStack("zstack","")
+zstack = RT.THStack("zstack","")
 
 for name in names:
   cut = cuts[name]
-  print name, cut
+  #print name, cut
   tree.Draw( "reco_beam_startZ>>startZ_"+name+"(50,0.,50.)", cut  + base_cut )
 
-  zhists[name] = gDirectory.Get("startZ_"+name)
+  zhists[name] = RT.gDirectory.Get("startZ_"+name)
   #zhists[name].Write()
 
   zhists[name].SetFillColor(colors[name]) 
   zhists[name].SetLineColor(colors[name]) 
   zstack.Add(zhists[name])
 
-  print
+  #print
 
 zstack.Write()
 #################
@@ -452,28 +643,31 @@ first_cut_dir = fout.mkdir( "first_cut_dir", "Cuts include start position and an
 first_cut_dir.cd()
 
 lenhists = dict()
-lenstack = THStack("lenstack_ang_pos","")
+lenstack = RT.THStack("lenstack_ang_pos","")
 
 endP_hists = dict()
-endP_stack = THStack("endPstack_ang_pos","")
+endP_stack = RT.THStack("endPstack_ang_pos","")
 
 endZ_hists = dict()
-endZ_stack = THStack("endZstack_ang_pos","")
+endZ_stack = RT.THStack("endZstack_ang_pos","")
+
+endY_hists = dict()
+endY_stack = RT.THStack("endYstack_ang_pos","")
 
 chi2hists = dict()
-chi2stack = THStack("chi2stack_ang_pos","")
+chi2stack = RT.THStack("chi2stack_ang_pos","")
 
 cnnhists = dict()
-cnnstack = THStack("cnnstack_ang_pos","")
+cnnstack = RT.THStack("cnnstack_ang_pos","")
 
 
 
 for name in names:
   cut = cuts[name]
-  print name, cut
+  #print name, cut
 
   tree.Draw( "reco_beam_len>>len_ang_pos_cut_"+name+"(40,0.,500.)", cut  + base_cut + ang_cut + pos_cut)
-  lenhists[name] = gDirectory.Get("len_ang_pos_cut_"+name)
+  lenhists[name] = RT.gDirectory.Get("len_ang_pos_cut_"+name)
   #lenhists[name].Write()
 
   lenhists[name].SetFillColor(colors[name]) 
@@ -481,7 +675,7 @@ for name in names:
   lenstack.Add(lenhists[name])
 
   tree.Draw( "reco_beam_true_byHits_endP>>endP_ang_pos_cut_"+name+"(40,0.,1.2)", cut  + base_cut + ang_cut + pos_cut)
-  endP_hists[name] = gDirectory.Get("endP_ang_pos_cut_"+name)
+  endP_hists[name] = RT.gDirectory.Get("endP_ang_pos_cut_"+name)
   #endP_hists[name].Write()
 
   endP_hists[name].SetFillColor(colors[name]) 
@@ -489,31 +683,40 @@ for name in names:
   endP_stack.Add(endP_hists[name])
 
   tree.Draw( "reco_beam_endZ>>endZ_ang_pos_cut_"+name+"(40,0.,500.)", cut  + base_cut + ang_cut + pos_cut)
-  endZ_hists[name] = gDirectory.Get("endZ_ang_pos_cut_"+name)
+  endZ_hists[name] = RT.gDirectory.Get("endZ_ang_pos_cut_"+name)
   #endZ_hists[name].Write()
 
   endZ_hists[name].SetFillColor(colors[name]) 
   endZ_hists[name].SetLineColor(colors[name]) 
   endZ_stack.Add(endZ_hists[name])
 
+  tree.Draw( "reco_beam_endY>>endY_ang_pos_cut_"+name+"(40,0.,500.)", cut  + base_cut + ang_cut + pos_cut)
+  endY_hists[name] = RT.gDirectory.Get("endY_ang_pos_cut_"+name)
+  #endY_hists[name].Write()
+
+  endY_hists[name].SetFillColor(colors[name]) 
+  endY_hists[name].SetLineColor(colors[name]) 
+  endY_stack.Add(endY_hists[name])
+
   tree.Draw( "reco_beam_Chi2_proton/reco_beam_Chi2_ndof>>chi2_ang_pos_cut_"+name+"(100,0,400)", cut + base_cut + ang_cut + pos_cut)
-  chi2hists[name] = gDirectory.Get("chi2_ang_pos_cut_"+name)
+  chi2hists[name] = RT.gDirectory.Get("chi2_ang_pos_cut_"+name)
   chi2hists[name].SetFillColor(colors[name]) 
   chi2hists[name].SetLineColor(colors[name]) 
   chi2stack.Add(chi2hists[name])
 
   tree.Draw( "reco_beam_PFP_trackScore>>cnn_ang_pos_cut_"+name+"(100,0,1.)", cut + base_cut + ang_cut + pos_cut)
-  cnnhists[name] = gDirectory.Get("cnn_ang_pos_cut_"+name)
+  cnnhists[name] = RT.gDirectory.Get("cnn_ang_pos_cut_"+name)
   cnnhists[name].SetFillColor(colors[name]) 
   cnnhists[name].SetLineColor(colors[name]) 
   cnnstack.Add(cnnhists[name])
 
 
-  print
+  #print
 
 lenstack.Write()
 endP_stack.Write()
 endZ_stack.Write()
+endY_stack.Write()
 chi2stack.Write()
 cnnstack.Write()
 #endP_first_cut_signal = endP_hists["PrimaryPionInteract"].Clone("first_cut_signal")
@@ -532,28 +735,31 @@ second_cut_dir = fout.mkdir( "second_cut_dir", "Cuts include start position and 
 second_cut_dir.cd()
 
 lenhists = dict()
-lenstack = THStack("lenstack_ang_pos_len","")
+lenstack = RT.THStack("lenstack_ang_pos_len","")
 
 endP_hists = dict()
-endP_stack = THStack("endPstack_ang_pos_len","")
+endP_stack = RT.THStack("endPstack_ang_pos_len","")
 
 endZ_hists = dict()
-endZ_stack = THStack("endZstack_ang_pos_len","")
+endZ_stack = RT.THStack("endZstack_ang_pos_len","")
+
+endY_hists = dict()
+endY_stack = RT.THStack("endYstack_ang_pos_len","")
 
 chi2hists = dict()
-chi2stack = THStack("chi2stack_ang_pos_len","")
+chi2stack = RT.THStack("chi2stack_ang_pos_len","")
 
 cnnhists = dict()
-cnnstack = THStack("cnnstack_ang_pos_len","")
+cnnstack = RT.THStack("cnnstack_ang_pos_len","")
 
 endZ_cut = " && reco_beam_endZ < 226."
 
 for name in names:
   cut = cuts[name]
-  print name, cut
+  #print name, cut
 
   tree.Draw( "reco_beam_len>>len_ang_pos_endZ_cut_"+name+"(40,0.,500.)", cut  + base_cut + ang_cut + pos_cut + endZ_cut)
-  lenhists[name] = gDirectory.Get("len_ang_pos_endZ_cut_"+name)
+  lenhists[name] = RT.gDirectory.Get("len_ang_pos_endZ_cut_"+name)
   #lenhists[name].Write()
 
   lenhists[name].SetFillColor(colors[name]) 
@@ -561,7 +767,7 @@ for name in names:
   lenstack.Add(lenhists[name])
 
   tree.Draw( "reco_beam_true_byHits_endP>>endP_ang_pos_endZ_cut_"+name+"(40,0.,1.2)", cut  + base_cut + ang_cut + pos_cut + endZ_cut)
-  endP_hists[name] = gDirectory.Get("endP_ang_pos_endZ_cut_"+name)
+  endP_hists[name] = RT.gDirectory.Get("endP_ang_pos_endZ_cut_"+name)
   #endP_hists[name].Write()
 
   endP_hists[name].SetFillColor(colors[name]) 
@@ -569,31 +775,40 @@ for name in names:
   endP_stack.Add(endP_hists[name])
 
   tree.Draw( "reco_beam_endZ>>endZ_ang_pos_endZ_cut_"+name+"(40,0.,500.)", cut  + base_cut + ang_cut + pos_cut + endZ_cut)
-  endZ_hists[name] = gDirectory.Get("endZ_ang_pos_endZ_cut_"+name)
+  endZ_hists[name] = RT.gDirectory.Get("endZ_ang_pos_endZ_cut_"+name)
   #endZ_hists[name].Write()
 
   endZ_hists[name].SetFillColor(colors[name]) 
   endZ_hists[name].SetLineColor(colors[name]) 
   endZ_stack.Add(endZ_hists[name])
 
+  tree.Draw( "reco_beam_endY>>endY_ang_pos_endZ_cut_"+name+"(40,0.,500.)", cut  + base_cut + ang_cut + pos_cut + endZ_cut)
+  endY_hists[name] = RT.gDirectory.Get("endY_ang_pos_endZ_cut_"+name)
+  #endY_hists[name].Write()
+
+  endY_hists[name].SetFillColor(colors[name]) 
+  endY_hists[name].SetLineColor(colors[name]) 
+  endY_stack.Add(endY_hists[name])
+
   tree.Draw( "reco_beam_Chi2_proton/reco_beam_Chi2_ndof>>chi2_ang_pos_endZ_cut_"+name+"(100,0,400)", cut + base_cut + ang_cut + pos_cut + endZ_cut)
-  chi2hists[name] = gDirectory.Get("chi2_ang_pos_endZ_cut_"+name)
+  chi2hists[name] = RT.gDirectory.Get("chi2_ang_pos_endZ_cut_"+name)
   chi2hists[name].SetFillColor(colors[name]) 
   chi2hists[name].SetLineColor(colors[name]) 
   chi2stack.Add(chi2hists[name])
 
   tree.Draw( "reco_beam_PFP_trackScore>>cnn_ang_pos_endZ_cut_"+name+"(100,0,1.)", cut + base_cut + ang_cut + pos_cut + endZ_cut)
-  cnnhists[name] = gDirectory.Get("cnn_ang_pos_endZ_cut_"+name)
+  cnnhists[name] = RT.gDirectory.Get("cnn_ang_pos_endZ_cut_"+name)
   cnnhists[name].SetFillColor(colors[name]) 
   cnnhists[name].SetLineColor(colors[name]) 
   cnnstack.Add(cnnhists[name])
 
 
-  print
+  #print
 
 lenstack.Write()
 endP_stack.Write()
 endZ_stack.Write()
+endY_stack.Write()
 chi2stack.Write()
 cnnstack.Write()
 
@@ -603,19 +818,19 @@ third_cut_dir = fout.mkdir( "third_cut_dir", "Cuts include start position and an
 third_cut_dir.cd()
 
 lenhists = dict()
-lenstack = THStack("lenstack_ang_pos_chi2","")
+lenstack = RT.THStack("lenstack_ang_pos_chi2","")
 
 endP_hists = dict()
-endP_stack = THStack("endPstack_ang_pos_chi2","")
+endP_stack = RT.THStack("endPstack_ang_pos_chi2","")
 
 endZ_hists = dict()
-endZ_stack = THStack("endZstack_ang_pos_chi2","")
+endZ_stack = RT.THStack("endZstack_ang_pos_chi2","")
 
 chi2hists = dict()
-chi2stack = THStack("chi2stack_ang_pos_chi2","")
+chi2stack = RT.THStack("chi2stack_ang_pos_chi2","")
 
 cnnhists = dict()
-cnnstack = THStack("cnnstack_ang_pos_chi2","")
+cnnstack = RT.THStack("cnnstack_ang_pos_chi2","")
 
 endZ_cut = " && reco_beam_endZ < 226."
 
@@ -623,10 +838,10 @@ chi2_cut = " && reco_beam_Chi2_proton/reco_beam_Chi2_ndof > 140. "
 
 for name in names:
   cut = cuts[name]
-  print name, cut
+  #print name, cut
 
   tree.Draw( "reco_beam_len>>len_ang_pos_endZ_chi2_cut_"+name+"(40,0.,500.)", cut  + base_cut + ang_cut + pos_cut + endZ_cut + chi2_cut)
-  lenhists[name] = gDirectory.Get("len_ang_pos_endZ_chi2_cut_"+name)
+  lenhists[name] = RT.gDirectory.Get("len_ang_pos_endZ_chi2_cut_"+name)
   #lenhists[name].Write()
 
   lenhists[name].SetFillColor(colors[name]) 
@@ -634,7 +849,7 @@ for name in names:
   lenstack.Add(lenhists[name])
 
   tree.Draw( "reco_beam_true_byHits_endP>>endP_ang_pos_endZ_chi2_cut_"+name+"(40,0.,1.2)", cut  + base_cut + ang_cut + pos_cut + endZ_cut + chi2_cut)
-  endP_hists[name] = gDirectory.Get("endP_ang_pos_endZ_chi2_cut_"+name)
+  endP_hists[name] = RT.gDirectory.Get("endP_ang_pos_endZ_chi2_cut_"+name)
   #endP_hists[name].Write()
 
   endP_hists[name].SetFillColor(colors[name]) 
@@ -642,7 +857,7 @@ for name in names:
   endP_stack.Add(endP_hists[name])
 
   tree.Draw( "reco_beam_endZ>>endZ_ang_pos_endZ_chi2_cut_"+name+"(40,0.,500.)", cut  + base_cut + ang_cut + pos_cut + endZ_cut + chi2_cut)
-  endZ_hists[name] = gDirectory.Get("endZ_ang_pos_endZ_chi2_cut_"+name)
+  endZ_hists[name] = RT.gDirectory.Get("endZ_ang_pos_endZ_chi2_cut_"+name)
   #endZ_hists[name].Write()
 
   endZ_hists[name].SetFillColor(colors[name]) 
@@ -650,19 +865,19 @@ for name in names:
   endZ_stack.Add(endZ_hists[name])
 
   tree.Draw( "reco_beam_Chi2_proton/reco_beam_Chi2_ndof>>chi2_ang_pos_endZ_chi2_cut_"+name+"(100,0,400)", cut + base_cut + ang_cut + pos_cut + endZ_cut + chi2_cut)
-  chi2hists[name] = gDirectory.Get("chi2_ang_pos_endZ_chi2_cut_"+name)
+  chi2hists[name] = RT.gDirectory.Get("chi2_ang_pos_endZ_chi2_cut_"+name)
   chi2hists[name].SetFillColor(colors[name]) 
   chi2hists[name].SetLineColor(colors[name]) 
   chi2stack.Add(chi2hists[name])
 
   tree.Draw( "reco_beam_PFP_trackScore>>cnn_ang_pos_endZ_chi2_cut_"+name+"(100,0,1.)", cut + base_cut + ang_cut + pos_cut + endZ_cut + chi2_cut)
-  cnnhists[name] = gDirectory.Get("cnn_ang_pos_endZ_chi2_cut_"+name)
+  cnnhists[name] = RT.gDirectory.Get("cnn_ang_pos_endZ_chi2_cut_"+name)
   cnnhists[name].SetFillColor(colors[name]) 
   cnnhists[name].SetLineColor(colors[name]) 
   cnnstack.Add(cnnhists[name])
 
 
-  print
+  #print
 
 lenstack.Write()
 endP_stack.Write()
@@ -679,30 +894,30 @@ third_cut_dir = fout.mkdir( "third_cut_dir", "Cuts include start position and an
 third_cut_dir.cd()
 
 lenhists = dict()
-lenstack = THStack("lenstack_ang_pos_dedx","")
+lenstack = RT.THStack("lenstack_ang_pos_dedx","")
 
 endP_hists = dict()
-endP_stack = THStack("endPstack_ang_pos_dedx","")
+endP_stack = RT.THStack("endPstack_ang_pos_dedx","")
 
 endZ_hists = dict()
-endZ_stack = THStack("endZstack_ang_pos_dedx","")
+endZ_stack = RT.THStack("endZstack_ang_pos_dedx","")
 
 for name in names:
-  print name
+  #print name
 
-  lenhists[name] = TH1D("len_ang_pos_dedx_cut_"+name, "", 40, 0., 500.)
+  lenhists[name] = RT.TH1D("len_ang_pos_dedx_cut_"+name, "", 40, 0., 500.)
   lenhists[name].SetFillColor(colors[name]) 
   lenhists[name].SetLineColor(colors[name]) 
 
-  endP_hists[name] = TH1D("endP_ang_pos_dedx_cut_"+name, "", 40, 0., 1.2)
+  endP_hists[name] = RT.TH1D("endP_ang_pos_dedx_cut_"+name, "", 40, 0., 1.2)
   endP_hists[name].SetFillColor(colors[name]) 
   endP_hists[name].SetLineColor(colors[name]) 
 
-  endZ_hists[name] = TH1D("endZ_ang_pos_dedx_cut_"+name, "", 40, 0., 1.2)
+  endZ_hists[name] = RT.TH1D("endZ_ang_pos_dedx_cut_"+name, "", 40, 0., 1.2)
   endZ_hists[name].SetFillColor(colors[name]) 
   endZ_hists[name].SetLineColor(colors[name]) 
 
-  print
+  #print
 
 for e in tree:
 
@@ -746,7 +961,7 @@ endZ_stack.Write()
 #endP_stack = THStack("endPstack_ang_pos_dedx_len","")
 #
 #for name in names:
-#  print name
+#  #print name
 #
 #  lenhists[name] = TH1D("len_ang_pos_dedx_endZ_cut_"+name, "", 40, 0., 500.)
 #  lenhists[name].SetFillColor(colors[name]) 
@@ -756,7 +971,7 @@ endZ_stack.Write()
 #  endP_hists[name].SetFillColor(colors[name]) 
 #  endP_hists[name].SetLineColor(colors[name]) 
 #
-#  print
+#  #print
 #
 #for e in tree:
 #

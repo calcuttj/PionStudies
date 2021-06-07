@@ -1,4 +1,4 @@
-from ROOT import *
+import ROOT as RT
 from set_style import *
 from add_stack import *
 from scale_stack import *
@@ -16,17 +16,25 @@ parser.add_argument( "--Ymin", type=float, help='legend positions', default = -1
 parser.add_argument( "--Ymax", type=float, help='legend positions', default = -1. )
 parser.add_argument( "-s", type=str, help='Name of output plot file', default='stack_try.pdf' )
 parser.add_argument( "-l", type=int, help='Cut level', default = 0 )
+parser.add_argument( "--listNames", type=int, help='List contents of MC file and exit', default = 0 )
+parser.add_argument( "-b", type=str, help='Binning override', default = "")
 
 args = parser.parse_args()
 
-gROOT.SetBatch(1)
-gStyle.SetOptStat(0)
+fMC   = RT.TFile(args.m) 
+if args.listNames:
+  for i in fMC.GetListOfKeys(): print(i.GetName())
+  exit()
 
-fData = TFile(args.d)
-fMC   = TFile(args.m) 
 
-c1 = TCanvas("c1", "c1", 500, 400)
+RT.gROOT.SetBatch(1)
+RT.gStyle.SetOptStat(0)
+
+fData = RT.TFile(args.d)
+
+c1 = RT.TCanvas("c1", "c1", 500, 400)
 c1.SetTicks()
+
 if args.l == 0:
   data_hist = fData.Get(args.t + "hist")
   mc_hist   = fMC.Get(args.t + "stack")
@@ -51,6 +59,11 @@ data_hist.Sumw2()
 mc_hist = scale_stack(mc_hist, data_hist)
 
 mc_hist.SetMaximum( max([mc_hist.GetMaximum(), data_hist.GetMaximum()]) )
+
+mc_hist.Draw("HIST")
+if args.b:
+  binning = args.b
+  mc_hist.GetXaxis().SetRangeUser(float(binning.split(",")[0]), float(binning.split(",")[1]))
 
 mc_hist.Draw("HIST")
 set_style( mc_hist, data_hist.GetXaxis().GetTitle(), "")

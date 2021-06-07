@@ -405,17 +405,56 @@ auto candidate_primaryMuon = []( double michelScore, int nhits){
 auto secondary_noPion= [](
                            const std::vector<double> &track_score, 
                            const std::vector<int> &trackID,
-                           const std::vector<double> &dEdX) {
+                           const std::vector<double> &dEdX,
+                           const std::vector<double> &chi2,
+                           const std::vector<int> &ndof) {
   for( size_t i = 0; i < track_score.size(); ++i ) {
-    if ((trackID[i] != -1) && (track_score[i] > cut_trackScore) &&
-        (dEdX[i] <= cut_dEdX)) {
-      return false;
+    if ((trackID[i] != -999) && (track_score[i] > cut_trackScore)) {
+      //if (dEdX[i] <= cut_dEdX)) {
+      if (dEdX[i] < 2.8 && dEdX[i] > 0.5) {
+        return false;
+      }
+      //else if (dEdX[i] > 2.8 && dEdX[i] < 3.4) {
+      else if (dEdX[i] < 3.4) {
+        if (ndof[i] > 0 && chi2[i]/ndof[i] > 70.) {
+          return false;
+        }
+      }
     }
   }
 
   return true;
 };
 
+auto is_secondary_pion= [](
+                           const std::vector<double> &track_score, 
+                           const std::vector<int> &trackID,
+                           const std::vector<double> &dEdX,
+                           const std::vector<double> &chi2,
+                           const std::vector<int> &ndof) {
+  std::vector<bool> results;
+  for( size_t i = 0; i < track_score.size(); ++i ) {
+    if ((trackID[i] != -999) && (track_score[i] > cut_trackScore)) {
+      //if (dEdX[i] <= cut_dEdX)) {
+      if (dEdX[i] < 2.8 && dEdX[i] > 0.5) {
+        results.push_back(true);
+      }
+      //else if (dEdX[i] > 2.8 && dEdX[i] < 3.4) {
+      else if (dEdX[i] < 3.4) {
+        if (ndof[i] > 0 && chi2[i]/ndof[i] > 70.) {
+          results.push_back(true);
+        }
+      }
+      else {
+        results.push_back(false);
+      }
+    }
+    else {
+      results.push_back(false);
+    }
+  }
+  return results;
+};
 
 
 auto has_shower_nHits = [](const std::vector<double> &track_score,
@@ -434,13 +473,82 @@ auto has_shower_nHits = [](const std::vector<double> &track_score,
   return false;
 };
 
+auto has_shower_dist_energy = [](const std::vector<double> &track_score,
+                                 const std::vector<double> &shower_x,
+                                 const std::vector<double> &shower_y,
+                                 const std::vector<double> &shower_z,
+                                 const std::vector<double> &energy,
+                                 double & x, double & y, double & z) {
+  for(size_t i = 0; i < track_score.size(); ++i){
+     double dist = sqrt(std::pow((shower_x[i] - x), 2) +
+                        std::pow((shower_y[i] - y), 2) +
+                        std::pow((shower_z[i] - z), 2));
+     if ((track_score[i] < cut_trackScore) &&
+         (track_score[i] > 0.) &&
+         (dist > 5. && dist < 1000.) &&
+         (energy[i] > 80. && energy[i] < 1000.)) {
+       return true;
+     }
+  }
 
+  return false;
+};
+
+auto is_pi0_shower = [](const std::vector<double> &track_score,
+                                 const std::vector<double> &shower_x,
+                                 const std::vector<double> &shower_y,
+                                 const std::vector<double> &shower_z,
+                                 const std::vector<double> &energy,
+                                 double & x, double & y, double & z) {
+  std::vector<bool> results;
+  for(size_t i = 0; i < track_score.size(); ++i){
+    double dist = sqrt(std::pow((shower_x[i] - x), 2) +
+                       std::pow((shower_y[i] - y), 2) +
+                       std::pow((shower_z[i] - z), 2));
+    if ((track_score[i] < cut_trackScore) &&
+        (track_score[i] > 0.) &&
+        (dist > 5. && dist < 1000.) &&
+        (energy[i] > 80. && energy[i] < 1000.)) {
+      results.push_back(true);
+    }
+    else {
+     results.push_back(false);
+    }
+  }
+
+  return results;
+};
+
+auto shower_dists = [](const std::vector<double> &track_score,
+                       const std::vector<double> &shower_x,
+                       const std::vector<double> &shower_y,
+                       const std::vector<double> &shower_z,
+                       double & x, double & y, double & z) {
+  std::vector<double> results;
+  for(size_t i = 0; i < track_score.size(); ++i){
+    if ((track_score[i] < cut_trackScore) &&
+        (track_score[i] > 0.)) {
+      double dist = sqrt(std::pow((shower_x[i] - x), 2) +
+                         std::pow((shower_y[i] - y), 2) +
+                         std::pow((shower_z[i] - z), 2));
+      results.push_back(dist);
+    }
+    else {
+      results.push_back(-999.);
+    }
+  }
+
+  return results;
+};
 
 auto leading_proton_momentum = [](const std::vector<double> & daughter_p,
-                                  const std::vector<int> & daughter_pdg) {
+                                  const std::vector<int> & daughter_pdg/*,
+                                  double proton_threshold = 0.*/) {
   double max_p = -1.;
   for (size_t i = 0; i < daughter_pdg.size(); ++i) {
     if (daughter_pdg[i] == 2212) {
+      if (daughter_p[i] < .2)
+        continue;
       if (daughter_p[i] > max_p)
         max_p = daughter_p[i];
     }
@@ -456,6 +564,8 @@ auto leading_proton_det_theta = [](const std::vector<double> & daughter_p,
   double max_theta = -999.; 
   for (size_t i = 0; i < daughter_pdg.size(); ++i) {
     if (daughter_pdg[i] == 2212) {
+      if (daughter_p[i] < .2)
+        continue;
       if (daughter_p[i] > max_p) {
         max_p = daughter_p[i];
         max_theta = daughter_pz[i]/daughter_p[i];
@@ -466,6 +576,28 @@ auto leading_proton_det_theta = [](const std::vector<double> & daughter_p,
   return max_theta;
 };
 
+auto n_track_daughters = [](const std::vector<double> &track_score, 
+                            const std::vector<int> &trackID) {
+  int results = 0;
+  for (size_t i = 0; i < track_score.size(); ++i) {
+    if ((trackID[i] != -999) && (track_score[i] > cut_trackScore)) {
+      ++results; 
+    }
+  }
+  return results;
+};
+
+auto n_shower_daughters = [](const std::vector<double> &track_score, 
+                             const std::vector<int> &showerID) {
+  int results = 0;
+  for (size_t i = 0; i < track_score.size(); ++i) {
+    if ((showerID[i] != -999) && (track_score[i] < cut_trackScore)) {
+      ++results; 
+    }
+  }
+  return results;
+};
+
 auto leading_proton_det_phi = [](const std::vector<double> & daughter_p,
                                    const std::vector<int> & daughter_pdg,
                                    const std::vector<double> & daughter_px,
@@ -474,6 +606,8 @@ auto leading_proton_det_phi = [](const std::vector<double> & daughter_p,
   double max_phi = -999.; 
   for (size_t i = 0; i < daughter_pdg.size(); ++i) {
     if (daughter_pdg[i] == 2212) {
+      if (daughter_p[i] < .2)
+        continue;
       if (daughter_p[i] > max_p) {
         max_p = daughter_p[i];
         max_phi = atan(daughter_px[i]/daughter_py[i]) * 180. / TMath::Pi();
@@ -482,4 +616,122 @@ auto leading_proton_det_phi = [](const std::vector<double> & daughter_p,
   }
 
   return max_phi;
+};
+
+auto backtrack_beam = [](const std::string process,
+                         const bool matched,
+                         const int origin, const int PDG) {
+  if (process == "primary" && matched && origin == 4 && PDG == 211) {
+    return 1;
+  }
+  else if (process == "primary" && matched && origin == 4 && PDG == -13) {
+    return 2;
+  }
+  else if (origin == 2) {
+    return 3;
+  }
+  else if (process == "primaryBackground") {
+    return 4;
+  }
+  else if (process.find("Inelastic") != std::string::npos) {
+    return 5;
+  }
+  else if (process == "Decay") {
+    return 6;
+  }
+  else {
+    return 7;
+  }
+};
+
+auto categorize_daughters = [](
+    const int beam_ID,
+    const std::vector<int> bt_origins, const std::vector<int> bt_IDs,
+    const std::vector<int> bt_PDGs, const std::vector<int> bt_ParIDs,
+    const std::vector<int> bt_ParPDGs,
+    const std::vector<int> true_daughters,
+    const std::vector<int> true_grand_daughters) {
+  std::vector<int> results;
+  //std::cout << "asdf" << std::endl;
+  for (size_t i = 0; i < bt_origins.size(); ++i) {
+    if (bt_IDs[i] == beam_ID) {
+      results.push_back(1);
+    }
+    else if (bt_origins[i] == 2) {
+      results.push_back(2);
+    }
+    else if (abs(bt_PDGs[i]) == 11 && (abs(bt_ParPDGs[i]) == 13)) {
+      results.push_back(10); 
+    }
+    else if (std::find(true_daughters.begin(), true_daughters.end(), bt_IDs[i]) !=
+             true_daughters.end()) {
+      if (abs(bt_PDGs[i]) == 211) {
+        results.push_back(3);
+      }
+      else if (abs(bt_PDGs[i]) == 13) {
+        results.push_back(4);
+      }
+      else if (bt_PDGs[i] == 2212) {
+        results.push_back(5);
+      }
+      else if (bt_PDGs[i] == 22) {
+        results.push_back(6);
+      }
+      else if (bt_PDGs[i] > 2212) {
+        results.push_back(7);
+      }
+      else {
+        //std::cout << bt_PDGs[i] << " " << bt_ParPDGs[i] << " " << (abs(bt_PDGs[i]) == 11 && (abs(bt_ParPDGs[i]) == 13)) << std::endl;
+        results.push_back(12);
+      }
+    }
+    else if (std::find(true_grand_daughters.begin(), 
+                       true_grand_daughters.end(), bt_IDs[i]) !=
+             true_grand_daughters.end()) {
+      if ((bt_PDGs[i] == 22 || abs(bt_PDGs[i]) == 11) && bt_ParPDGs[i] == 111) {
+        results.push_back(11);
+      }
+      else {
+        results.push_back(8);
+      }
+    }
+    else if (std::find(true_grand_daughters.begin(), 
+                       true_grand_daughters.end(), bt_ParIDs[i]) !=
+             true_grand_daughters.end()) {
+        results.push_back(9);
+    }
+    else {
+        //std::cout << bt_PDGs[i] << " " << bt_ParPDGs[i] << " " << (abs(bt_PDGs[i]) == 11 && (abs(bt_ParPDGs[i]) == 13)) << std::endl;
+        results.push_back(12);
+    }
+  }
+  return results;
+};
+
+auto daughter_PDG_types(const std::vector<int> bt_PDGs) {
+  std::vector<int> results;
+  for (const int PDG : bt_PDGs) {
+    if (abs(PDG) == 211) {
+      results.push_back(1);
+    }
+    else if (abs(PDG) == 13) {
+      results.push_back(2);
+    }
+    else if (abs(PDG) == 2212) {
+      results.push_back(3);
+    }
+    else if (abs(PDG) == 22) {
+      results.push_back(4);
+    }
+    else if (abs(PDG) > 2212) {
+      results.push_back(5);
+    }
+    else if (abs(PDG) == 11) {
+      results.push_back(6);
+    }
+    else {
+      results.push_back(7);
+    }
+  }
+  return results;
 };

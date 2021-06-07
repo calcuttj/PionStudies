@@ -326,6 +326,79 @@ auto truncatedMean = [](double truncate_low, double truncate_high, std::vector<s
 
 };
 
+auto truncatedMean_pos = [](double truncate_low, double truncate_high, std::vector<std::vector<double>> &vecs_dEdX){
+
+   size_t size = 0;
+   std::vector<double> trunc_mean;
+   //std::vector<double> help_vec;
+   truncate_high = 1 - truncate_high; 
+   int i_low = 0;
+   int i_high = 0;
+
+   //sort the dEdX vecotrs in matrix
+   for(auto &&vec : vecs_dEdX){
+      //size = vec.size();
+      std::vector<double> help_vec;
+
+
+      //check dEdX vector isn't empty!
+      if(vec.empty()){
+         trunc_mean.push_back(-9999.);
+         continue;
+      }
+
+      else{
+         std::vector<double> temp_vec;
+         for (double d : vec) {
+           if (d < 0.) {
+             continue;
+           }
+           temp_vec.push_back(d);
+         }
+         for (double d : temp_vec) {
+           if (d < 0.) {
+             std::cout << d << std::endl;
+           }
+         }
+         if (temp_vec.empty()) {
+           trunc_mean.push_back(-9999.);
+           continue;
+         }
+         //Sort Vector
+         sort(temp_vec.begin(), temp_vec.end());
+       
+         //Discard upper and lower part of signal
+         //rint rounds to integer
+         i_low = rint ( temp_vec.size()*truncate_low);
+         i_high = rint( temp_vec.size()*truncate_high);
+         
+         
+         //if (i_high >= temp_vec.size()) std::cout << "Warning: too high" << std::endl;
+         for(int i = i_low; i </*=*/ i_high; i++){
+           if (temp_vec[i] < 0) {
+             std::cout << "added " << temp_vec[i] << " " << i << std::endl;
+           }
+           help_vec.push_back(temp_vec[i]);
+         };
+
+         //Mean of help vector
+
+         trunc_mean.push_back(accumulate(help_vec.begin(), help_vec.end(), 0.0) / help_vec.size());
+         if (trunc_mean.back() < 0 && trunc_mean.back() != -9999. && trunc_mean.back() != -999.) {
+           std::cout << accumulate(help_vec.begin(), help_vec.end(), 0.0) << " " << help_vec.size() << std::endl;
+           std::cout << temp_vec.size() << " " << i_low << " " << i_high << std::endl;
+           for (size_t i = 0; i < help_vec.size(); ++i) {
+             std::cout << "\t" << help_vec[i] << std::endl;
+           }
+         }
+      }
+
+
+   };
+
+   return trunc_mean;
+
+};
 
 auto recoLength = [](const std::vector<double> &sX, const std::vector<double> &sY, const std::vector<double> &sZ, const std::vector<double> &eX, const std::vector<double> &eY, const std::vector<double> &eZ){
    std::vector<double> length;

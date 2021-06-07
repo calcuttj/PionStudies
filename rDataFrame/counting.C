@@ -41,6 +41,7 @@ const std::string data_signal_abs_file = "eventSelection_data_ABS.root";
 int counting(bool doCounting = false) {
 
   gInterpreter->GenerateDictionary("vector<vector<int>>", "vector");
+  gROOT->SetBatch(1);
 
   TFile *output = new TFile ("output_eventSelection.root", "RECREATE");
   THStack *stack_cutFlow = new THStack("cutFlow", "Cut Flow MC and Data");
@@ -227,9 +228,9 @@ int counting(bool doCounting = false) {
   h_true_BG->SetFillColor(kBlue);
 
   //Scaling MC to DATA
-  double total = h_data_total->GetBinContent(4);
-  double total_2 = h_true_abs->GetBinContent(4) + h_true_cex->GetBinContent(4) +
-                   h_true_nPi0->GetBinContent(4) + h_true_BG->GetBinContent(4);
+  double total = h_data_total->GetBinContent(3);
+  double total_2 = h_true_abs->GetBinContent(3) + h_true_cex->GetBinContent(3) +
+                   h_true_nPi0->GetBinContent(3) + h_true_BG->GetBinContent(3);
 
   h_true_BG->Scale(total / total_2);
   h_true_abs->Scale(total / total_2);
@@ -257,11 +258,25 @@ int counting(bool doCounting = false) {
 
   auto c1 = new TCanvas("Event Selection Flow", "",1600,1200);
   stack_cutFlow->Draw();
-  h_data_total->Draw("PSAME");
+  h_data_total->SetMarkerStyle(20);
+  h_data_total->Draw("P e1 SAME");
   c1->BuildLegend();
   c1->Write();
   c1->Close();
 
+  auto c2 = new TCanvas("zoomed_flow", "", 1600, 1200);
+  stack_cutFlow->Draw();
+  stack_cutFlow->GetHistogram()->GetXaxis()->SetRangeUser(3, 7);
+  stack_cutFlow->GetXaxis()->SetBinLabel(4, "Primary Pion");
+  stack_cutFlow->GetXaxis()->SetBinLabel(5, "Abs + Cex + n#pi^{0}");
+  stack_cutFlow->GetXaxis()->SetBinLabel(6, "Cex + n#pi^{0}");
+  stack_cutFlow->GetXaxis()->SetBinLabel(7, "Abs");
+  stack_cutFlow->GetXaxis()->SetLabelSize(.04);
+  stack_cutFlow->Draw();
+  h_data_total->Draw(" P e1 same");
+  c2->BuildLegend();
+  c2->Write();
+  
   
 
   //*******************************

@@ -73,8 +73,8 @@ auto new_interaction_topology = [](int pdg, double endZ,
       topology = 4;
     }
     //After FV
-    //else if (endZ > 226.) {
-    else if (endZ > 225.94353) {
+    //else if (endZ > 225.94353) {
+    else if (endZ > 222.10561) {
       topology = 6;
     }
     else if (process == "pi+Inelastic") {

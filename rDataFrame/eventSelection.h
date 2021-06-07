@@ -53,8 +53,8 @@ double data_xlow = 0., data_xhigh = 10., data_ylow= -5.;
 double data_yhigh= 10., data_zlow=30., data_zhigh=35., data_coslow=.93;
 
 //For Data from Owen Goodwin
-double mc_BI_xlow = 0., mc_BI_xhigh = 10., mc_BI_ylow= -5.;
-double mc_BI_yhigh= 10., mc_BI_zlow=30., mc_BI_zhigh=35., mc_BI_coslow=.93;
+double mc_BI_xlow = -2., mc_BI_xhigh = 2., mc_BI_ylow= -1.5;
+double mc_BI_yhigh= 2., mc_BI_zlow=28.5, mc_BI_zhigh=31., mc_BI_coslow=.97;
 
 //Tag PrimaryPion without elastic Scattering
 //
@@ -301,7 +301,8 @@ auto secondary_noPion= [](
       if (dEdX[i] < 2.8 && dEdX[i] > 0.5) {
         return false;
       }
-      else if (dEdX[i] > 2.8 && dEdX[i] < 3.4) {
+      //else if (dEdX[i] > 2.8 && dEdX[i] < 3.4) {
+      else if (dEdX[i] < 3.4) {
         if (ndof[i] > 0 && chi2[i]/ndof[i] > 70.) {
           return false;
         }
@@ -325,7 +326,8 @@ auto is_secondary_pion= [](
       if (dEdX[i] < 2.8 && dEdX[i] > 0.5) {
         results.push_back(true);
       }
-      else if (dEdX[i] > 2.8 && dEdX[i] < 3.4) {
+      //else if (dEdX[i] > 2.8 && dEdX[i] < 3.4) {
+      else if (dEdX[i] < 3.4) {
         if (ndof[i] > 0 && chi2[i]/ndof[i] > 70.) {
           results.push_back(true);
         }
@@ -404,7 +406,27 @@ auto is_pi0_shower = [](const std::vector<double> &track_score,
   return results;
 };
 
+auto shower_dists = [](const std::vector<double> &track_score,
+                       const std::vector<double> &shower_x,
+                       const std::vector<double> &shower_y,
+                       const std::vector<double> &shower_z,
+                       double & x, double & y, double & z) {
+  std::vector<double> results;
+  for(size_t i = 0; i < track_score.size(); ++i){
+    if ((track_score[i] < cut_trackScore) &&
+        (track_score[i] > 0.)) {
+      double dist = sqrt(std::pow((shower_x[i] - x), 2) +
+                         std::pow((shower_y[i] - y), 2) +
+                         std::pow((shower_z[i] - z), 2));
+      results.push_back(dist);
+    }
+    else {
+      results.push_back(-999.);
+    }
+  }
 
+  return results;
+};
 
 auto leading_proton_momentum = [](const std::vector<double> & daughter_p,
                                   const std::vector<int> & daughter_pdg/*,
@@ -481,4 +503,122 @@ auto leading_proton_det_phi = [](const std::vector<double> & daughter_p,
   }
 
   return max_phi;
+};
+
+auto backtrack_beam = [](const std::string process,
+                         const bool matched,
+                         const int origin, const int PDG) {
+  if (process == "primary" && matched && origin == 4 && PDG == 211) {
+    return 1;
+  }
+  else if (process == "primary" && matched && origin == 4 && PDG == -13) {
+    return 2;
+  }
+  else if (origin == 2) {
+    return 3;
+  }
+  else if (process == "primaryBackground") {
+    return 4;
+  }
+  else if (process.find("Inelastic") != std::string::npos) {
+    return 5;
+  }
+  else if (process == "Decay") {
+    return 6;
+  }
+  else {
+    return 7;
+  }
+};
+
+auto categorize_daughters = [](
+    const int beam_ID,
+    const std::vector<int> bt_origins, const std::vector<int> bt_IDs,
+    const std::vector<int> bt_PDGs, const std::vector<int> bt_ParIDs,
+    const std::vector<int> bt_ParPDGs,
+    const std::vector<int> true_daughters,
+    const std::vector<int> true_grand_daughters) {
+  std::vector<int> results;
+  //std::cout << "asdf" << std::endl;
+  for (size_t i = 0; i < bt_origins.size(); ++i) {
+    if (bt_IDs[i] == beam_ID) {
+      results.push_back(1);
+    }
+    else if (bt_origins[i] == 2) {
+      results.push_back(2);
+    }
+    else if (abs(bt_PDGs[i]) == 11 && (abs(bt_ParPDGs[i]) == 13)) {
+      results.push_back(10); 
+    }
+    else if (std::find(true_daughters.begin(), true_daughters.end(), bt_IDs[i]) !=
+             true_daughters.end()) {
+      if (abs(bt_PDGs[i]) == 211) {
+        results.push_back(3);
+      }
+      else if (abs(bt_PDGs[i]) == 13) {
+        results.push_back(4);
+      }
+      else if (bt_PDGs[i] == 2212) {
+        results.push_back(5);
+      }
+      else if (bt_PDGs[i] == 22) {
+        results.push_back(6);
+      }
+      else if (bt_PDGs[i] > 2212) {
+        results.push_back(7);
+      }
+      else {
+        //std::cout << bt_PDGs[i] << " " << bt_ParPDGs[i] << " " << (abs(bt_PDGs[i]) == 11 && (abs(bt_ParPDGs[i]) == 13)) << std::endl;
+        results.push_back(12);
+      }
+    }
+    else if (std::find(true_grand_daughters.begin(), 
+                       true_grand_daughters.end(), bt_IDs[i]) !=
+             true_grand_daughters.end()) {
+      if ((bt_PDGs[i] == 22 || abs(bt_PDGs[i]) == 11) && bt_ParPDGs[i] == 111) {
+        results.push_back(11);
+      }
+      else {
+        results.push_back(8);
+      }
+    }
+    else if (std::find(true_grand_daughters.begin(), 
+                       true_grand_daughters.end(), bt_ParIDs[i]) !=
+             true_grand_daughters.end()) {
+        results.push_back(9);
+    }
+    else {
+        //std::cout << bt_PDGs[i] << " " << bt_ParPDGs[i] << " " << (abs(bt_PDGs[i]) == 11 && (abs(bt_ParPDGs[i]) == 13)) << std::endl;
+        results.push_back(12);
+    }
+  }
+  return results;
+};
+
+auto daughter_PDG_types(const std::vector<int> bt_PDGs) {
+  std::vector<int> results;
+  for (const int PDG : bt_PDGs) {
+    if (abs(PDG) == 211) {
+      results.push_back(1);
+    }
+    else if (abs(PDG) == 13) {
+      results.push_back(2);
+    }
+    else if (abs(PDG) == 2212) {
+      results.push_back(3);
+    }
+    else if (abs(PDG) == 22) {
+      results.push_back(4);
+    }
+    else if (abs(PDG) > 2212) {
+      results.push_back(5);
+    }
+    else if (abs(PDG) == 11) {
+      results.push_back(6);
+    }
+    else {
+      results.push_back(7);
+    }
+  }
+  return results;
 };

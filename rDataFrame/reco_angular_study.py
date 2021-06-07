@@ -61,6 +61,7 @@ leg.AddEntry(rData, "Data", "lp")
 leg.Draw("same")
 c1.Write("cut_ratio")
 rMC.Write()
+rData.Write()
 
 
 ####

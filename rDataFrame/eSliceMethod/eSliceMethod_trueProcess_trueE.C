@@ -97,7 +97,9 @@ int eSliceMethod_trueProcess_trueE(const string mcFilepath){
    //Initial Filters for all events
    auto mcIncident_true_primaryPi = frame
       .Filter("true_beam_endZ > 0")
-      //.Filter("primary_isBeamType && passBeamCut")      
+      .Filter("primary_isBeamType")
+      .Define("true_initKE", "true_firstEntryIncident")
+      .Define("true_interKE", "true_interactingKE_fromLength")
       .Filter("true_beam_PDG == 211");
    //.Range(70,100)
 
@@ -107,13 +109,13 @@ int eSliceMethod_trueProcess_trueE(const string mcFilepath){
    //Build the Incident Histogram
    //---------
    mcIncident_true_primaryPi
-      .Foreach( [h_trueE_truePion_inc_initE, h_trueE_truePion_inc_interE] (double true_firstEntryIncident, double true_beam_interactingEnergy) { 
+      .Foreach( [h_trueE_truePion_inc_initE, h_trueE_truePion_inc_interE] (double true_initKE, double true_beam_interactingEnergy) { 
             //make sure incident Pion does not interact in bin it was born
-            int binNum_initE = (int) true_firstEntryIncident / bin_size_inc + 1;
+            int binNum_initE = (int) true_initKE / bin_size_inc + 1;
             int binNum_interE = (int) true_beam_interactingEnergy / bin_size_inc + 1;
 
 
-            if(binNum_initE != binNum_interE && true_firstEntryIncident > true_beam_interactingEnergy){
+            if(binNum_initE != binNum_interE && true_initKE > true_beam_interactingEnergy){
             if(binNum_initE <= nBin_int && binNum_initE >0 && binNum_interE <= nBin_int && binNum_interE > 0){
 
             //std::cout << "binNumber initial E = " << binNum_initE << std::endl;
@@ -125,7 +127,7 @@ int eSliceMethod_trueProcess_trueE(const string mcFilepath){
             };   
             };
             }
-            ,{"true_firstEntryIncident", "true_interactingKE"});
+            ,{"true_initKE", "true_interKE"});
 
    h_trueE_truePion_inc_initE->Write();
    h_trueE_truePion_inc_interE->Write();
@@ -136,20 +138,20 @@ int eSliceMethod_trueProcess_trueE(const string mcFilepath){
    //Interacting selected samples
    //------------------------------------------------------
    mcInteracting_true_abs
-      .Foreach( [h_trueE_trueAbs_interacting] ( double true_firstEntryIncident, double true_beam_interactingEnergy ){
+      .Foreach( [h_trueE_trueAbs_interacting] ( double true_initKE, double true_beam_interactingEnergy ){
 
-            int binNum_initE = (int) true_firstEntryIncident / bin_size_inc + 1;
+            int binNum_initE = (int) true_initKE / bin_size_inc + 1;
             int binNum_interE = (int) true_beam_interactingEnergy / bin_size_inc + 1;
 
-            if(binNum_initE != binNum_interE && true_firstEntryIncident > true_beam_interactingEnergy){
+            if(binNum_initE != binNum_interE && true_initKE > true_beam_interactingEnergy){
             if(binNum_initE <= nBin_int && binNum_initE >0 && binNum_interE <= nBin_int && binNum_interE > 0){
 
             h_trueE_trueAbs_interacting->SetBinContent( binNum_interE, h_trueE_trueAbs_interacting->GetBinContent( binNum_interE ) + 1); 
 
-            }      
-            }
+            };     
+            };
             }            
-            ,{"true_firstEntryIncident","true_interactingKE"});
+            ,{"true_initKE","true_interKE"});
 
    h_trueE_trueAbs_interacting->Sumw2(0);
    h_trueE_trueAbs_interacting->Write();
@@ -191,10 +193,6 @@ int eSliceMethod_trueProcess_trueE(const string mcFilepath){
    //------------------------------------------------------
    //    Absorption, Selected Interactions Reconstrucetd Energy
    //------------------------------------------------------
-   //
-   string xs_abs_name, xs_abs_title;
-   xs_abs_name = "h_xs_trueE_trueAbs_mc";
-   xs_abs_title = "Absorption MC";
 
 
    TH1D* h_xs_trueE_trueAbs = new TH1D("h_xs_trueE_trueAbs", "Absortpion MC", nBin_int, eEnd, eStart);
@@ -230,7 +228,7 @@ int eSliceMethod_trueProcess_trueE(const string mcFilepath){
    TCanvas *c_trueE_abs = new TCanvas("c_trueE_abs", "c_trueE_abs");
    gPad->SetGrid(1,1);
    h_xs_trueE_trueAbs->SetTitle( "True Absorption;true Kinetic Energy (MeV); #sigma (mb)");
-   h_xs_trueE_trueAbs->GetXaxis()->SetRangeUser(400,1000);
+   h_xs_trueE_trueAbs->GetXaxis()->SetRangeUser(100,11000);
    h_xs_trueE_trueAbs->GetXaxis()->SetNdivisions(1020);
    h_xs_trueE_trueAbs->GetYaxis()->SetNdivisions(1020);
 
@@ -248,7 +246,7 @@ int eSliceMethod_trueProcess_trueE(const string mcFilepath){
    TCanvas *c_trueE_totInel = new TCanvas("c_trueE_totInel", "c_trueE_totInel");
    gPad->SetGrid(1,1);
    h_xs_trueE_truePion_totInel->SetTitle( "True Total Inelastic; true Kinetic Energy (MeV); #sigma (mb)");
-   h_xs_trueE_truePion_totInel->GetXaxis()->SetRangeUser(400,1000);
+   h_xs_trueE_truePion_totInel->GetXaxis()->SetRangeUser(100,1100);
    h_xs_trueE_truePion_totInel->GetXaxis()->SetNdivisions(1020);
    h_xs_trueE_truePion_totInel->GetYaxis()->SetNdivisions(1020);
 

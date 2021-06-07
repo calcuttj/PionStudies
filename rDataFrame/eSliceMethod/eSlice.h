@@ -184,6 +184,17 @@ void hist_bethe_mean(double E_init, double mass_particle, TH1D* fit_mean, TH1D* 
    };
 };
 
+void hist_bethe_mean_distance(double E_init, double mass_particle, TH1D* h_bethe ){
+   
+   for(int i=1; i <= h_bethe->GetNbinsX(); i++){
+      h_bethe->SetBinContent( i, betheBloch(E_init, mass_particle)); 
+      h_bethe->SetBinError(i, 0.001 );
+      E_init = E_init - betheBloch(E_init, mass_particle);       
+      if(E_init <= 0) return;
+
+   };
+};
+
 
 //----------------------------------------
 // Build Bethe Hist for XS calculation

@@ -12,6 +12,7 @@
 #include "TColor.h"
 #include "TLatex.h"
 #include "TMath.h"
+#include "../eventSelection.h"
 #include "../lambda.h"
 #include "../betheBloch.h"
 #include "eSlice.h"
@@ -40,13 +41,13 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
    gInterpreter->GenerateDictionary("vector<vector<int>>", "vector");
    ROOT::RDataFrame frame(pionTree, mcFilepath);
 
-   TFile f2("fit_mc_Prod4_dEdX_pitch_05_19_21.root", "UPDATE");
+   TFile f2("fit_mc_Prod4a_05_27_21.root", "UPDATE");
    TH1D *fit_dEdX_lifetime_mpv = (TH1D*)f2.Get("dEdX_mpv_lifetime"); //mean value corrected for lifetime
    TH1D *fit_pitch_mean = (TH1D*)f2.Get("fit_mc_pitch_mean");
 
    TH1D *fit_dEdX_lifetime_mpv_SCEcorr = (TH1D*)f2.Get("fit_mc_dEdX_SCEcorr_mpv"); //mean value corrected for lifetime
    TH1D *fit_pitch_mean_SCEcorr = (TH1D*)f2.Get("fit_mc_pitch_SCEcorr_mean");
-   TFile *output = new TFile ("eSliceMethod_energyDeposit_05_19_21.root", "RECREATE");
+   TFile *output = new TFile ("eSliceMethod_energyDeposit_05_27_21.root", "RECREATE");
 
    output->cd();
    fit_dEdX_lifetime_mpv->Write();
@@ -68,19 +69,31 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
    TH1D* bethe_mu_mean = new TH1D("betheMean_muon", "", fit_pitch_mean->GetNbinsX(), 1, fit_pitch_mean->GetNbinsX() );
    bethe_mu_mean->GetXaxis()->SetTitle("wire"); bethe_mu_mean->GetYaxis()->SetTitle("dEdX (MeV/cm)");
 
+   TH1D* bethe_pi_mean_distance = new TH1D("betheMeanDistance_pion", "", 400, 0, 400); //centimeter distance
+   bethe_pi_mean_distance->GetXaxis()->SetTitle("distance [cm]"); bethe_pi_mean_distance->GetYaxis()->SetTitle("dEdX (MeV/cm)");
+
    hist_bethe_mpv( KE_in_pion, mass_pion, fit_pitch_mean, bethe_pi_mpv);
    hist_bethe_mean( KE_in_pion, mass_pion, fit_pitch_mean, bethe_pi_mean);
    //hist_bethe_mpv( 885.7, mass_muon, fit_pitch_mean, bethe_mu_mpv); //885.7 is mean of dsitribution of reco_beam_incidentEnergies[0]
    //hist_bethe_mean( 885.7, mass_muon, fit_pitch_mean, bethe_mu_mean);
    hist_bethe_mpv( KE_in_muon, mass_muon, fit_pitch_mean, bethe_mu_mpv);
    hist_bethe_mean( KE_in_muon, mass_muon, fit_pitch_mean, bethe_mu_mean);
+   
+   hist_bethe_mean_distance( KE_in_pion, mass_pion, bethe_pi_mean_distance);
 
    bethe_pi_mpv->Write();
    bethe_mu_mpv->Write();
 
    bethe_pi_mean->Write();
    bethe_mu_mean->Write();
+   bethe_pi_mean_distance->Write();
 
+   //--------------------------------------------------------
+   //PREP for TRUE INTERACTING ENERGY
+   //Histogram with energy deposit along wire and running sum
+   TH1* runningSum_true_dE = bethe_pi_mean_distance->GetCumulative();
+   runningSum_true_dE->GetXaxis()->SetTitle("distance [cm]"); runningSum_true_dE->GetYaxis()->SetTitle("dE [MeV]");
+   runningSum_true_dE->Write();
    //--------------------------------------------------------
    //PREP for INTERACTING ENERGY
    //Histogram with energy deposit along wire and running sum
@@ -111,7 +124,7 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
    runningSum_dE->Write();
 
    //SCEcorr
-   TH1D* dEdX_mean_calc_fit_bethe_SCEcorr = (TH1D*)bethe_frac_mu->Clone("dEdX_mean_calc_fit_bethe_SCEcorr");
+   /*TH1D* dEdX_mean_calc_fit_bethe_SCEcorr = (TH1D*)bethe_frac_mu->Clone("dEdX_mean_calc_fit_bethe_SCEcorr");
    dEdX_mean_calc_fit_bethe_SCEcorr->Multiply(fit_dEdX_lifetime_mpv_SCEcorr);
    dEdX_mean_calc_fit_bethe_SCEcorr->Write();
 
@@ -127,7 +140,7 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
    };
 
    dE_product_fit_dEdX_pitch_SCEcorr.Write();
-   runningSum_dE_SCEcorr->Write();
+   runningSum_dE_SCEcorr->Write();*/
    //--------------------------------------------------------
 
    //Initial Filters for all events
@@ -146,51 +159,90 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
    //
 
    auto mcIncident_selected_primaryPi = frame_filter      
-      //.Range(100)
-      .Define("true_firstEntryIncident", [](std::vector<double> &trajKE){
-            return trajKE[0] - eLoss_mc_trueE;
+      //.Range(50)
+      .Define("true_firstEntryIncident", [](double true_beam_startP){
+            true_beam_startP = 1000*true_beam_startP;
+            double startKE = sqrt( pow(true_beam_startP,2) + pow(mass_pion,2) ) - mass_pion;
+            startKE = startKE - eLoss_mc_trueE; //subtracting 8MeV for beam plug eLoss
+            return startKE;
             }
-      ,{"true_beam_traj_KE"})
+      ,{"true_beam_startP"})
       
       .Define("true_interactingKE", [](double true_beam_endP){
             true_beam_endP = 1000*true_beam_endP; //convert GeV -> MeV
             double endKE = sqrt( pow(true_beam_endP,2) + pow(mass_pion,2)  ) - mass_pion;
             return endKE;}
             ,{"true_beam_endP"})
-      //uncalibrated
-      .Define("reco_firstEntryIncident", firstIncident, {"reco_beam_incidentEnergies"})
+ 
+      .Define("true_interactingKE_fromLength", [runningSum_true_dE](double endX, double endY, double endZ, double startKE){
+            double dist = sqrt( pow( endX - mc_meanX, 2) 
+                  + pow( endY - mc_meanY, 2)
+                  + pow( endZ - mc_meanZ, 2) );
+
+            double endKE;
+            int dist_int = (int) dist;
+            if(dist >=1 && dist < runningSum_true_dE->GetNbinsX()) endKE = startKE - runningSum_true_dE->GetBinContent(dist);
+            else endKE = -999.;
+
+            return endKE;}
+            ,{"true_beam_endX", "true_beam_endY", "true_beam_endZ", "true_firstEntryIncident"})
+
+     //uncalibrated
+      .Define("reco_firstEntryIncident", [](double beamInst_P){
+            beamInst_P = 1000*beamInst_P;
+            double startKE = sqrt( pow(beamInst_P,2) + pow(mass_pion,2) ) - mass_pion;
+            return startKE;
+            }
+      ,{"beam_inst_P"})
       //For now in Reco not subtratcting any energy Loss... can do later on if needed
 
       .Define("reco_interactingKE", [runningSum_dE](const std::vector<double> &reco_beam_calo_wire, double incidentE){
-            double interactingWire = reco_beam_calo_wire[ reco_beam_calo_wire.size() ];
+ 
+            double interactingWire, interactingKE;
+
+            if( reco_beam_calo_wire.empty()) return -999.;
+            else{
+
+               interactingWire= reco_beam_calo_wire[ reco_beam_calo_wire.size() - 1]; //last entry
             double interactingKE;
             if(interactingWire >= 1 && interactingWire < runningSum_dE->GetNbinsX()){
             interactingKE = incidentE - runningSum_dE->GetBinContent(interactingWire);
             }
             else interactingKE = -999;
+            //std::cout << "initWire = " << interactingWire << "  inter KE = " << interactingKE << std::endl;
             return interactingKE;
+            };
             }
             ,{"reco_beam_calo_wire", "reco_firstEntryIncident"})
 
       //SCEcorr only need to change interactingKE
-      .Define("reco_interactingKE_SCEcorr", [runningSum_dE_SCEcorr](const std::vector<double> &reco_beam_calo_wire, double incidentE){
-            double interactingWire = reco_beam_calo_wire[ reco_beam_calo_wire.size() ];
-            double interactingKE;
-            if(interactingWire >= 1 && interactingWire < runningSum_dE_SCEcorr->GetNbinsX()){
-            interactingKE = incidentE - runningSum_dE_SCEcorr->GetBinContent(interactingWire);
-            }
-            else interactingKE = -999;
-            return interactingKE;
-            }
-            ,{"reco_beam_calo_wire", "reco_firstEntryIncident"})
+      //.Define("reco_interactingKE_SCEcorr", [runningSum_dE_SCEcorr](const std::vector<double> &reco_beam_calo_wire, double incidentE){
+      //      double interactingWire = reco_beam_calo_wire[ reco_beam_calo_wire.size() - 1 ];
+      //      double interactingKE;
+      //      if(interactingWire >= 1 && interactingWire < runningSum_dE_SCEcorr->GetNbinsX()){
+      //      interactingKE = incidentE - runningSum_dE_SCEcorr->GetBinContent(interactingWire);
+      //      }
+      //      else interactingKE = -999;
+      //      return interactingKE;
+      //      }
+      //      ,{"reco_beam_calo_wire", "reco_firstEntryIncident"})
 
       .Define("reco_incident_wire", [](std::vector<double> &reco_beam_calo_wire){
-            return reco_beam_calo_wire[ reco_beam_calo_wire[0] ];
+     if(reco_beam_calo_wire.empty()) return -999.;
+     else return reco_beam_calo_wire[ reco_beam_calo_wire[0] ];
             },{"reco_beam_calo_wire"})
 
    .Define("reco_interacting_wire", [](std::vector<double> &reco_beam_calo_wire){
-         return reco_beam_calo_wire[ reco_beam_calo_wire.size() ];
-         },{"reco_beam_calo_wire"});
+     if(reco_beam_calo_wire.empty()) return -999.;
+     else return reco_beam_calo_wire[ reco_beam_calo_wire.size() - 1 ];
+         },{"reco_beam_calo_wire"})
+
+   .Define("selected_incidentPion", "primary_isBeamType && passBeamQuality_TPCjustPosition && !isPrimaryMuonCandidate")
+     
+   .Define("selected_abs", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && !has_shower_nHits_distance")
+     
+   .Define("selected_cex", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && has_shower_nHits_distance");
+
 
    delete fit_dEdX_lifetime_mpv;
    delete fit_pitch_mean;

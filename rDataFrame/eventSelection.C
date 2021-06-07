@@ -37,7 +37,7 @@ using namespace std::chrono;
 
 //***********************
 //Main Function
-int eventSelection_primMu(const string mcFile, const string dataFile,
+int eventSelection(const string mcFile, const string dataFile,
                            bool doBatch = false) {
 
   //This prevents the canvas from being draw at the end
@@ -179,6 +179,13 @@ int eventSelection_primMu(const string mcFile, const string dataFile,
   mc_all = mc_all
     .Define("primary_isBeamType", isBeamType, {"reco_beam_type"})
 
+    .Define("passBeamQuality_TPCinfo", beamQuality_mc_TPCinfo, 
+            {"reco_beam_calo_startX", "reco_beam_calo_startY", "reco_beam_calo_startZ",
+             "reco_beam_calo_endX", "reco_beam_calo_endY", "reco_beam_calo_endZ"} ) //This is TJ's BeamQuality Cut that only uses TPC info and not any BI info
+
+    .Define("passBeamQuality_TPCjustPosition", beamQuality_mc_TPCjustPosition, 
+            {"reco_beam_calo_startX", "reco_beam_calo_startY", "reco_beam_calo_startZ"} ) //TJ's cut but without the angular cut, just on position
+    
     .Define("passBeamCut", manual_beamPos_mc, 
             {"reco_beam_startX", "reco_beam_startY", "reco_beam_startZ",
              "reco_beam_trackDirX", "reco_beam_trackDirY", "reco_beam_trackDirZ",
@@ -201,18 +208,25 @@ int eventSelection_primMu(const string mcFile, const string dataFile,
    
      .Define("has_shower_nHits_distance", has_shower_nHits,
             {"reco_daughter_PFP_trackScore_collection",
-             "reco_daughter_PFP_nHits"})
+             "reco_daughter_PFP_nHits"});
 
-     .Define("selected_incidentPion", "primary_isBeamType && passBeamCut && passBeamCutBI && !isPrimaryMuonCandidate")
+     //.Define("selected_incidentPion", "primary_isBeamType && passBeamQuality_TPCinfo && !isPrimaryMuonCandidate")
      
-     .Define("selected_abs", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && !has_shower_nHits_distance")
+     //.Define("selected_abs", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && !has_shower_nHits_distance")
      
-     .Define("selected_cex", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && has_shower_nHits_distance");
+     //.Define("selected_cex", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && has_shower_nHits_distance");
     
   // DATA
   data_all/*_cutValues*/ = data_all
     .Define("primary_isBeamType", isBeamType, {"reco_beam_type"})
-    
+ 
+    .Define("passBeamQuality_TPCinfo", beamQuality_data_TPCinfo, 
+            {"reco_beam_calo_startX", "reco_beam_calo_startY", "reco_beam_calo_startZ",
+             "reco_beam_calo_endX", "reco_beam_calo_endY", "reco_beam_calo_endZ"} )
+   
+    .Define("passBeamQuality_TPCjustPosition", beamQuality_data_TPCjustPosition, 
+            {"reco_beam_calo_startX", "reco_beam_calo_startY", "reco_beam_calo_startZ"} )
+  
     .Define("passBeamQuality", data_BI_quality,
             {"beam_inst_nMomenta", "beam_inst_nTracks"})
     
@@ -233,13 +247,13 @@ int eventSelection_primMu(const string mcFile, const string dataFile,
      
      .Define("has_shower_nHits_distance", has_shower_nHits,
             {"reco_daughter_PFP_trackScore_collection",
-             "reco_daughter_PFP_nHits"})
+             "reco_daughter_PFP_nHits"});
      
-     .Define("selected_incidentPion", "primary_isBeamType && passBeamCut && passBeamQuality && !isPrimaryMuonCandidate")
+     //.Define("selected_incidentPion", "primary_isBeamType && passBeamQuality_TPCinfo && passBeamQuality && !isPrimaryMuonCandidate")
      
-     .Define("selected_abs", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && !has_shower_nHits_distance")
+     //.Define("selected_abs", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && !has_shower_nHits_distance")
      
-     .Define("selected_cex", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && has_shower_nHits_distance");
+     //.Define("selected_cex", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && has_shower_nHits_distance");
 
   //Label within MC files who passed which CUT (this can help to see when what drops out)
   auto mc_output_with_label = mc_all/*_cutValues*/;

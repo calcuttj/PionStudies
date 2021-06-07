@@ -36,7 +36,8 @@ using namespace ROOT::VecOps;
 int eSliceMethod_trueInt_trueE(const string mcFilepath){
 
    gInterpreter->GenerateDictionary("vector<vector<int>>", "vector");
-   ROOT::RDataFrame frame(inputTree, mcFilepath);
+   ROOT::RDataFrame frame(pionTree, mcFilepath);
+   //ROOT::RDataFrame frame(inputTree, mcFilepath);
 
    //access Jakes GeantFile in folder
    TFile f1("exclusive_xsec.root");
@@ -52,10 +53,10 @@ int eSliceMethod_trueInt_trueE(const string mcFilepath){
    mg->SetTitle("Cross-Section; true kinetic Energy (MeV); #sigma (mbarn)");
    
    //output file
-   TFile *output = new TFile ("output_eSliceMethod_trueProcess_trueEnergy.root", "RECREATE");
+   TFile *output = new TFile ("output_eSliceMethod_backToFeb.root", "RECREATE");
    
    //make binning inc for true true same
-   bin_size_inc = bin_size_int;
+   //bin_size_inc = bin_size_int;
         
    //Incident Histogram and Interacting Histogram, interacting for different Processes
    //Energies are kinetic Energy of beam particle
@@ -90,10 +91,10 @@ int eSliceMethod_trueInt_trueE(const string mcFilepath){
    auto mcIncident_true_primaryPi = frame_filter      
       .Filter("true_beam_PDG == 211")
       //.Filter("true_primPionInel && !isDecay")
-      .Define("true_firstEntryIncident", firstIncident, {"true_beam_incidentEnergies"})
-      .Define("true_KEint_fromEndP", [mass_pion](double true_beam_endP){
+      .Define("true_first_alt", firstIncident, {"true_beam_incidentEnergies"})
+      .Define("true_int_alt", [](double true_beam_endP){
             true_beam_endP = 1000*true_beam_endP; //convert GeV -> MeV
-            double endKE = sqrt( pow(true_beam_endP,2) + pow(mass_pion,2)  ) - mass_pion;
+            double endKE = sqrt( pow(true_beam_endP,2) + pow(139.,2)  ) - 139.;
             return endKE;}
             ,{"true_beam_endP"})
       .Define("true_interacting_wire", "true_beam_endZ / 0.48");
@@ -131,13 +132,11 @@ int eSliceMethod_trueInt_trueE(const string mcFilepath){
             ,{"true_firstEntryIncident", "true_KEint_fromEndP"});
             //,{"true_firstEntryIncident", "true_beam_interactingEnergy"});
    h_true_pion_true_incidentE->Sumw2(0);
-   h_true_pion_true_incidentE->Rebin( bin_size_int/bin_size_inc );
-   h_true_pion_true_incidentE->Scale( 1 / (bin_size_int/bin_size_inc) );
+   //h_true_pion_true_incidentE->Rebin( bin_size_int/bin_size_inc );
+   //h_true_pion_true_incidentE->Scale( 1 / (bin_size_int/bin_size_inc) );
    h_true_pion_true_incidentE->Write();
 
-   h_true_pion_true_incidentE->Sumw2(0);
-   h_true_pion_true_incidentE->Write();
-
+ 
 
 
    //******************************************************
@@ -149,8 +148,8 @@ int eSliceMethod_trueInt_trueE(const string mcFilepath){
    // --> For incident we still need to take into account that some interact 
    // further back in the TPC, so the cut on APA3 is not applied for the incident sample
    //
-   auto mcInteracting_true_allPrimaryPi = mcIncident_true_primaryPi
-      .Filter("true_beam_endZ < 226");
+   auto mcInteracting_true_allPrimaryPi = mcIncident_true_primaryPi;
+      //.Filter("true_beam_endZ < 226");
 
    //for the true samples no beam Cuts are applied as one should reproduce the geant XS
 
@@ -318,7 +317,7 @@ int eSliceMethod_trueInt_trueE(const string mcFilepath){
    TCanvas *c_abs = new TCanvas("c_abs", "c_abs");
    gPad->SetGrid(1,1);
    h_xs_true_abs_true_E->SetTitle( "Absorption;Kinetic Energy (MeV); #sigma (mb)");
-   h_xs_true_abs_true_E->GetXaxis()->SetRangeUser(400,900);
+   h_xs_true_abs_true_E->GetXaxis()->SetRangeUser(400,1000);
    h_xs_true_abs_true_E->GetXaxis()->SetNdivisions(1020);
    h_xs_true_abs_true_E->GetYaxis()->SetNdivisions(1020);
    
@@ -335,7 +334,7 @@ int eSliceMethod_trueInt_trueE(const string mcFilepath){
    TCanvas *c_cex = new TCanvas("c_cex", "c_cex");
    gPad->SetGrid(1,1);
    h_xs_true_cex_true_E->SetTitle( "Charge Exchange;Kinetic Energy (MeV); #sigma (mb)");
-   h_xs_true_cex_true_E->GetXaxis()->SetRangeUser(400,900);
+   h_xs_true_cex_true_E->GetXaxis()->SetRangeUser(400,1000);
    h_xs_true_cex_true_E->GetXaxis()->SetNdivisions(1020);
    h_xs_true_cex_true_E->GetYaxis()->SetNdivisions(1020);
    
@@ -353,7 +352,7 @@ int eSliceMethod_trueInt_trueE(const string mcFilepath){
    TCanvas *c_totInel = new TCanvas("c_totInel", "c_totInel");
    gPad->SetGrid(1,1);
    h_xs_true_totInel_true_E->SetTitle( "Total Inelastic;Kinetic Energy (MeV); #sigma (mb)");
-   h_xs_true_totInel_true_E->GetXaxis()->SetRangeUser(400,900);
+   h_xs_true_totInel_true_E->GetXaxis()->SetRangeUser(400,1000);
    h_xs_true_totInel_true_E->GetXaxis()->SetNdivisions(1020);
    h_xs_true_totInel_true_E->GetYaxis()->SetNdivisions(1020);
    

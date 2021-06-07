@@ -26,10 +26,9 @@ using namespace ROOT::VecOps;
 //**********************************************************
 //
 //Some Cut Values
-double cutAPA3_Z = 226.;
+double cutAPA3_Z = 222.; //updated 19may2021
 double cut_trackScore = 0.3;
 double cut_michelScore = 0.55;
-double cut_michelScore_ajib = 0.5;
 double cut_dEdX = 3.8;
 int cut_nHits_shower_low = 40;
 //daughter Distance cut
@@ -52,9 +51,35 @@ double zlow = 27.5,  zhigh = 32.5,  coslow = 0.93;
 double data_xlow = 0., data_xhigh = 10., data_ylow= -5.;
 double data_yhigh= 10., data_zlow=30., data_zhigh=35., data_coslow=.93;
 
-//For Data from Owen Goodwin
+//For Data from Owen Goodwin 
+//Updated with Jake 19May2021
 double mc_BI_xlow = -2., mc_BI_xhigh = 2., mc_BI_ylow= -1.5;
 double mc_BI_yhigh= 2., mc_BI_zlow=28.5, mc_BI_zhigh=31., mc_BI_coslow=.97;
+
+//Data and MC Beam Quality Cuts only from TPC info, Tingjun May 27,2021
+//https://indico.fnal.gov/event/49253/contributions/216082/attachments/143665/181907/pioninel.pdf
+//
+//These are computed AFTER SCE corrections!!
+//need to do plots too and cross-check values!
+
+double data_meanX = -27.91, data_sigmaX = 4.71;
+double data_meanY = 424.36, data_sigmaY = 5.16;
+double data_meanZ = 3.78, data_sigmaZ = 1.10;
+double data_thetaX = 100.45 * TMath::Pi()/ 180; 
+double data_thetaY = 103.52 * TMath::Pi() / 180;
+double data_thetaZ = 17.83 * TMath::Pi() / 180;
+
+
+double mc_meanX = -30.81, mc_sigmaX = 5.02;
+double mc_meanY = 422.41, mc_sigmaY = 4.51;
+double mc_meanZ = 0.11, mc_sigmaZ = 0.22;
+double mc_thetaX = 101.58 * TMath::Pi()/ 180; 
+double mc_thetaY = 101.19 * TMath::Pi()/ 180;
+double mc_thetaZ = 16.59 * TMath::Pi()/ 180;
+
+
+double cut_beamQuality_TPC_xyz = 3.;
+double cut_beamQuality_TPC_cosTheta = 0.95;
 
 //Tag PrimaryPion without elastic Scattering
 //
@@ -118,6 +143,95 @@ auto primary_chi2 = [](double chi2_proton, int chi2_ndof){
 //Beam
 auto isBeamType = [](int reco_beam_type){
   return (reco_beam_type == 13);
+};
+
+//TPC values based Beam Cut
+auto beamQuality_mc_TPCinfo = [](double calo_beam_startX, double calo_beam_startY,
+                                    double calo_beam_startZ, double calo_beam_endX,
+                                    double calo_beam_endY, double calo_beam_endZ)   {
+
+   double diffX = calo_beam_endX - calo_beam_startX;
+   double diffY = calo_beam_endY - calo_beam_startY;
+   double diffZ = calo_beam_endZ - calo_beam_startZ;
+
+   double cosTrk_thetaX = diffX / sqrt( diffX*diffX + diffZ*diffZ );
+   double cosTrk_thetaY = diffY / sqrt( diffY*diffY + diffZ*diffZ );
+   double cosTrk_thetaZ = diffZ / sqrt( diffX*diffX + diffZ*diffZ );
+
+   double cosTheta = cos(mc_thetaX) * cosTrk_thetaX + cos(mc_thetaY) * cosTrk_thetaY + cos(mc_thetaZ) * cosTrk_thetaZ;
+
+   if( abs( (calo_beam_startX - mc_meanX ) / mc_sigmaX ) > cut_beamQuality_TPC_xyz )
+      return false;
+
+   if( abs( (calo_beam_startY - mc_meanY ) / mc_sigmaY ) > cut_beamQuality_TPC_xyz )
+      return false;
+
+   if( abs( (calo_beam_startZ - mc_meanZ ) / mc_sigmaZ ) > cut_beamQuality_TPC_xyz )
+      return false;
+
+   if( cosTheta < cut_beamQuality_TPC_cosTheta )
+      return false;
+
+   return true;
+};
+
+auto beamQuality_mc_TPCjustPosition = [](double calo_beam_startX, double calo_beam_startY,
+                                    double calo_beam_startZ)   {
+
+   if( abs( (calo_beam_startX - mc_meanX ) / mc_sigmaX ) > cut_beamQuality_TPC_xyz )
+      return false;
+
+   if( abs( (calo_beam_startY - mc_meanY ) / mc_sigmaY ) > cut_beamQuality_TPC_xyz )
+      return false;
+
+   if( abs( (calo_beam_startZ - mc_meanZ ) / mc_sigmaZ ) > cut_beamQuality_TPC_xyz )
+      return false;
+
+   return true;
+};
+
+auto beamQuality_data_TPCinfo = [](double calo_beam_startX, double calo_beam_startY,
+                                    double calo_beam_startZ, double calo_beam_endX,
+                                    double calo_beam_endY, double calo_beam_endZ)   {
+
+   double diffX = calo_beam_endX - calo_beam_startX;
+   double diffY = calo_beam_endY - calo_beam_startY;
+   double diffZ = calo_beam_endZ - calo_beam_startZ;
+
+   double cosTrk_thetaX = diffX / sqrt( diffX*diffX + diffZ*diffZ );
+   double cosTrk_thetaY = diffY / sqrt( diffY*diffY + diffZ*diffZ );
+   double cosTrk_thetaZ = diffZ / sqrt( diffX*diffX + diffZ*diffZ );
+
+   double cosTheta = cos(data_thetaX) * cosTrk_thetaX + cos(data_thetaY) * cosTrk_thetaY + cos(data_thetaZ) * cosTrk_thetaZ;
+
+   if( abs( (calo_beam_startX - data_meanX ) / data_sigmaX ) > cut_beamQuality_TPC_xyz )
+      return false;
+
+   if( abs( (calo_beam_startY - data_meanY ) / data_sigmaY ) > cut_beamQuality_TPC_xyz )
+      return false;
+
+   if( abs( (calo_beam_startZ - data_meanZ ) / data_sigmaZ ) > cut_beamQuality_TPC_xyz )
+      return false;
+
+   if( cosTheta < cut_beamQuality_TPC_cosTheta )
+      return false;
+
+   return true;
+};
+
+auto beamQuality_data_TPCjustPosition = [](double calo_beam_startX, double calo_beam_startY,
+                                    double calo_beam_startZ)   {
+
+   if( abs( (calo_beam_startX - data_meanX ) / data_sigmaX ) > cut_beamQuality_TPC_xyz )
+      return false;
+
+   if( abs( (calo_beam_startY - data_meanY ) / data_sigmaY ) > cut_beamQuality_TPC_xyz )
+      return false;
+
+   if( abs( (calo_beam_startZ - data_meanZ ) / data_sigmaZ ) > cut_beamQuality_TPC_xyz )
+      return false;
+
+   return true;
 };
 
 auto manual_beamPos_mc = [](double beam_startX, double beam_startY,
@@ -275,13 +389,12 @@ auto compute_distanceVertex = [](double beam_endX,
 //Removing primaryMuons in the Incident Pion sample
 //by looking for MichelElectron with CNN score
 
-auto candidate_primaryMuon = []( const std::vector<double> &michelScore){
+auto candidate_primaryMuon = []( double michelScore, int nhits){
 
-   if(michelScore.empty()) return false;
+   if(michelScore == -999.) return false; //there is no michel score available keep event
 
-   for(auto i : michelScore){
-      if(i > cut_michelScore) return true; //there is a michel candidate
-   };
+   if( michelScore./nhits > cut_michelScore) return true; //there is a michel candidate
+
 
    return false;
 };

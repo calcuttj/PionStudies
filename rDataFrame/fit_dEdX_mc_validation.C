@@ -26,6 +26,7 @@
 #include "fitfunc.h"
 #include "betheBloch.h"
 #include <ROOT/RDataFrame.hxx>
+#include "eSliceMethod/eSlice.h"
 
 
 #include <iostream>
@@ -187,10 +188,10 @@ int fit_dEdX_mc_validation(const string file_path) {
    h_betheMPV_muon->GetXaxis()->SetTitle("wire");
    h_betheMPV_muon->GetYaxis()->SetTitle("dEdX (MeV/cm)");
 
-   double mass_pion = 139, mass_muon = 105.6;
+   //double mass_pion = 139, mass_muon = 105.6;
 
    //maybe get energy of pions and muons from distribution of MC? better
-   double E_in_pion = 850 , E_in_muon = 890 ;
+   double E_in_pion =  KE_in_pion, E_in_muon = KE_in_muon ;
 
    hist_bethe( E_in_pion, mass_pion, fit_pitch_mean, h_betheMPV_pion);
    hist_bethe( E_in_muon, mass_muon, fit_pitch_mean, h_betheMPV_muon);
@@ -205,9 +206,8 @@ int fit_dEdX_mc_validation(const string file_path) {
    h_betheMean_muon->GetXaxis()->SetTitle("wire");
    h_betheMean_muon->GetYaxis()->SetTitle("dEdX (MeV/cm)");
    
-   mass_pion = 139; mass_muon = 105.6;
-   E_in_pion = 850; E_in_muon = 890 ;
-
+   E_in_pion =  KE_in_pion, E_in_muon = KE_in_muon;
+   
    bethe_mean( E_in_pion, mass_pion, fit_pitch_mean, h_betheMean_pion);
    bethe_mean( E_in_muon, mass_muon, fit_pitch_mean, h_betheMean_muon);
 

@@ -80,7 +80,7 @@ int dEdX_correction_try(const string path1, const string path2 ){
 
    auto filtered_SCE = frame_mc_SCE
       .Filter("primary_isBeamType")
-      .Filter("passBeamCut")
+      .Filter("passBeamQuality_TPCjustPosition")
       .Filter("!isPrimaryMuonCandidate")
       .Define("uncorrected_dE", dEdX_trkPitch, {"reco_beam_calibrated_dEdX_NoSCE", "reco_beam_TrkPitch_NoSCE"})
       .Define("corrected_dE", dEdX_trkPitch, {"reco_beam_calibrated_dEdX_SCE", "reco_beam_TrkPitch_SCE"})
@@ -89,7 +89,7 @@ int dEdX_correction_try(const string path1, const string path2 ){
 
    auto filtered_data5387 = frame_data5387
       .Filter("primary_isBeamType")
-      .Filter("passBeamCut")
+      .Filter("passBeamQuality_TPCjustPosition")
       .Filter("!isPrimaryMuonCandidate")
       .Define("uncorrected_dE", dEdX_trkPitch, {"reco_beam_calibrated_dEdX_NoSCE", "reco_beam_TrkPitch_NoSCE"})
       .Define("cut_uncorrected_dEdX", cut_dEdX, {"reco_beam_calibrated_dEdX_NoSCE", "reco_beam_calo_wire_NoSCE"})

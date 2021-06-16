@@ -41,13 +41,13 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
    gInterpreter->GenerateDictionary("vector<vector<int>>", "vector");
    ROOT::RDataFrame frame(pionTree, mcFilepath);
 
-   TFile f2("fit_mc_Prod4a_05_27_21.root", "UPDATE");
+   TFile f2("fit_mc_Prod4a_06_11_21.root", "UPDATE");
    TH1D *fit_dEdX_lifetime_mpv = (TH1D*)f2.Get("dEdX_mpv_lifetime"); //mean value corrected for lifetime
    TH1D *fit_pitch_mean = (TH1D*)f2.Get("fit_mc_pitch_mean");
 
    TH1D *fit_dEdX_lifetime_mpv_SCEcorr = (TH1D*)f2.Get("fit_mc_dEdX_SCEcorr_mpv"); //mean value corrected for lifetime
    TH1D *fit_pitch_mean_SCEcorr = (TH1D*)f2.Get("fit_mc_pitch_SCEcorr_mean");
-   TFile *output = new TFile ("eSliceMethod_energyDeposit_05_27_21.root", "RECREATE");
+   TFile *output = new TFile ("eSliceMethod_energyDeposit_mc_06_11_21.root", "RECREATE");
 
    output->cd();
    fit_dEdX_lifetime_mpv->Write();
@@ -144,8 +144,8 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
    //--------------------------------------------------------
 
    //Initial Filters for all events
-   auto frame_filter = frame
-      .Filter("true_beam_endZ > 0");
+   auto frame_filter = frame;
+      //.Filter("true_beam_endZ > 0");
  
 
    //Filter for different interaction types
@@ -163,7 +163,7 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
       .Define("true_firstEntryIncident", [](double true_beam_startP){
             true_beam_startP = 1000*true_beam_startP;
             double startKE = sqrt( pow(true_beam_startP,2) + pow(mass_pion,2) ) - mass_pion;
-            startKE = startKE - eLoss_mc_trueE; //subtracting 8MeV for beam plug eLoss
+            //startKE = startKE - eLoss_mc_trueE; //subtracting for beam plug eLoss
             return startKE;
             }
       ,{"true_beam_startP"})
@@ -204,7 +204,6 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
             else{
 
                interactingWire= reco_beam_calo_wire[ reco_beam_calo_wire.size() - 1]; //last entry
-            double interactingKE;
             if(interactingWire >= 1 && interactingWire < runningSum_dE->GetNbinsX()){
             interactingKE = incidentE - runningSum_dE->GetBinContent(interactingWire);
             }
@@ -235,21 +234,21 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
    .Define("reco_interacting_wire", [](std::vector<double> &reco_beam_calo_wire){
      if(reco_beam_calo_wire.empty()) return -999.;
      else return reco_beam_calo_wire[ reco_beam_calo_wire.size() - 1 ];
-         },{"reco_beam_calo_wire"})
+         },{"reco_beam_calo_wire"});
 
-   .Define("selected_incidentPion", "primary_isBeamType && passBeamQuality_TPCjustPosition && !isPrimaryMuonCandidate")
+   //.Define("selected_incidentPion", "primary_isBeamType && passBeamQuality_TPCjustPosition && !isPrimaryMuonCandidate")
      
-   .Define("selected_abs", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && !has_shower_nHits_distance")
+   //.Define("selected_abs", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && !has_shower_nHits_distance")
      
-   .Define("selected_cex", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && has_shower_nHits_distance");
+  // .Define("selected_cex", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && has_shower_nHits_distance");
 
 
    delete fit_dEdX_lifetime_mpv;
    delete fit_pitch_mean;
    mcIncident_selected_primaryPi.Snapshot("pionana/beamana", outputName);
    
-   mcIncident_selected_primaryPi.Range(0,31700).Snapshot("pionana/beamana", "eSliceMethod_Prod4_mc_1GeV_part1_05_19_21.root");
-   mcIncident_selected_primaryPi.Range(31701,0).Snapshot("pionana/beamana", "eSliceMethod_Prod4_mc_1GeV_part2_05_19_21.root");
+   mcIncident_selected_primaryPi.Range(0,31700).Snapshot("pionana/beamana", "eSliceMethod_Prod4_mc_1GeV_part1_06_01_21.root");
+   mcIncident_selected_primaryPi.Range(31701,0).Snapshot("pionana/beamana", "eSliceMethod_Prod4_mc_1GeV_part2_06_01_21.root");
 
 
    

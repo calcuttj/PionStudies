@@ -146,6 +146,7 @@ auto isBeamType = [](int reco_beam_type){
 };
 
 //TPC values based Beam Cut
+//Tingjun: https://indico.fnal.gov/event/49434/contributions/217088/attachments/144364/183297/backgroundstudies.pdf
 auto beamQuality_mc_TPCinfo = [](double calo_beam_startX, double calo_beam_startY,
                                     double calo_beam_startZ, double calo_beam_endX,
                                     double calo_beam_endY, double calo_beam_endZ)   {
@@ -160,10 +161,7 @@ auto beamQuality_mc_TPCinfo = [](double calo_beam_startX, double calo_beam_start
 
    double cosTheta = cos(mc_thetaX) * cosTrk_thetaX + cos(mc_thetaY) * cosTrk_thetaY + cos(mc_thetaZ) * cosTrk_thetaZ;
 
-   if( abs( (calo_beam_startX - mc_meanX ) / mc_sigmaX ) > cut_beamQuality_TPC_xyz )
-      return false;
-
-   if( abs( (calo_beam_startY - mc_meanY ) / mc_sigmaY ) > cut_beamQuality_TPC_xyz )
+   if( sqrt( pow( (calo_beam_startX - mc_meanX ) / mc_sigmaX, 2) + pow( (calo_beam_startY - mc_meanY ) / mc_sigmaY , 2) ) > cut_beamQuality_TPC_xyz )
       return false;
 
    if( abs( (calo_beam_startZ - mc_meanZ ) / mc_sigmaZ ) > cut_beamQuality_TPC_xyz )
@@ -178,10 +176,7 @@ auto beamQuality_mc_TPCinfo = [](double calo_beam_startX, double calo_beam_start
 auto beamQuality_mc_TPCjustPosition = [](double calo_beam_startX, double calo_beam_startY,
                                     double calo_beam_startZ)   {
 
-   if( abs( (calo_beam_startX - mc_meanX ) / mc_sigmaX ) > cut_beamQuality_TPC_xyz )
-      return false;
-
-   if( abs( (calo_beam_startY - mc_meanY ) / mc_sigmaY ) > cut_beamQuality_TPC_xyz )
+   if( sqrt( pow( (calo_beam_startX - mc_meanX ) / mc_sigmaX, 2) + pow( (calo_beam_startY - mc_meanY ) / mc_sigmaY , 2) ) > cut_beamQuality_TPC_xyz )
       return false;
 
    if( abs( (calo_beam_startZ - mc_meanZ ) / mc_sigmaZ ) > cut_beamQuality_TPC_xyz )
@@ -204,10 +199,7 @@ auto beamQuality_data_TPCinfo = [](double calo_beam_startX, double calo_beam_sta
 
    double cosTheta = cos(data_thetaX) * cosTrk_thetaX + cos(data_thetaY) * cosTrk_thetaY + cos(data_thetaZ) * cosTrk_thetaZ;
 
-   if( abs( (calo_beam_startX - data_meanX ) / data_sigmaX ) > cut_beamQuality_TPC_xyz )
-      return false;
-
-   if( abs( (calo_beam_startY - data_meanY ) / data_sigmaY ) > cut_beamQuality_TPC_xyz )
+   if( sqrt( pow( (calo_beam_startX - data_meanX ) / data_sigmaX, 2) + pow( (calo_beam_startY - data_meanY ) / data_sigmaY , 2) ) > cut_beamQuality_TPC_xyz )
       return false;
 
    if( abs( (calo_beam_startZ - data_meanZ ) / data_sigmaZ ) > cut_beamQuality_TPC_xyz )
@@ -222,10 +214,7 @@ auto beamQuality_data_TPCinfo = [](double calo_beam_startX, double calo_beam_sta
 auto beamQuality_data_TPCjustPosition = [](double calo_beam_startX, double calo_beam_startY,
                                     double calo_beam_startZ)   {
 
-   if( abs( (calo_beam_startX - data_meanX ) / data_sigmaX ) > cut_beamQuality_TPC_xyz )
-      return false;
-
-   if( abs( (calo_beam_startY - data_meanY ) / data_sigmaY ) > cut_beamQuality_TPC_xyz )
+   if( sqrt( pow( (calo_beam_startX - data_meanX ) / data_sigmaX, 2) + pow( (calo_beam_startY - data_meanY ) / data_sigmaY , 2) ) > cut_beamQuality_TPC_xyz )
       return false;
 
    if( abs( (calo_beam_startZ - data_meanZ ) / data_sigmaZ ) > cut_beamQuality_TPC_xyz )

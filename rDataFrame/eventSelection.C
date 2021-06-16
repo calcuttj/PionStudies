@@ -34,14 +34,16 @@ using namespace ROOT::VecOps;
 
 using namespace std::chrono; 
 std::string default_data = 
-    "/Users/fstocker/cernbox/pionAnalyzer/pionAnalyzerTree/pionana_5387_1GeV_1_27_20.root";
+    "prod4a/pduneana_Prod4_1GeV_5387_5_12_21.root";
+std::string default_mc = 
+    "prod4a/pduneana_Prod4a_1GeV_5_14_21.root";
 
 
 //***********************
 //Main Function
-int eventSelection(const string mcFile, const string dataFile = default_data,
+int eventSelection(const string mcFile = default_mc, const string dataFile = default_data,
                    std::string tree_name = "pduneana/beamana",
-                   bool doCounting = false, bool doBatch = true, bool do_filters = false) {
+                   bool doCounting = false, bool doBatch = false, bool do_filters = false) {
   std::cout << "Tree name: " << tree_name << std::endl;
 
   //This prevents the canvas from being draw at the end
@@ -270,11 +272,11 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
             {"primary_isBeamType", "primary_ends_inAPA3", "has_noPion_daughter",
              "passBeamCutBI",
             /*"has_shower_nHits_distance"*/"has_shower_dist_energy"})
-     .Define("selected_incidentPion", "primary_isBeamType && passBeamCutBI && !isPrimaryMuonCandidate")
+     .Define("selected_incidentPion", "primary_isBeamType && passBeamQuality_TPCjustPosition && !isPrimaryMuonCandidate")
      
-     //.Define("selected_abs", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && !has_shower_nHits_distance")
+     .Define("selected_abs", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && !has_shower_nHits_distance")
      
-     //.Define("selected_cex", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && has_shower_nHits_distance");
+     .Define("selected_cex", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && has_shower_nHits_distance");
     
   // DATA
   data_all/*_cutValues*/ = data_all
@@ -349,11 +351,11 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
              "passBeamCut",
              /*"has_shower_nHits_distance"*/"has_shower_dist_energy"})
      
-     //.Define("selected_incidentPion", "primary_isBeamType && passBeamQuality_TPCinfo && passBeamQuality && !isPrimaryMuonCandidate")
+     .Define("selected_incidentPion", "primary_isBeamType && passBeamQuality_TPCjustPosition && !isPrimaryMuonCandidate") //need passBeamQuality from BI??
      
-     //.Define("selected_abs", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && !has_shower_nHits_distance")
+     .Define("selected_abs", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && !has_shower_nHits_distance")
      
-     //.Define("selected_cex", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && has_shower_nHits_distance");
+     .Define("selected_cex", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && has_shower_nHits_distance");
 
   //Label within MC files who passed which CUT (this can help to see when what drops out)
   auto mc_output_with_label = mc_all/*_cutValues*/;
@@ -372,7 +374,7 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
   std::cout << "Starting cuts" << std::endl;
   auto time0 = high_resolution_clock::now();
   auto mc_snap_all = mc_output_with_label.Snapshot(
-      tree_name, "eventSelection_mc_all.root");
+      pionTree, "eventSelection_mc_all.root");
   auto time1 = high_resolution_clock::now();
   std::cout << "MC all: " <<
                duration_cast<seconds>(time1 - time0).count() <<
@@ -387,7 +389,7 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
                  std::endl;
 
     auto mc_snap_beam_type = mcCUT_beamType.Snapshot(
-        tree_name, "eventSelection_mc_beamType.root");
+        pionTree, "eventSelection_mc_beamType.root");
 
     //Beam quality cuts (start position/direction)
     //auto mcCUT_beamCut = mcCUT_beamType.Filter("passBeamCut");
@@ -395,7 +397,7 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
 
     ////Make sure the beam track ends before APA2
     //auto mcCUT_endAPA3 = mcCUT_beamCut.Filter("primary_ends_inAPA3");
-    auto mcCUT_endAPA3 = mcCUT_beamType.Filter("primary_ends_inAPA3 && passBeamCut && !(isPrimaryMuonCandidate)");
+    auto mcCUT_endAPA3 = mcCUT_beamType.Filter("primary_ends_inAPA3 && passBeamQuality_TPCjustPosition && !(isPrimaryMuonCandidate)");
     auto time2 = high_resolution_clock::now();
     std::cout << "MC APA3 cut: " <<
                  duration_cast<seconds>(time2 - time1).count() <<
@@ -442,12 +444,12 @@ int eventSelection(const string mcFile, const string dataFile = default_data,
 
   //Filter out non track-like beam objects 
   auto data_snap_all = data_output_with_label.Snapshot(
-      tree_name, "eventSelection_data_all.root");
+      pionTree, "eventSelection_data_all.root");
 
   //auto dataCUT_beamQuality = data_output_with_label.Filter("passBeamQuality && primary_isBeamType");
   auto dataCUT_beamQuality = data_output_with_label.Filter("passBeamQuality");
   auto data_snap_beamQuality = dataCUT_beamQuality.Snapshot(
-      tree_name, "eventSelection_data_BeamQuality.root");
+      pionTree, "eventSelection_data_BeamQuality.root");
 
   //Ends before APA2
   //auto dataCUT_endAPA3 = dataCUT_beamQuality.Filter("primary_ends_inAPA3 && passBeamCut");

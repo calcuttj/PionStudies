@@ -40,14 +40,14 @@ int eSliceMethod_branchPrepData(const string mcFilepath, const string outputName
    gInterpreter->GenerateDictionary("vector<vector<int>>", "vector");
    ROOT::RDataFrame frame(pionTree, mcFilepath);
 
-   TFile f2("fit_5387_Prod4_dEdX_pitch_05_19_21.root", "UPDATE");
+   TFile f2("fit_5387_Prod4a_06_11_21.root", "UPDATE");
    TH1D *fit_dEdX_lifetime_mpv = (TH1D*)f2.Get("dEdX_mpv_lifetime"); //mean value corrected for lifetime
    TH1D *fit_pitch_mean = (TH1D*)f2.Get("fit_pitch_mean");
    
    TH1D *fit_dEdX_lifetime_mpv_SCEcorr = (TH1D*)f2.Get("fit_dEdX_SCEcorr_mpv"); //mean value corrected for lifetime
    TH1D *fit_pitch_mean_SCEcorr = (TH1D*)f2.Get("fit_pitch_SCEcorr_mean");
 
-   TFile *output = new TFile ("eSliceMethod_energyDeposit_5387_05_19_21.root", "RECREATE");
+   TFile *output = new TFile ("eSliceMethod_energyDeposit_5387_06_11_21.root", "RECREATE");
 
    output->cd();
    fit_dEdX_lifetime_mpv->Write();
@@ -141,39 +141,56 @@ int eSliceMethod_branchPrepData(const string mcFilepath, const string outputName
    //
    //for Interacting energy, the wire the primary particle interacted at should be the last one in reco_beam_calo_wire
    //
-
-   auto mcIncident_selected_primaryPi = frame  
-      .Define("reco_firstEntryIncident", firstIncident, {"reco_beam_incidentEnergies"})
+   //
+   std::cout << "Doing Reco Incident and Interacting energy" << std::endl;
+   auto mcIncident_selected_primaryPi = frame      
+     //uncalibrated
+      .Define("reco_firstEntryIncident", [](double beamInst_P){
+            beamInst_P = 1000*beamInst_P;
+            double startKE = sqrt( pow(beamInst_P,2) + pow(mass_pion,2) ) - mass_pion;
+            return startKE;
+            }
+      ,{"beam_inst_P"})
+      //For now in Reco not subtratcting any energy Loss... can do later on if needed
 
       .Define("reco_interactingKE", [runningSum_dE](const std::vector<double> &reco_beam_calo_wire, double incidentE){
-            double interactingWire = reco_beam_calo_wire[ reco_beam_calo_wire.size() ];
-            double interactingKE;
+ 
+            double interactingWire, interactingKE;
+
+            if( reco_beam_calo_wire.empty()) return -999.;
+            else{
+
+               interactingWire= reco_beam_calo_wire[ reco_beam_calo_wire.size() - 1]; //last entry
             if(interactingWire >= 1 && interactingWire < runningSum_dE->GetNbinsX()){
             interactingKE = incidentE - runningSum_dE->GetBinContent(interactingWire);
             }
-            else interactingKE = -999;
+            else interactingKE = -999.;
+            //std::cout << "initWire = " << interactingWire << "  inter KE = " << interactingKE << std::endl;
             return interactingKE;
+            };
             }
             ,{"reco_beam_calo_wire", "reco_firstEntryIncident"})
 
       //SCEcorr only need to change interactingKE
-      .Define("reco_interactingKE_SCEcorr", [runningSum_dE_SCEcorr](const std::vector<double> &reco_beam_calo_wire, double incidentE){
-            double interactingWire = reco_beam_calo_wire[ reco_beam_calo_wire.size() ];
-            double interactingKE;
-            if(interactingWire >= 1 && interactingWire < runningSum_dE_SCEcorr->GetNbinsX()){
-            interactingKE = incidentE - runningSum_dE_SCEcorr->GetBinContent(interactingWire);
-            }
-            else interactingKE = -999;
-            return interactingKE;
-            }
-            ,{"reco_beam_calo_wire", "reco_firstEntryIncident"})
-      
+      //.Define("reco_interactingKE_SCEcorr", [runningSum_dE_SCEcorr](const std::vector<double> &reco_beam_calo_wire, double incidentE){
+      //      double interactingWire = reco_beam_calo_wire[ reco_beam_calo_wire.size() - 1 ];
+      //      double interactingKE;
+      //      if(interactingWire >= 1 && interactingWire < runningSum_dE_SCEcorr->GetNbinsX()){
+      //      interactingKE = incidentE - runningSum_dE_SCEcorr->GetBinContent(interactingWire);
+      //      }
+      //      else interactingKE = -999;
+      //      return interactingKE;
+      //      }
+      //      ,{"reco_beam_calo_wire", "reco_firstEntryIncident"})
+
       .Define("reco_incident_wire", [](std::vector<double> &reco_beam_calo_wire){
-            return reco_beam_calo_wire[ reco_beam_calo_wire[0] ];
+     if(reco_beam_calo_wire.empty()) return -999.;
+     else return reco_beam_calo_wire[ reco_beam_calo_wire[0] ];
             },{"reco_beam_calo_wire"})
 
    .Define("reco_interacting_wire", [](std::vector<double> &reco_beam_calo_wire){
-         return reco_beam_calo_wire[ reco_beam_calo_wire.size() ];
+     if(reco_beam_calo_wire.empty()) return -999.;
+     else return reco_beam_calo_wire[ reco_beam_calo_wire.size() - 1 ];
          },{"reco_beam_calo_wire"});
 
    delete fit_dEdX_lifetime_mpv;

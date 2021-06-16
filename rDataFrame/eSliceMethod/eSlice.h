@@ -42,8 +42,8 @@ double eLoss_mc_trueE = 43; //MeV, kinetic energy
 //binning, bc of beam spread we need to weight the bins, for incident Histo bin very fine and create it, rebin afterwards and divide by the rebinned number (otherwise it is multiple counting
 
 
-double bin_size_int = 25.;
-double bin_size_inc = 25.; //2
+double bin_size_int = 50.;
+double bin_size_inc = 50.; //2
 
 double eStart = 1500.; //1200
 double eEnd = 0.;
@@ -101,6 +101,29 @@ void build_incidentHist(TH1D* initialE, TH1D* interE, TH1D* incident){
    return;
 
 };
+
+//----------------------------------------
+// Function to check nitial E bin and Interacting Ebin
+///----------------------------------------
+
+auto checkBins(double init_KE, double inter_KE, int bin_init, int bin_inter){
+
+   if(
+         bin_init != bin_inter && 
+         init_KE > inter_KE &&
+         bin_init <= nBin_int &&
+         bin_init > 0 &&
+         bin_inter <= nBin_int &&
+         bin_inter > 0 ){
+
+      return true;
+   }
+
+   else return false;
+};
+
+
+
 
 //----------------------------------------
 // CONSTRUCT XS from Histos 

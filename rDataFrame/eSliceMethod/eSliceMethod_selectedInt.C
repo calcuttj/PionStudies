@@ -35,7 +35,7 @@ using namespace ROOT::VecOps;
 //***********************
 //Main Function
 
-int eSliceMethod_selectedInt(const string mcFilepath, bool isMC, bool doUnsmear){
+int eSliceMethod_selectedInt(const string mcFilepath, bool isMC, bool doEffPur, bool doUnsmear, bool doRecoEff){
 
    gInterpreter->GenerateDictionary("vector<vector<int>>", "vector");
    ROOT::RDataFrame frame(pionTree, mcFilepath);
@@ -66,15 +66,20 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC, bool doUnsmear)
 
    TH1D *h_eff_eventSel_int = (TH1D*)f2.Get("h_eff_eventSel_int");
    TH1D *h_pur_removeBG_int = (TH1D*)f2.Get("h_pur_removeBG_int");
+   TH1D *h_trueE_eff_reconstruction_int = (TH1D*)f2.Get("h_trueE_eff_reconstruction_int");
    TH2D *h2_inverse_smearing_interacting = (TH2D*)f2.Get("h2_inverse_smearing_interacting");
 
    TH1D *h_eff_eventSel_inc_initE = (TH1D*)f2.Get("h_eff_eventSel_inc_initE");
    TH1D *h_pur_removeBG_inc_initE = (TH1D*)f2.Get("h_pur_removeBG_inc_initE");
+   TH1D *h_trueE_eff_reconstruction_inc_initE = (TH1D*)f2.Get("h_trueE_eff_reconstruction_inc_initE");
    TH2D *h2_inverse_smearing_incident_initE = (TH2D*)f2.Get("h2_inverse_smearing_incident_initE");
 
    TH1D *h_eff_eventSel_inc_interE = (TH1D*)f2.Get("h_eff_eventSel_inc_interE");
    TH1D *h_pur_removeBG_inc_interE = (TH1D*)f2.Get("h_pur_removeBG_inc_interE");
+   TH1D *h_trueE_eff_reconstruction_inc_interE = (TH1D*)f2.Get("h_trueE_eff_reconstruction_inc_interE");
    TH2D *h2_inverse_smearing_incident_interE = (TH2D*)f2.Get("h2_inverse_smearing_incident_interE");
+
+   //Get Reco Efficiencies to apply on trueE
 
    //Eff & Pur on TrueE bins
    TH1D *h_trueE_eff_eventSel_int = (TH1D*)f2.Get("h_trueE_eff_eventSel_int");
@@ -138,12 +143,9 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC, bool doUnsmear)
 
    //Initial Filters for all events
    auto mcIncident_selected_primaryPi = frame
-      .Define("reco_initE_eq_interE", [](double reco_initE, double reco_interE){
-            if( initE_sameBin_interE(reco_initE, reco_interE) ) return true;
-            else return false;
-            }
-            ,{"reco_firstEntryIncident", "reco_interactingKE"})
-      .Filter("selected_incidentPion && !reco_initE_eq_interE");
+      .Define("true_initKE", "true_firstEntryIncident")
+      .Define("true_interKE", "true_interactingKE_fromLength")
+      .Filter("selected_incidentPion");
 
    //========================================================
    //Build the Incident Histogram
@@ -151,24 +153,31 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC, bool doUnsmear)
    //take the interacting energy, that slice is filled too
    if(isMC){
       mcIncident_selected_primaryPi
-         .Foreach( [h_trueE_selPion_inc_initE, h_trueE_selPion_inc_interE] (double true_firstEntryIncident, double true_beam_interactingEnergy) { 
+         .Foreach( [h_trueE_selPion_inc_initE, h_trueE_selPion_inc_interE] (double init_KE, double inter_KE) { 
                //make sure incident Pion does not interact in bin it was born
-               if( !( initE_sameBin_interE( true_firstEntryIncident, true_beam_interactingEnergy ) ) ){
-               h_trueE_selPion_inc_initE->Fill( true_firstEntryIncident ); 
-               h_trueE_selPion_inc_interE->Fill( true_beam_interactingEnergy ); 
+               int bin_initE = (int) init_KE / bin_size_inc + 1;
+               int bin_interE = (int) inter_KE / bin_size_inc + 1;
+               if( checkBins(init_KE, inter_KE, bin_initE, bin_interE) ){
+
+               h_trueE_selPion_inc_initE->SetBinContent( bin_initE, h_trueE_selPion_inc_initE->GetBinContent( bin_initE ) + 1); 
+               h_trueE_selPion_inc_interE->SetBinContent( bin_interE, h_trueE_selPion_inc_interE->GetBinContent( bin_interE ) + 1); 
+
                };
                }
-               ,{"true_firstEntryIncident", "true_KEint_fromEndP"});
-
+               ,{"true_initKE", "true_interKE"});
    }
 
    mcIncident_selected_primaryPi
-      .Foreach( [h_recoE_selPion_inc_initE, h_recoE_selPion_inc_interE] (double reco_firstEntryIncident, double reco_beam_interactingEnergy ) {
+      .Foreach( [h_recoE_selPion_inc_initE, h_recoE_selPion_inc_interE] (double init_KE, double inter_KE) { 
+            //make sure incident Pion does not interact in bin it was born
+            int bin_initE = (int) init_KE / bin_size_inc + 1;
+            int bin_interE = (int) inter_KE / bin_size_inc + 1;
+            if( checkBins(init_KE, inter_KE, bin_initE, bin_interE) ){
 
-            if( !(initE_sameBin_interE(reco_firstEntryIncident, reco_beam_interactingEnergy)) ){
-            h_recoE_selPion_inc_initE->Fill( reco_firstEntryIncident ); 
-            h_recoE_selPion_inc_interE->Fill( reco_beam_interactingEnergy ); 
-            };        
+            h_recoE_selPion_inc_initE->SetBinContent( bin_initE,  h_recoE_selPion_inc_initE->GetBinContent( bin_initE ) + 1); 
+            h_recoE_selPion_inc_interE->SetBinContent( bin_interE, h_recoE_selPion_inc_interE->GetBinContent( bin_interE ) + 1); 
+
+            };
             }
             ,{"reco_firstEntryIncident", "reco_interactingKE"});
 
@@ -192,26 +201,33 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC, bool doUnsmear)
    if(isMC){
       mcInteracting_selected_abs
 
-         .Foreach( [h_trueE_selAbs_interacting] ( double true_firstEntryIncident, double true_beam_interactingEnergy ){
+         .Foreach( [h_trueE_selAbs_interacting] (double init_KE, double inter_KE) { 
+               //make sure incident Pion does not interact in bin it was born
+               int bin_initE = (int) init_KE / bin_size_inc + 1;
+               int bin_interE = (int) inter_KE / bin_size_inc + 1;
+               if( checkBins(init_KE, inter_KE, bin_initE, bin_interE) ){
 
-               if( !( initE_sameBin_interE( true_firstEntryIncident, true_beam_interactingEnergy ) ) ){
-               h_trueE_selAbs_interacting->Fill(true_beam_interactingEnergy);
+               h_trueE_selAbs_interacting->SetBinContent( bin_interE, h_trueE_selAbs_interacting->GetBinContent( bin_interE ) + 1); 
+
                };
-               }            
-               ,{"true_firstEntryIncident","true_KEint_fromEndP"});
-
+               }
+               ,{"true_initKE", "true_interKE"});
       h_trueE_selAbs_interacting->Sumw2(0);
       h_trueE_selAbs_interacting->Write();
    }
 
    mcInteracting_selected_abs 
-      .Foreach( [h_recoE_selAbs_interacting] ( double reco_firstEntryIncident, double reco_beam_interactingEnergy ){
+      .Foreach( [h_recoE_selAbs_interacting] (double init_KE, double inter_KE) { 
+         //make sure incident Pion does not interact in bin it was born
+         int bin_initE = (int) init_KE / bin_size_inc + 1;
+         int bin_interE = (int) inter_KE / bin_size_inc + 1;
+         if( checkBins(init_KE, inter_KE, bin_initE, bin_interE) ){
 
-            if( !( initE_sameBin_interE( reco_firstEntryIncident, reco_beam_interactingEnergy ) ) ){
-            h_recoE_selAbs_interacting->Fill(reco_beam_interactingEnergy);
-            };
-            }            
-            ,{"reco_firstEntryIncident","reco_interactingKE"});
+            h_recoE_selAbs_interacting->SetBinContent( bin_interE, h_recoE_selAbs_interacting->GetBinContent( bin_interE ) + 1); 
+
+         };
+      }
+   ,{"reco_firstEntryIncident","reco_interactingKE"});
 
    h_recoE_selAbs_interacting->Sumw2(0);
    h_recoE_selAbs_interacting->Write();
@@ -235,44 +251,32 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC, bool doUnsmear)
    //   Unsmear Start and End Distributions for Incident Histogram
    //
    //------------------------------------------------------
+   if(doEffPur){
+      h_recoE_selPion_inc_initE->Multiply( h_pur_removeBG_inc_initE );
+      h_recoE_selPion_inc_initE->Divide( h_eff_eventSel_inc_initE );
 
-   h_recoE_selPion_inc_initE->Multiply( h_pur_removeBG_inc_initE );
-   h_recoE_selPion_inc_initE->Divide( h_eff_eventSel_inc_initE );
+      //interE
+      h_recoE_selPion_inc_interE->Multiply( h_pur_removeBG_inc_interE );
+      h_recoE_selPion_inc_interE->Divide( h_eff_eventSel_inc_interE );
 
-   //interE
-   h_recoE_selPion_inc_interE->Multiply( h_pur_removeBG_inc_interE );
-   h_recoE_selPion_inc_interE->Divide( h_eff_eventSel_inc_interE );
 
+   };
    //Unsmear the start Pion Distribution with the inverse matrix
    //Loop through smearing matrix Incident
    if(doUnsmear){
       for(int i = 1; i <= nBin_int; i++){
-         double help_sum = 0;
+         double help_sum_initE = 0, help_sum_interE=0;
          //rows
          for(int j = 1; j <= nBin_int; j++){
-            help_sum += h_recoE_selPion_inc_initE->GetBinContent(j)*h2_inverse_smearing_incident_initE->GetBinContent( i, j);
+            help_sum_initE += h_recoE_selPion_inc_initE->GetBinContent(j)*h2_inverse_smearing_incident_initE->GetBinContent( i, j);
+            help_sum_interE += h_recoE_selPion_inc_interE->GetBinContent(j)*h2_inverse_smearing_incident_interE->GetBinContent( i, j);
          }; 
-         h_recoE_unsmeared_inc_initE->SetBinContent( i , help_sum);
+         h_recoE_unsmeared_inc_initE->SetBinContent( i , help_sum_initE);
+         h_recoE_unsmeared_inc_interE->SetBinContent( i , help_sum_interE);
       };
 
       h_recoE_unsmeared_inc_initE->Sumw2(0);
-      h_recoE_unsmeared_inc_initE->Write();
-
-
-
-      //Unsmear the start Pion Distribution with the inverse matrix
-      //Loop through smearing matrix Incident
-      for(int i = 1; i <= nBin_int; i++){
-         double help_sum = 0;
-         //rows
-         for(int j = 1; j <= nBin_int; j++){
-            help_sum += h_recoE_selPion_inc_interE->GetBinContent(j)*h2_inverse_smearing_incident_interE->GetBinContent( i, j);
-         }; 
-         h_recoE_unsmeared_inc_interE->SetBinContent( i , help_sum);
-      };
-
       h_recoE_unsmeared_inc_interE->Sumw2(0);
-      h_recoE_unsmeared_inc_interE->Write();
    }
 
    else {
@@ -280,26 +284,22 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC, bool doUnsmear)
       h_recoE_unsmeared_inc_interE = h_recoE_selPion_inc_interE;
 
    }
+   if(doRecoEff){
+      h_recoE_unsmeared_inc_initE->Divide( h_trueE_eff_reconstruction_inc_initE );
+      h_recoE_unsmeared_inc_interE->Divide( h_trueE_eff_reconstruction_inc_interE );
+   };
+
+   h_recoE_unsmeared_inc_initE->Sumw2(0);
+   h_recoE_unsmeared_inc_initE->Write();
+   h_recoE_unsmeared_inc_interE->Sumw2(0);
+   h_recoE_unsmeared_inc_interE->Write();
    //------------------------------------------------------
    //    Build recoE_unsmeared Incident Histo
    //    from the distributions for XS calculation after
    //------------------------------------------------------
 
-   TH1* h_cum_initE = h_recoE_unsmeared_inc_initE->GetCumulative(false);
-   TH1* h_cum_interE = h_recoE_unsmeared_inc_interE->GetCumulative(false);
-   //FILLING OF INCIDENT
-   //--> if Pion is "born" in bin 10 and interacts in bin 4 then incident is filled from bin 9 to 4
-   //cumulative sum of initialE: the difference between higher bin and the lower next shows how many pions were born 
-   //cumulative sum of interE: the difference between the higher bin and lower shows how many pions died
-   //incident histo is built such that it takes the difference of what was born in previous bin compared to what died in previous bin
-   //i.e. incident histo cannot fill the first energy bin of KE 1200MeV
 
-   //h_recoE_unsmeared_incident->SetBinContent(nBin_int, 1); //to avoid dividing through 0
-   for(int i= nBin_int-1; i >= 1; i--){
-      double diff = h_cum_initE->GetBinContent(i+1) - h_cum_interE->GetBinContent(i+1);
-      h_recoE_unsmeared_incident->SetBinContent( i, diff);
-   };
-
+   build_incidentHist( h_recoE_unsmeared_inc_initE, h_recoE_unsmeared_inc_interE, h_recoE_unsmeared_incident );
    h_recoE_unsmeared_incident->Sumw2(0);
    h_recoE_unsmeared_incident->Write();
 
@@ -309,9 +309,11 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC, bool doUnsmear)
    //------------------------------------------------------
 
    //Take account for purity of TrueE == RecoE and Efficiency from Smearing
-   h_recoE_selAbs_interacting->Multiply( h_pur_removeBG_int);
-   h_recoE_selAbs_interacting->Divide( h_eff_eventSel_int );
+   if(doEffPur){
+      h_recoE_selAbs_interacting->Multiply( h_pur_removeBG_int);
+      h_recoE_selAbs_interacting->Divide( h_eff_eventSel_int );
 
+   };
    if(doUnsmear){   for(int i = 1; i <= nBin_int; i++){
       double help_sum = 0;
       //rows
@@ -322,12 +324,17 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC, bool doUnsmear)
    };
 
    h_recoE_unsmeared_interacting->Sumw2(0);
-   h_recoE_unsmeared_interacting->Write();
    }
 
    else {
       h_recoE_unsmeared_interacting = h_recoE_selAbs_interacting;
    }
+   if(doRecoEff){
+      h_recoE_unsmeared_interacting->Divide( h_trueE_eff_reconstruction_int );
+
+   };
+   h_recoE_unsmeared_interacting->Sumw2(0);
+   h_recoE_unsmeared_interacting->Write();
    //=====================================================
    //             Computing the XS
    //=====================================================
@@ -335,187 +342,94 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC, bool doUnsmear)
    // xs(Ebin) = (A / (Na*density*bin_size)) * dEdX(Ebin) * hInteracting / hIncident
    //
    // More Accurate use log( Ninc / (Ninc - Nint ))
-   //
-   double scale_factor = factor_mbarn * atomic_mass / ( density * N_avogadro * bin_size_int );
 
    //------------------------------------------------------
    //    Absorption, Selected Interactions Reconstrucetd Energy
    //------------------------------------------------------
    //
-   string xs_abs_name, xs_abs_title;
+   string xs_abs_name, xs_abs_title, xs_totInel_name, xs_totInel_title;
    if(isMC) {
+      xs_totInel_name = "h_xs_recoE_selected_totInel_mc";
+      xs_totInel_title = "Total Inelastic MC";
       xs_abs_name = "h_xs_recoE_selected_abs_mc";
       xs_abs_title = "Absorption MC";
    }
    else {
+      xs_totInel_name = "h_xs_recoE_selected_totInel_data";
+      xs_totInel_title = "Total Inelastic Data";
       xs_abs_name = "h_xs_recoE_selected_abs_data";
       xs_abs_title = "Absorption Data";
    }
 
 
-   TH1D* h_xs_RecoE_selected_abs = (TH1D*) h_recoE_unsmeared_incident->Clone(xs_abs_name.c_str());
-   h_xs_RecoE_selected_abs->SetTitle(xs_abs_title.c_str());
+   TH1D* h_xs_recoE_selected_abs = new TH1D( xs_abs_name.c_str(), xs_abs_title.c_str(), nBin_int, eEnd, eStart);
+   TH1D* h_xs_recoE_selected_totInel = new TH1D( xs_totInel_name.c_str(), xs_totInel_title.c_str(), nBin_int, eEnd, eStart);
 
-   TH1D* dummy_recoE_abs = (TH1D*) h_recoE_unsmeared_incident->Clone(xs_abs_name.c_str());
-   dummy_recoE_abs->Add( h_recoE_unsmeared_interacting, -1);
-   h_xs_RecoE_selected_abs->Divide( dummy_recoE_abs );
-   for(int i = 1; i <= nBin_int; i++) h_xs_RecoE_selected_abs->SetBinContent(i, log( h_xs_RecoE_selected_abs->GetBinContent(i) ));
-   h_xs_RecoE_selected_abs->Multiply( h_betheMean_muon );
-   h_xs_RecoE_selected_abs->Scale( scale_factor );
+   //Function doing XS
+   do_XS_log( h_xs_recoE_selected_abs, h_recoE_unsmeared_interacting, h_recoE_unsmeared_incident, h_betheMean_muon );   
+   do_XS_log_binomial_error( h_xs_recoE_selected_abs, h_recoE_unsmeared_interacting, h_recoE_unsmeared_incident, h_betheMean_muon );   
 
-   //Try Bin Errors from error propagation derivation of sigma(E)
-   //error is like error of binomial factor*sqrt( p(1-p)/Ninc) where p=Nint/Ninc
+   do_XS_log( h_xs_recoE_selected_totInel, h_recoE_unsmeared_inc_interE, h_recoE_unsmeared_incident, h_betheMean_muon );   
+   do_XS_log_binomial_error( h_xs_recoE_selected_totInel, h_recoE_unsmeared_inc_interE, h_recoE_unsmeared_incident, h_betheMean_muon );   
 
-   for(int i=1; i <= nBin_int; i++){
-
-      double p = h_recoE_unsmeared_interacting->GetBinContent(i) / h_recoE_unsmeared_incident->GetBinContent(i);
-      double nInc_i = h_recoE_unsmeared_incident->GetBinContent(i);
-      double help_factor = scale_factor*h_betheMean_muon->GetBinContent(i);
-
-      h_xs_RecoE_selected_abs->SetBinError( i , help_factor*sqrt( p*(1-p)/nInc_i ));
-   };
-   h_xs_RecoE_selected_abs->Write();
+   
+   h_xs_recoE_selected_abs->Write();
+   h_xs_recoE_selected_totInel->Write();
 
    //------------------------------------------------------
    //     For TrueE  
    //------------------------------------------------------
    h_trueE_selPion_inc_initE->Multiply( h_trueE_pur_removeBG_inc_initE );
    h_trueE_selPion_inc_initE->Divide( h_trueE_eff_eventSel_inc_initE );
+   //also reco efficiency
+   h_trueE_selPion_inc_initE->Divide( h_trueE_eff_reconstruction_inc_initE );
+
    h_trueE_selPion_inc_interE->Multiply( h_trueE_pur_removeBG_inc_interE );
    h_trueE_selPion_inc_interE->Divide( h_trueE_eff_eventSel_inc_interE );
+   //also reco efficiency
+   h_trueE_selPion_inc_interE->Divide( h_trueE_eff_reconstruction_inc_interE );
 
    h_trueE_selAbs_interacting->Multiply( h_trueE_pur_removeBG_int);
    h_trueE_selAbs_interacting->Divide( h_trueE_eff_eventSel_int );
+   //also reco efficiency
+   h_trueE_selAbs_interacting->Divide( h_trueE_eff_reconstruction_int);
 
-   TH1* h_cum_trueE_initE = h_trueE_selPion_inc_initE->GetCumulative(false);
-   TH1* h_cum_trueE_interE = h_trueE_selPion_inc_interE->GetCumulative(false);
 
-   //h_trueE_unsmeared_incident->SetBinContent(nBin_int, 1); //to avoid dividing through 0
-   for(int i= nBin_int-1; i >= 1; i--){
-      double diff = h_cum_trueE_initE->GetBinContent(i+1) - h_cum_trueE_interE->GetBinContent(i+1);
-      h_trueE_selPion_incident->SetBinContent( i, diff);
-   };
-
+   build_incidentHist( h_trueE_selPion_inc_initE, h_trueE_selPion_inc_interE, h_trueE_selPion_incident );
    h_trueE_selPion_incident->Sumw2(0);
    h_trueE_selPion_incident->Write();
+   //-----------
 
+   TH1D* h_xs_trueE_selected_abs = new TH1D( "h_xs_trueE_selected_abs", "true Kinetic Energy (MeV)", nBin_int, eEnd, eStart );
+   TH1D* h_xs_trueE_selected_totInel = new TH1D( "h_xs_trueE_selected_totInel", "true Kinetic Energy (MeV)", nBin_int, eEnd, eStart );
+   //Function doing XS
+   if(isMC){   
 
-   TH1D* h_xs_trueE_selected_abs = (TH1D*) h_trueE_selPion_incident->Clone("h_xs_trueE_selected_abs");
-   h_xs_trueE_selected_abs->GetXaxis()->SetTitle("true Kinetic Energy (MeV)");
-   TH1D* dummy_trueE_abs = (TH1D*) h_trueE_selPion_incident->Clone("h_xs_trueE_selected_abs");
+      do_XS_log( h_xs_trueE_selected_abs, h_trueE_selAbs_interacting, h_trueE_selPion_incident, h_betheMean_muon );   
+      do_XS_log_binomial_error( h_xs_trueE_selected_abs, h_trueE_selAbs_interacting, h_trueE_selPion_incident, h_betheMean_muon );   
+      
+      do_XS_log( h_xs_trueE_selected_totInel, h_trueE_selPion_inc_interE, h_trueE_selPion_incident, h_betheMean_muon );   
+      do_XS_log_binomial_error( h_xs_trueE_selected_totInel, h_trueE_selPion_inc_interE, h_trueE_selPion_incident, h_betheMean_muon );   
 
-   TH1D* h_xs_trueE_selected_totInel = (TH1D*) h_trueE_selPion_incident->Clone("h_xs_trueE_selected_totInel");
-   h_xs_trueE_selected_totInel->GetXaxis()->SetTitle("true Kinetic Energy (MeV)");
-   TH1D* dummy_trueE_totInel = (TH1D*) h_trueE_selPion_incident->Clone("h_xs_trueE_selected_totInel");
-
-
-   if(isMC){
-
-      TH1D* dummy_trueE_abs = (TH1D*) h_trueE_selPion_incident->Clone();
-      dummy_trueE_abs->Add( h_trueE_selAbs_interacting, -1);
-      h_xs_trueE_selected_abs->Divide( dummy_trueE_abs );
-      for(int i = 1; i <= nBin_int; i++) h_xs_trueE_selected_abs->SetBinContent(i, log( h_xs_trueE_selected_abs->GetBinContent(i) ));
-      h_xs_trueE_selected_abs->Multiply( h_betheMean_muon );
-      h_xs_trueE_selected_abs->Scale( scale_factor );
-
-      TH1D* dummy_trueE_totInel = (TH1D*) h_trueE_selPion_incident->Clone();
-      dummy_trueE_totInel->Add( h_trueE_selPion_inc_interE, -1);
-      h_xs_trueE_selected_totInel->Divide( dummy_trueE_totInel );
-      for(int i = 1; i <= nBin_int; i++) h_xs_trueE_selected_totInel->SetBinContent(i, log( h_xs_trueE_selected_totInel->GetBinContent(i) ));
-      h_xs_trueE_selected_totInel->Multiply( h_betheMean_muon );
-      h_xs_trueE_selected_totInel->Scale( scale_factor );
-
-   }
-
-   /* Less Accurate when Nint !<< Ninc
-      TH1D* h_xs_RecoE_selected_abs = (TH1D*) h_recoE_selAbs_interacting->Clone("h_xs_RecoE_selected_abs");
-      h_xs_RecoE_selected_abs->Divide( h_recoE_selPion_inc_initE );
-      h_xs_RecoE_selected_abs->Multiply( h_betheMean_muon );
-      h_xs_RecoE_selected_abs->Scale( factor_mbarn*scale_factor );
-      */
-
-
-
-   if(isMC){
-      for(int i=1; i <= nBin_int; i++){
-
-         double p = h_trueE_selAbs_interacting->GetBinContent(i) / h_trueE_selPion_incident->GetBinContent(i);
-         double nInc_i = h_trueE_selPion_incident->GetBinContent(i);
-         double help_factor = scale_factor*h_betheMean_muon->GetBinContent(i);
-
-         h_xs_trueE_selected_abs->SetBinError( i , help_factor*sqrt( p*(1-p)/nInc_i ));
-      };
-      h_xs_trueE_selected_abs->Write();
-
-      for(int i=1; i <= nBin_int; i++){
-
-         double p = h_trueE_selPion_inc_interE->GetBinContent(i) / h_trueE_selPion_incident->GetBinContent(i);
-         double nInc_i = h_trueE_selPion_incident->GetBinContent(i);
-         double help_factor = scale_factor*h_betheMean_muon->GetBinContent(i);
-
-         h_xs_trueE_selected_totInel->SetBinError( i , help_factor*sqrt( p*(1-p)/nInc_i ));
-      };
-      h_xs_trueE_selected_totInel->Write();
    }
 
    h_xs_trueE_selected_abs->Write();
    h_xs_trueE_selected_totInel->Write();
-   //------------------------------------------------------
-   //    Total Inelastic, Selected Interactions Reconstrucetd Energy
-   //------------------------------------------------------
-   //
-   string xs_totInel_name, xs_totInel_title;
-   if(isMC) {
-      xs_totInel_name = "h_xs_recoE_selected_totInel_mc";
-      xs_totInel_title = "Total Inelastic MC";
-   }
-   else {
-      xs_totInel_name = "h_xs_recoE_selected_totInel_data";
-      xs_totInel_title = "Total Inelastic Data";
-   }
 
-
-   TH1D* h_xs_RecoE_selected_totInel = (TH1D*) h_recoE_unsmeared_incident->Clone(xs_totInel_name.c_str());
-   h_xs_RecoE_selected_totInel->SetTitle(xs_totInel_title.c_str());
-
-   /*for(int i = 1; i<= nBin_int; i++){
-     std::cout << "Unsmeared incident Bin = " << i << " Content = " << h_recoE_unsmeared_incident->GetBinContent(i) << std::endl;
-     std::cout << "Unsmeared interE   Bin = " << i << " Content = " << h_recoE_unsmeared_inc_interE->GetBinContent(i) << std::endl;
-     std::cout << "Difference = " << h_recoE_unsmeared_incident->GetBinContent(i) -  h_recoE_unsmeared_inc_interE->GetBinContent(i) << std::endl;
-     };
-     */
-   TH1D* dummy_recoE_totInel = (TH1D*) h_recoE_unsmeared_incident->Clone(xs_totInel_name.c_str());
-   dummy_recoE_totInel->Add( h_recoE_unsmeared_inc_interE, -1);
-   h_xs_RecoE_selected_totInel->Divide( dummy_recoE_totInel );
-   for(int i = 1; i <= nBin_int; i++) h_xs_RecoE_selected_totInel->SetBinContent(i, log( h_xs_RecoE_selected_totInel->GetBinContent(i) ));
-   h_xs_RecoE_selected_totInel->Multiply( h_betheMean_muon );
-   h_xs_RecoE_selected_totInel->Scale( scale_factor );
-
-   for(int i=1; i <= nBin_int; i++){
-
-      double p = h_recoE_unsmeared_inc_interE->GetBinContent(i) / h_recoE_unsmeared_incident->GetBinContent(i);
-      double nInc_i = h_recoE_unsmeared_incident->GetBinContent(i);
-      double help_factor = scale_factor*h_betheMean_muon->GetBinContent(i);
-
-      h_xs_RecoE_selected_totInel->SetBinError( i , help_factor*sqrt( p*(1-p)/nInc_i ));
-   };
-   h_recoE_unsmeared_inc_interE->Write();
-   //h_recoE_unsmeared_incident->Write();
-   h_xs_RecoE_selected_totInel->Write();
    //------------------------------------------------------
 
    //=====================================================*
    //            Plotting and Style
    //=====================================================
    //
-   //h_xs_RecoE_selected_abs->Scale(2);
+   //h_xs_recoE_selected_abs->Scale(2);
 
-   TCanvas *c_RecoE_abs = new TCanvas("c_RecoE_abs", "c_RecoE_abs");
+   TCanvas *c_recoE_abs = new TCanvas("c_recoE_abs", "c_recoE_abs");
    gPad->SetGrid(1,1);
-   h_xs_RecoE_selected_abs->SetTitle( "Selected Absorption; Reco Kinetic Energy (MeV); #sigma (mb)");
-   h_xs_RecoE_selected_abs->GetXaxis()->SetRangeUser(300,1000);
-   h_xs_RecoE_selected_abs->GetXaxis()->SetNdivisions(1020);
-   h_xs_RecoE_selected_abs->GetYaxis()->SetNdivisions(1020);
+   h_xs_recoE_selected_abs->SetTitle( "Selected Absorption; Reco Kinetic Energy (MeV); #sigma (mb)");
+   h_xs_recoE_selected_abs->GetXaxis()->SetRangeUser(300,1000);
+   h_xs_recoE_selected_abs->GetXaxis()->SetNdivisions(1020);
+   h_xs_recoE_selected_abs->GetYaxis()->SetNdivisions(1020);
 
    string c_abs_title;
    if(isMC) c_abs_title = "Absorption MC; Reco kinetic Energy (MeV); #sigma (mbarn)";
@@ -526,10 +440,10 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC, bool doUnsmear)
    abs_KE->SetLineColor(kBlue);
    abs_KE->SetLineWidth(3);
    abs_KE->Draw("AC");
-   h_xs_RecoE_selected_abs->SetMarkerSize(0.7);
-   h_xs_RecoE_selected_abs->Draw("PE0 SAME");
+   h_xs_recoE_selected_abs->SetMarkerSize(0.7);
+   h_xs_recoE_selected_abs->Draw("PE0 SAME");
 
-   c_RecoE_abs->Write();
+   c_recoE_abs->Write();
 
    if(isMC){
       TCanvas *c_trueE_abs = new TCanvas("c_trueE_abs", "c_trueE_abs");
@@ -551,12 +465,12 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC, bool doUnsmear)
    };
 
 
-   TCanvas *c_RecoE_totInel = new TCanvas("c_RecoE_totInel", "c_RecoE_totInel");
+   TCanvas *c_recoE_totInel = new TCanvas("c_recoE_totInel", "c_recoE_totInel");
    gPad->SetGrid(1,1);
-   h_xs_RecoE_selected_totInel->SetTitle( "Selected Total Inelastic; Reco Kinetic Energy (MeV); #sigma (mb)");
-   h_xs_RecoE_selected_totInel->GetXaxis()->SetRangeUser(300,1000);
-   h_xs_RecoE_selected_totInel->GetXaxis()->SetNdivisions(1020);
-   h_xs_RecoE_selected_totInel->GetYaxis()->SetNdivisions(1020);
+   h_xs_recoE_selected_totInel->SetTitle( "Selected Total Inelastic; Reco Kinetic Energy (MeV); #sigma (mb)");
+   h_xs_recoE_selected_totInel->GetXaxis()->SetRangeUser(300,1000);
+   h_xs_recoE_selected_totInel->GetXaxis()->SetNdivisions(1020);
+   h_xs_recoE_selected_totInel->GetYaxis()->SetNdivisions(1020);
 
    string c_totInel_title;
    if(isMC) c_totInel_title = "Total Inelastic MC; Reco kinetic Energy (MeV); #sigma (mbarn)";
@@ -567,10 +481,10 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC, bool doUnsmear)
    totInel_KE->SetLineColor(kRed);
    totInel_KE->SetLineWidth(3);
    totInel_KE->Draw("AC");
-   h_xs_RecoE_selected_totInel->SetMarkerSize(0.7);
-   h_xs_RecoE_selected_totInel->Draw("PE0 SAME");
+   h_xs_recoE_selected_totInel->SetMarkerSize(0.7);
+   h_xs_recoE_selected_totInel->Draw("PE0 SAME");
 
-   c_RecoE_totInel->Write();
+   c_recoE_totInel->Write();
 
    if(isMC){
       TCanvas *c_trueE_totInel = new TCanvas("c_trueE_totInel", "c_trueE_totInel");
@@ -580,8 +494,6 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC, bool doUnsmear)
       h_xs_trueE_selected_totInel->GetXaxis()->SetNdivisions(1020);
       h_xs_trueE_selected_totInel->GetYaxis()->SetNdivisions(1020);
 
-      if(isMC) c_totInel_title = "Total Inelastic MC; true kinetic Energy (MeV); #sigma (mbarn)";
-      else c_totInel_title = "Total Inelastic Data; true kinetic Energy (MeV); #sigma (mbarn)";
 
       totInel_KE->SetTitle( c_totInel_title.c_str());
       totInel_KE->GetXaxis()->SetRangeUser(eEnd, eStart);
@@ -593,6 +505,7 @@ int eSliceMethod_selectedInt(const string mcFilepath, bool isMC, bool doUnsmear)
 
       c_trueE_totInel->Write();
    }
+   
    //output->Write();
    //f1.Close();
    return 0;

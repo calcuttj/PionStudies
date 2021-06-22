@@ -98,6 +98,7 @@ int eSliceMethod_trueProcess_trueE(const string mcFilepath){
       //.Filter("primary_isBeamType && passBeamQuality_TPCjustPosition")
       .Define("true_initKE", "true_firstEntryIncident")
       .Define("true_interKE", "true_interactingKE_fromLength")
+      //.Define("true_interKE", "true_interactingKE") //this trueKE from true_beam_endP, doesn't give as good results as the one with Bethe
       .Filter("true_beam_PDG == 211");
       //.Filter("true_beam_PDG == 211 && passBeamQuality_TPCjustPosition && primary_isBeamType"); //shows how reco efficiency acts ununiformly on the XS computation
 
@@ -110,15 +111,9 @@ int eSliceMethod_trueProcess_trueE(const string mcFilepath){
    //---------
    mcIncident_true_primaryPi
       .Foreach( [h_trueE_truePion_inc_initE, h_trueE_truePion_inc_interE] (double true_initKE, double true_beam_interactingEnergy) { 
-            //make sure incident Pion does not interact in bin it was born
-            int binNum_initE = (int) true_initKE / bin_size_inc + 1;
-            int binNum_interE = (int) true_beam_interactingEnergy / bin_size_inc + 1;
-            if( checkBins(true_initKE, true_beam_interactingEnergy, binNum_initE, binNum_interE) ){
 
-               h_trueE_truePion_inc_initE->SetBinContent( binNum_initE, h_trueE_truePion_inc_initE->GetBinContent( binNum_initE ) + 1); 
-               h_trueE_truePion_inc_interE->SetBinContent( binNum_interE, h_trueE_truePion_inc_interE->GetBinContent( binNum_interE ) + 1); 
+            fill_initE_interE( h_trueE_truePion_inc_initE, h_trueE_truePion_inc_interE, true_initKE, true_beam_interactingEnergy);
 
-            };   
             }
             ,{"true_initKE", "true_interKE"});
 
@@ -133,14 +128,9 @@ int eSliceMethod_trueProcess_trueE(const string mcFilepath){
    mcIncident_true_primaryPi
       .Filter("true_primPionInel")
       .Foreach( [h_trueE_truePionInel] (double true_initKE, double true_beam_interactingEnergy) { 
-            //make sure incident Pion does not interact in bin it was born
-            int binNum_initE = (int) true_initKE / bin_size_inc + 1;
-            int binNum_interE = (int) true_beam_interactingEnergy / bin_size_inc + 1;
-            if( checkBins(true_initKE, true_beam_interactingEnergy, binNum_initE, binNum_interE) ){
+            
+            fill_interacting( h_trueE_truePionInel, true_initKE, true_beam_interactingEnergy);
 
-               h_trueE_truePionInel->SetBinContent( binNum_interE, h_trueE_truePionInel->GetBinContent( binNum_interE ) + 1); 
-
-            };   
             }
             ,{"true_initKE", "true_interKE"});
 
@@ -150,13 +140,7 @@ int eSliceMethod_trueProcess_trueE(const string mcFilepath){
    mcInteracting_true_abs
       .Foreach( [h_trueE_trueAbs_interacting] ( double true_initKE, double true_beam_interactingEnergy ){
 
-            int binNum_initE = (int) true_initKE / bin_size_inc + 1;
-            int binNum_interE = (int) true_beam_interactingEnergy / bin_size_inc + 1;
-            if( checkBins(true_initKE, true_beam_interactingEnergy, binNum_initE, binNum_interE) ){
-
-            h_trueE_trueAbs_interacting->SetBinContent( binNum_interE, h_trueE_trueAbs_interacting->GetBinContent( binNum_interE ) + 1); 
-    
-            };
+            fill_interacting( h_trueE_trueAbs_interacting, true_initKE, true_beam_interactingEnergy);
             }            
             ,{"true_initKE","true_interKE"});
 

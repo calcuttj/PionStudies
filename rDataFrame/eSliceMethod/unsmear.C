@@ -66,6 +66,12 @@ int unsmear(const string mcFilepath, bool doEffPur, bool doSmearing, bool doReco
    gStyle->SetNdivisions(1020);
    gStyle->SetPaintTextFormat("3.2f");
 
+   //Test getting Gauss Inverse
+   //TFile f1("smearMatrixGauss_20MeV.root");
+   //TH2D *invGauss = (TH2D*)f1.Get("inverseMatrix_gaussFit_interacting");
+   //f1.Close();
+   
+
    //string output_name = "unsmear_halfMC_" + std::to_string((int) bin_size_int) + "MeV.root";
    string output_name = "unsmear_" + std::to_string((int) bin_size_int) + "MeV.root";
 
@@ -636,7 +642,10 @@ int unsmear(const string mcFilepath, bool doEffPur, bool doSmearing, bool doReco
    //   Row's are i(y), columns are j(x) 
    //
    //Loop through smearing matrix Incident
+   
+
    if(doSmearing){
+   
    for(int i = 1; i <= nBin_int; i++){
       double help_sum_initE = 0, help_sum_interE = 0;
       //rows
@@ -647,6 +656,17 @@ int unsmear(const string mcFilepath, bool doEffPur, bool doSmearing, bool doReco
       h_unsmeared_inc_initE->SetBinContent( i , help_sum_initE);
       h_unsmeared_inc_interE->SetBinContent( i , help_sum_interE);
    };
+   
+   /*for(int i = 1; i <= nBin_int; i++){
+      double help_sum_initE = 0, help_sum_interE = 0;
+      //rows
+      for(int j = 1; j <= nBin_int; j++){
+         help_sum_initE += h_help_unsmear_inc_initE->GetBinContent(j)*h2_inverse_smearing_incident_initE->GetBinContent( i, j);
+         help_sum_interE += h_help_unsmear_inc_interE->GetBinContent(j)*invGauss->GetBinContent( i, j);
+      }; 
+      h_unsmeared_inc_initE->SetBinContent( i , help_sum_initE);
+      h_unsmeared_inc_interE->SetBinContent( i , help_sum_interE);
+   };*/
    }
    else{
       h_unsmeared_inc_initE = h_help_unsmear_inc_initE;

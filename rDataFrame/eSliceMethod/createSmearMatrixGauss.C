@@ -9,6 +9,7 @@
 #include "TLegend.h"
 #include "TArrow.h"
 #include "TStyle.h"
+#include "TRandom3.h"
 #include "TColor.h"
 #include "TLatex.h"
 #include "TMath.h"
@@ -72,10 +73,44 @@ int createSmearMatrixGauss(){
    string output_name = "smearMatrixGauss_" + std::to_string((int) bin_size_int) + "MeV.root";
 
    TFile *output = new TFile ( output_name.c_str() , "RECREATE");
-   
+
    TH2D* smearMatrix_interacting = new TH2D("smearMatrix_gaussFit_interacting", "Smearing Matrix for Interacting E Pions, created from Gauss Fits; recoInteractingKE; trueInteractingKE", nBin_int, eEnd, eStart, nBin_int, eEnd, eStart);
 
    TH2D* smearMatrix_initial = new TH2D("smearMatrix_gaussFit_initial", "Smearing Matrix for Initial E Pions, created from Gauss Fits; recoInitialKE; trueInitialKE", nBin_int, eEnd, eStart, nBin_int, eEnd, eStart);
+
+   TH1D* monoChromatic_trueKE_250 = new TH1D("monoChromatic_trueKE_250", "MonoChromatic Energy;trueIntearctingKE", nBin_int, eEnd, eStart);
+   TH1D* monoChromatic_trueKE_460 = new TH1D("monoChromatic_trueKE_460", "MonoChromatic Energy;trueIntearctingKE", nBin_int, eEnd, eStart);
+   TH1D* monoChromatic_trueKE_580 = new TH1D("monoChromatic_trueKE_580", "MonoChromatic Energy;trueIntearctingKE", nBin_int, eEnd, eStart);
+
+   monoChromatic_trueKE_250->SetBinContent(14,3000);
+   monoChromatic_trueKE_460->SetBinContent(24,3000);
+   monoChromatic_trueKE_580->SetBinContent(30,3000);
+
+   TH1D* monoChromatic_recoKE_250 = new TH1D("monoChromatic_recoKE_250", "MonoChromatic Energy;recoIntearctingKE", nBin_int, eEnd, eStart);
+   TH1D* monoChromatic_recoKE_460 = new TH1D("monoChromatic_recoKE_460", "MonoChromatic Energy;recoIntearctingKE", nBin_int, eEnd, eStart);
+   TH1D* monoChromatic_recoKE_580 = new TH1D("monoChromatic_recoKE_580", "MonoChromatic Energy;recoIntearctingKE", nBin_int, eEnd, eStart);
+   
+   TH1D* randNoise_recoKE_250 = new TH1D("randNoise_recoKE_250", "randNoise Energy;recoIntearctingKE", nBin_int, eEnd, eStart);
+   TH1D* randNoise_recoKE_460 = new TH1D("randNoise_recoKE_460", "randNoise Energy;recoIntearctingKE", nBin_int, eEnd, eStart);
+   TH1D* randNoise_recoKE_580 = new TH1D("randNoise_recoKE_580", "randNoise Energy;recoIntearctingKE", nBin_int, eEnd, eStart);
+   
+   TH1D* testSmearBack_recoKE_250 = new TH1D("testSmearBack_recoKE_250", "testSmearBack Energy;recoIntearctingKE", nBin_int, eEnd, eStart);
+   TH1D* testSmearBack_recoKE_460 = new TH1D("testSmearBack_recoKE_460", "testSmearBack Energy;recoIntearctingKE", nBin_int, eEnd, eStart);
+   TH1D* testSmearBack_recoKE_580 = new TH1D("testSmearBack_recoKE_580", "testSmearBack Energy;recoIntearctingKE", nBin_int, eEnd, eStart);
+   
+   TH1D* noiseSmearBack_recoKE_250 = new TH1D("noiseSmearBack_recoKE_250", "noiseSmearBack Energy;recoIntearctingKE", nBin_int, eEnd, eStart);
+   TH1D* noiseSmearBack_recoKE_460 = new TH1D("noiseSmearBack_recoKE_460", "noiseSmearBack Energy;recoIntearctingKE", nBin_int, eEnd, eStart);
+   TH1D* noiseSmearBack_recoKE_580 = new TH1D("noiseSmearBack_recoKE_580", "noiseSmearBack Energy;recoIntearctingKE", nBin_int, eEnd, eStart);
+   //Pre-Work Set all values of TH2D's to 0
+
+   for(int i=1; i <= nBin_int; i++){
+      for(int j=1; j <= nBin_int; j++){
+
+         smearMatrix_interacting->SetBinContent(i,j, 0.);
+         smearMatrix_initial->SetBinContent(i,j, 0.);
+
+      };
+   };
 
    double sigma_interacting = 30., sigma_initial = 23.;
 
@@ -93,7 +128,7 @@ int createSmearMatrixGauss(){
    //
    std::vector<double> prob_erf_interacting, prob_smearInteracting;
    double n_sigma_interacting;
-   
+
    for(int i=0; i < nBin_3sigma_interacting + 1; i++){
 
       n_sigma_interacting = (i*bin_size_int + (bin_size_int / 2)) /sigma_interacting;
@@ -106,12 +141,12 @@ int createSmearMatrixGauss(){
       }
       //std::cout << "Probability Erf = " << prob_erf_interacting[i] << std::endl;
       //std::cout << "Probability Bin Matrix = " << prob_smearInteracting[i] << std::endl;
-      
+
    };
 
    std::vector<double> prob_erf_initial, prob_smearInitial;
    double n_sigma_initial;
-   
+
    for(int i=0; i < nBin_3sigma_initial + 1; i++){
 
       n_sigma_initial = (i*bin_size_int + (bin_size_int / 2)) /sigma_initial;
@@ -124,7 +159,7 @@ int createSmearMatrixGauss(){
       }
       //std::cout << "Probability Erf = " << prob_erf_initial[i] << std::endl;
       //std::cout << "Probability Bin Matrix = " << prob_smearInitial[i] << std::endl;
-      
+
    };
 
 
@@ -165,7 +200,103 @@ int createSmearMatrixGauss(){
    smearMatrix_initial->Write();
 
 
-return 0;
+   //Test Inversion how it looks like!
+   TH2D* inverseMatrix_interacting = new TH2D("inverseMatrix_gaussFit_interacting", "Inverse smearing  Matrix for Interacting E Pions, created from Gauss Fits; recoInteractingKE; trueInteractingKE", nBin_int, eEnd, eStart, nBin_int, eEnd, eStart);
+
+   TH2D* inverseMatrix_initial = new TH2D("inverseMatrix_gaussFit_initial", "Inverse smearing Matrix for Initial E Pions, created from Gauss Fits; recoInitialKE; trueInitialKE", nBin_int, eEnd, eStart, nBin_int, eEnd, eStart);
+
+   invert_smearing( smearMatrix_interacting, inverseMatrix_interacting );
+   invert_smearing( smearMatrix_initial, inverseMatrix_initial );
+
+   inverseMatrix_interacting->Write();
+   inverseMatrix_initial->Write();
+
+
+
+   //Test MonoChromatic Energy smear to reco
+   //
+   //y is fixed for true E
+   for(int i=1; i <= nBin_int; i++){
+
+      monoChromatic_recoKE_250->SetBinContent( i ,  monoChromatic_trueKE_250->GetBinContent(14)*smearMatrix_interacting->GetBinContent( i, 14) );
+      monoChromatic_recoKE_460->SetBinContent( i ,  monoChromatic_trueKE_460->GetBinContent(24)*smearMatrix_interacting->GetBinContent( i, 24) );
+      monoChromatic_recoKE_580->SetBinContent( i ,  monoChromatic_trueKE_580->GetBinContent(30)*smearMatrix_interacting->GetBinContent( i, 30) );
+
+   };
+
+   monoChromatic_recoKE_250->Write();
+   monoChromatic_recoKE_460->Write();
+   monoChromatic_recoKE_580->Write();
+
+   //Create noise on recoKE histo
+   //
+   double ran_x, ran_y;
+   double binC_250, binC_460, binC_580;
+   for(int i=1; i <= nBin_int; i++){
+
+      gRandom->Rannor(ran_x,ran_y);
+      
+      binC_250 = monoChromatic_recoKE_250->GetBinContent(i);
+
+      if(binC_250 != 0) randNoise_recoKE_250->SetBinContent( i, binC_250 + sqrt(binC_250)*ran_x);
+      //else randNoise_recoKE_250->SetBinContent( i, sqrt(1)*ran_x);
+ 
+      binC_460 = monoChromatic_recoKE_460->GetBinContent(i);
+
+      if(binC_460 != 0) randNoise_recoKE_460->SetBinContent( i, binC_460 + sqrt(binC_460)*ran_x);
+      else randNoise_recoKE_460->SetBinContent( i, sqrt(1)*ran_x);
+     
+      binC_580 = monoChromatic_recoKE_580->GetBinContent(i);
+
+      if(binC_580 != 0) randNoise_recoKE_580->SetBinContent( i, binC_580 + sqrt(binC_580)*ran_x);
+      else randNoise_recoKE_580->SetBinContent( i, abs(sqrt(1)*ran_x));
+      //std::cout << "Random x = " << ran_x << "  Random y = " << ran_y << std::endl;  
+   };
+
+   randNoise_recoKE_250->Write();
+   randNoise_recoKE_460->Write();
+   randNoise_recoKE_580->Write();
+
+   // SMEAR Back Test
+   //
+   //y is fixed for true E
+   for(int i=1; i <= nBin_int; i++){
+
+      double sum_250 = 0, sum_noise_250 = 0;
+      double sum_460 = 0, sum_noise_460 = 0;
+      double sum_580 = 0, sum_noise_580 = 0;
+
+      for(int j=1; j <= nBin_int; j++){
+
+         sum_250 += monoChromatic_recoKE_250->GetBinContent(j)*inverseMatrix_interacting->GetBinContent( i , j);
+         sum_460 += monoChromatic_recoKE_460->GetBinContent(j)*inverseMatrix_interacting->GetBinContent( i , j);
+         sum_580 += monoChromatic_recoKE_580->GetBinContent(j)*inverseMatrix_interacting->GetBinContent( i , j);
+
+         sum_noise_250 += randNoise_recoKE_250->GetBinContent(j)*inverseMatrix_interacting->GetBinContent( i , j);
+         sum_noise_460 += randNoise_recoKE_460->GetBinContent(j)*inverseMatrix_interacting->GetBinContent( i , j);
+         sum_noise_580 += randNoise_recoKE_580->GetBinContent(j)*inverseMatrix_interacting->GetBinContent( i , j);
+
+      };
+
+      testSmearBack_recoKE_250->SetBinContent( i , sum_250 );
+      testSmearBack_recoKE_460->SetBinContent( i , sum_460 );
+      testSmearBack_recoKE_580->SetBinContent( i , sum_580 );
+   
+      noiseSmearBack_recoKE_250->SetBinContent( i , sum_noise_250 );
+      noiseSmearBack_recoKE_460->SetBinContent( i , sum_noise_460 );
+      noiseSmearBack_recoKE_580->SetBinContent( i , sum_noise_580 );
+   };
+
+   testSmearBack_recoKE_250->Write();
+   testSmearBack_recoKE_460->Write();
+   testSmearBack_recoKE_580->Write();
+   
+   noiseSmearBack_recoKE_250->Write();
+   noiseSmearBack_recoKE_460->Write();
+   noiseSmearBack_recoKE_580->Write();
+
+
+      return 0;
 };
 
 

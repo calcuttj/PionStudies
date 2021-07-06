@@ -95,10 +95,10 @@ int eSliceMethod_doEffPur_evSel(const string mcFilepath){
    TH1D* h_pur_removeBG_inc_interE = new TH1D("h_pur_removeBG_inc_interE", "", nBin_int, eEnd, eStart);
    TH1D* h_eff_eventSel_inc_interE = new TH1D("h_eff_eventSel_inc_interE", "", nBin_int, eEnd, eStart);
 
-   auto frame = inputFrame      
-      .Define("true_initKE", "true_firstEntryIncident")
-      .Define("true_interKE", "true_interactingKE_fromLength")
-      .Filter("true_beam_endZ > 0");
+   auto frame = inputFrame
+      .Define("true_equalBin", equalBin, {"true_initKE", "true_interKE"})
+      .Filter("true_beam_endZ > 0 ");
+      //.Filter("true_beam_endZ > 0 && !true_equalBin");
 
 
 
@@ -125,7 +125,7 @@ int eSliceMethod_doEffPur_evSel(const string mcFilepath){
 
             fill_initE_interE( h_recoE_selPion_inc_initE, h_recoE_selPion_inc_interE, init_KE, inter_KE);
             }
-            ,{"reco_firstEntryIncident", "reco_interactingKE"});
+            ,{"reco_initKE", "reco_interKE"});
 
 
    build_incidentHist( h_recoE_selPion_inc_initE, h_recoE_selPion_inc_interE, h_recoE_selPion_incident );
@@ -137,7 +137,7 @@ int eSliceMethod_doEffPur_evSel(const string mcFilepath){
 
                fill_interacting( h_recoE_selAbs_int, init_KE, inter_KE);
             }
-            ,{"reco_firstEntryIncident","reco_interactingKE"});
+            ,{"reco_initKE","reco_interKE"});
 
    h_recoE_selPion_inc_interE->Write();
    h_recoE_selPion_inc_initE->Write();
@@ -153,62 +153,62 @@ int eSliceMethod_doEffPur_evSel(const string mcFilepath){
    //True Pions available after beamCuts
    eventSel_post_pandoraReco
       //Events where trueInitE == trueInterE should not be available for this selection they are not a signal
-      .Filter("true_beam_PDG == 211")
+      .Filter("true_beam_PDG == 211 && !true_equalBin")
       .Foreach( [h_recoE_postPandora_truePion_inc_initE, h_recoE_postPandora_truePion_inc_interE] (double init_KE, double inter_KE) { 
 
             fill_initE_interE( h_recoE_postPandora_truePion_inc_initE, h_recoE_postPandora_truePion_inc_interE, init_KE, inter_KE);
             }
-            ,{"reco_firstEntryIncident", "reco_interactingKE"});
+            ,{"reco_initKE", "reco_interKE"});
 
 
    //True Pions in selected incident
    eventSel_incidentPion
       //Events where trueInitE == trueInterE should not be available for this selection they are not a signal
-      .Filter("true_beam_PDG == 211")
+      .Filter("true_beam_PDG == 211 && !true_equalBin")
       .Foreach( [h_recoE_selPion_truePion_inc_initE, h_recoE_selPion_truePion_inc_interE] (double init_KE, double inter_KE) { 
 
             fill_initE_interE( h_recoE_selPion_truePion_inc_initE, h_recoE_selPion_truePion_inc_interE, init_KE, inter_KE);
             }
-            ,{"reco_firstEntryIncident", "reco_interactingKE"});
+            ,{"reco_initKE", "reco_interKE"});
 
    //True Abs available after beamCuts
    eventSel_post_pandoraReco
       //Events where trueInitE == trueInterE should not be available for this selection they are not a signal
-      .Filter("true_absSignal")
+      .Filter("true_absSignal && !true_equalBin")
       .Foreach( [h_recoE_postPandora_trueAbs_int] (double init_KE, double inter_KE) { 
 
                fill_interacting( h_recoE_postPandora_trueAbs_int, init_KE, inter_KE);
             }
-            ,{"reco_firstEntryIncident","reco_interactingKE"});
+            ,{"reco_initKE","reco_interKE"});
    //True Abs available after Selection
    eventSel_abs
       //Events where trueInitE == trueInterE should not be available for this selection they are not a signal
-      .Filter("true_absSignal")
+      .Filter("true_absSignal && !true_equalBin")
       .Foreach( [h_recoE_selAbs_trueAbs_int] (double init_KE, double inter_KE) { 
 
                fill_interacting( h_recoE_selAbs_trueAbs_int, init_KE, inter_KE);
             }
-            ,{"reco_firstEntryIncident","reco_interactingKE"});
+            ,{"reco_initKE","reco_interKE"});
 
    //True TotInel available after beamCuts
    eventSel_post_pandoraReco
       //Events where trueInitE == trueInterE should not be available for this selection they are not a signal
-      .Filter("true_primPionInel")
+      .Filter("true_primPionInel && !true_equalBin")
       .Foreach( [h_recoE_postPandora_trueTotInel_int] (double init_KE, double inter_KE) { 
 
                fill_interacting( h_recoE_postPandora_trueTotInel_int, init_KE, inter_KE);
             }
-            ,{"reco_firstEntryIncident","reco_interactingKE"});
+            ,{"reco_initKE","reco_interKE"});
    
    //True TotInel available after Selection
    eventSel_incidentPion
       //Events where trueInitE == trueInterE should not be available for this selection they are not a signal
-      .Filter("true_primPionInel")
+      .Filter("true_primPionInel && !true_equalBin")
       .Foreach( [h_recoE_selPion_trueTotInel_int] (double init_KE, double inter_KE) { 
 
                fill_interacting( h_recoE_selPion_trueTotInel_int, init_KE, inter_KE);
             }
-            ,{"reco_firstEntryIncident","reco_interactingKE"});
+            ,{"reco_initKE","reco_interKE"});
 
 
    //------------------------------------------------------------

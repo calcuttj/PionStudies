@@ -1,20 +1,28 @@
 #include "TCanvas.h"
 #include "TROOT.h"
+#include "TGraph.h"
 #include "TGraphErrors.h"
+#include "TMultiGraph.h"
 #include "TH1.h"
+#include "TF1.h"
+#include "THStack.h"
 #include "TLegend.h"
 #include "TArrow.h"
+#include "TStyle.h"
+#include "TColor.h"
 #include "TLatex.h"
 #include "TMath.h"
+#include "TMatrixDBase.h"
+#include "TArray.h"
 #include <ROOT/RDataFrame.hxx>
-#include "TColor.h"
+
 
 #include <iostream>
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
+
 #include <vector>
-#include <numeric>
 
 
 using namespace std;
@@ -42,10 +50,10 @@ double eLoss_mc_trueE = 43; //MeV, kinetic energy
 //binning, bc of beam spread we need to weight the bins, for incident Histo bin very fine and create it, rebin afterwards and divide by the rebinned number (otherwise it is multiple counting
 
 
-double bin_size_int = 50.;
-double bin_size_inc = 50.; //2
+double bin_size_int = 20.;
+double bin_size_inc = 20.; //2
 
-double eStart = 1500.; //1200
+double eStart = 1200.; //1200
 double eEnd = 0.;
 int nBin_int = (eStart - eEnd) / bin_size_int;
 int nBin_inc = (eStart - eEnd) / bin_size_inc;
@@ -80,25 +88,38 @@ auto firstIncident = [](const std::vector<double> &incidentEnergy){
 //
 //----------------------------------------
 void build_incidentHist(TH1D* initialE, TH1D* interE, TH1D* incident){
-   
+
    int nBin = initialE->GetNbinsX();
 
    for(int i = nBin; i>=1; i--){
-      
-      int birth = initialE->GetBinContent( i );
-      int death = interE->GetBinContent( i );
+
+      double birth = initialE->GetBinContent( i );
+      double birth_err = initialE->GetBinError( i );
+      double death = interE->GetBinContent( i );
+      double death_err = interE->GetBinError( i );
 
       for(int j = i -1; j >= 1; j--){
          incident->SetBinContent( j, incident->GetBinContent(j) + birth );
+         incident->SetBinError( j, incident->GetBinError(j) + birth_err );
       };
 
       for(int j = i -1; j >= 1; j--){
          incident->SetBinContent( j, incident->GetBinContent(j) - death );
+         incident->SetBinError( j, incident->GetBinError(j) - death_err );
       };
-   
+
    };
-   
+
    return;
+
+};
+
+auto equalBin(double init_KE, double inter_KE){
+   int bin_initE = (int) init_KE / bin_size_inc + 1;
+   int bin_interE = (int) inter_KE / bin_size_inc + 1;
+
+   if(bin_initE == bin_interE) return true;
+   else return false;
 
 };
 
@@ -122,8 +143,93 @@ auto checkBins(double init_KE, double inter_KE, int bin_init, int bin_inter){
    else return false;
 };
 
+//----------------------------------------
+// Function to fill InitE, InterE histo and Interacting Histo
+//----------------------------------------
+void fill_initE_interE(TH1D* initE, TH1D* interE, double init_KE, double inter_KE){
+   //make sure incident Pion does not interact in bin it was born
+   int bin_initE = (int) init_KE / bin_size_inc + 1;
+   int bin_interE = (int) inter_KE / bin_size_inc + 1;
+   if( checkBins(init_KE, inter_KE, bin_initE, bin_interE) ){
+
+      initE->SetBinContent( bin_initE, initE->GetBinContent( bin_initE ) + 1); 
+      interE->SetBinContent( bin_interE, interE->GetBinContent( bin_interE ) + 1);    
+   }
+   return;
+};
+
+void fill_interacting(TH1D* interE, double init_KE, double inter_KE){
+   //make sure incident Pion does not interact in bin it was born
+   int bin_initE = (int) init_KE / bin_size_inc + 1;
+   int bin_interE = (int) inter_KE / bin_size_inc + 1;
+   if( checkBins(init_KE, inter_KE, bin_initE, bin_interE) ){
+      interE->SetBinContent( bin_interE, interE->GetBinContent( bin_interE ) + 1);    
+   }
+   return;
+};
+
+//----------------------------------------
+// Function to fill smearing histos initE and interE
+//----------------------------------------
+
+void fill_smearing_matrix(TH2D* h2_smear, double true_initKE, double true_interKE, double reco_initKE, double reco_interKE, bool doInter){
+   //make sure incident Pion does not interact in bin it was born
+   int bin_true_initE = (int) true_initKE / bin_size_inc + 1;
+   int bin_true_interE = (int) true_interKE / bin_size_inc + 1;
+
+   int bin_reco_initE = (int) reco_initKE / bin_size_inc + 1;
+   int bin_reco_interE = (int) reco_interKE / bin_size_inc + 1;
+
+   if( checkBins(true_initKE, true_interKE, bin_true_initE, bin_true_interE) && checkBins(reco_initKE, reco_interKE, bin_reco_initE, bin_reco_interE) ){
+
+      //depends if initE smearing or interE smearing, maybe if we don't do unsmearing on initialE this can be taken away
+      if(doInter) h2_smear->Fill(reco_interKE, true_interKE);
+      else h2_smear->Fill(reco_initKE, true_initKE);
+
+   }; 
+   return;
+};
+
+void fill_smearing_matrix_inter(TH2D* h2_smear, double true_initKE, double true_interKE, double reco_initKE, double reco_interKE ){
+   //make sure incident Pion does not interact in bin it was born
+   int bin_true_initE = (int) true_initKE / bin_size_inc + 1;
+   int bin_true_interE = (int) true_interKE / bin_size_inc + 1;
+
+   int bin_reco_initE = (int) reco_initKE / bin_size_inc + 1;
+   int bin_reco_interE = (int) reco_interKE / bin_size_inc + 1;
+
+   if( checkBins(true_initKE, true_interKE, bin_true_initE, bin_true_interE) && checkBins(reco_initKE, reco_interKE, bin_reco_initE, bin_reco_interE) ){
+
+      h2_smear->Fill(reco_initKE, true_initKE);
+
+   }; 
+   return;
+};
+
+//----------------------------------------
+// Normalise Smearing histos, true is bin Y, reco is bin X
+//----------------------------------------
+
+void normalise_smearing(TH2D* smear){
+
+   int nBin = smear->GetNbinsX();
+
+   for(int i=1; i <= smear->GetNbinsX(); i++){
+
+      int sum = smear->Integral( 1, nBin, i, i ); //sum up all recoE signals for one trueE signal
+
+      if(sum !=0){
+         for(int j = 1; j <= nBin; j++){
+
+            smear->SetBinContent( j , i, smear->GetBinContent(j,i) / sum);
+
+         };
+      };
+   }; 
 
 
+   return;
+};
 
 //----------------------------------------
 // CONSTRUCT XS from Histos 
@@ -136,9 +242,9 @@ void do_XS_log(TH1D* xs, TH1D* interacting, TH1D* incident, TH1D* hist_bethe){
 
    xs->Divide( incident, temp);
    for(int i = 1; i <= xs->GetNbinsX(); i++){
-   
+
       if( xs->GetBinContent(i) > 0) xs->SetBinContent(i, log( xs->GetBinContent(i) ) );
-      
+
       else xs->SetBinContent(i, -10);
    };
 
@@ -149,7 +255,7 @@ void do_XS_log(TH1D* xs, TH1D* interacting, TH1D* incident, TH1D* hist_bethe){
 };
 
 void do_XS_log_binomial_error(TH1D* xs, TH1D* interacting, TH1D* incident, TH1D* hist_bethe){
-   
+
    for(int i = 1; i <= xs->GetNbinsX(); i++){
 
       double p = interacting->GetBinContent(i) / incident->GetBinContent(i);
@@ -208,7 +314,7 @@ void hist_bethe_mean(double E_init, double mass_particle, TH1D* fit_mean, TH1D* 
 };
 
 void hist_bethe_mean_distance(double E_init, double mass_particle, TH1D* h_bethe ){
-   
+
    for(int i=1; i <= h_bethe->GetNbinsX(); i++){
       h_bethe->SetBinContent( i, betheBloch(E_init, mass_particle)); 
       h_bethe->SetBinError(i, 0.001 );
@@ -232,6 +338,56 @@ void fill_betheHisto( TH1D* bethe_hist, double mass){
    };
 
 };
+
+
+//----------------------------------------
+//   MAKE INVERSE MATRIX
+//----------------------------------------
+// input should be smearing matrix, output is inverse matrix as TH2D
+//
+void invert_smearing( TH2D* smearing, TH2D* inverse){
+
+   int nBin = smearing->GetNbinsX();
+    
+   TMatrixD matrix_help(nBin + 2, nBin + 2, smearing->GetArray(), "D");
+   TMatrixD matrix = matrix_help.GetSub(1, nBin, 1, nBin); //avoid underflow and overflowbin
+
+   //matrix_smearing_incident_initE.Print();
+
+   Double_t det1;
+   TMatrixD matrix_inverse = matrix;
+   matrix_inverse.Invert(&det1);
+
+   TMatrixD U1(matrix_inverse, TMatrixD::kMult, matrix);
+   TMatrixDDiag diag1(U1); diag1 = 0.0;
+   const Double_t U1_max_offdiag = (U1.Abs()).Max();
+   std::cout << "  Smearing Function "  << std::endl;
+   std::cout << "  Maximum off-diagonal = " << U1_max_offdiag << std::endl;
+   std::cout << "  Determinant          = " << det1 << std::endl;   
+
+   //put inverse into TH2
+   for (int i = 1; i <= nBin; i++){
+      for (int j= 1; j <= nBin; j++){
+         inverse->SetBinContent(j, i, matrix_inverse(i-1,j-1)); //vector indices style for matrix 
+      };
+   };  
+   return;
+};
+
+/*   //Check that matrix and inverse are unity
+   TMatrixD unity_smearing_incident_initE = matrix_inverse_smearing_incident_initE * matrix_smearing_incident_initE ;
+   TH2D* h2_prod_smearing_incident_initE = new TH2D("h2_prod_smearing_incident_initE", "", nBin_int, eEnd, eStart, nBin_int, eEnd, eStart);
+   for (int i = 1; i <= nBin_int; i++){
+      for (int j= 1; j <= nBin_int; j++){
+         h2_prod_smearing_incident_initE->SetBinContent(j, i, unity_smearing_incident_initE(i-1,j-1)); 
+      }
+   }
+
+   h2_prod_smearing_incident_initE->Write();
+
+*/
+
+
 
 
 auto deltaE = [](const std::vector<double> &dEdX, const std::vector<double> &pitch){
@@ -264,6 +420,5 @@ auto relPos = [](const std::vector<double> &dEdX, const std::vector<double> &pit
    }
    return relPos;
 };
-
 
 

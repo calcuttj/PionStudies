@@ -72,9 +72,55 @@ void unfold_bayes_wBG(const string mcFilepath = path, bool doMC = true, bool doX
    auto frame = inputFrame
       .Define("true_equalBin", equalBin, {"true_initKE", "true_interKE"})
       .Define("reco_equalBin", equalBin, {"reco_initKE", "reco_interKE"})
-      //.Filter("true_beam_endZ > 0 && !true_equalBin")
-      .Filter("true_beam_endZ > 0")
-      .Filter("true_beam_PDG == 211");
+      //Definitions for Response Matrix generation
+      
+      //Pion InitialE and interE distributions
+      .Define("truePion_response", 
+            " true_beam_PDG == 211 && selected_incidentPion"
+            " && !true_equalBin && !reco_equalBin"
+            " && reco_initKE != -999. && reco_interKE != -999.")
+      
+      .Define("truePion_miss", 
+            " true_beam_PDG == 211 && !true_equalBin"
+             " && ( reco_initKE == -999. || reco_interKE == -999. || reco_equalBin || !selected_incidentPion )")
+      
+      .Define("truePion_fake", 
+            " selected_incidentPion && (true_beam_PDG != 211 || true_equalBin)")
+
+      //Pion Total Inelastic Distribution
+      .Define("truePion_totInel_response", 
+            " true_primPionInel && selected_incidentPion"
+            " && !true_equalBin && !reco_equalBin"
+            " && reco_initKE != -999. && reco_interKE != -999.")
+
+      .Define("truePion_totInel_miss", 
+            " true_primPionInel && !true_equalBin"
+            " && ( reco_initKE == -999. || reco_interKE == -999. || reco_equalBin || !selected_incidentPion )")
+
+      .Define("truePion_totInel_fake", 
+            " selected_incidentPion && ( !true_primPionInel || true_equalBin ) ")
+
+      //Pion Total Inelastic Distribution
+      .Define("truePion_abs_response", 
+            " true_absSignal && selected_abs"
+            " && !true_equalBin && !reco_equalBin"
+            " && reco_initKE != -999. && reco_interKE != -999.")
+
+      .Define("truePion_abs_miss", 
+            " true_absSignal && !true_equalBin"
+            " && ( reco_initKE == -999. || reco_interKE == -999. || reco_equalBin || !selected_abs )")
+
+      .Define("truePion_abs_fake", 
+            " selected_abs && ( !true_absSignal || true_equalBin )")
+      
+      .Filter("true_beam_endZ > 0");
+      //.Filter("true_beam_PDG == 211");
+
+// Checking wether categorisation is not giving one event two contributions
+   auto h_test = frame
+      .Define("sum", "truePion_response + truePion_miss + truePion_fake")
+      .Histo1D("sum");
+   h_test->Write();
 
 
    cout << "==================================== TRAIN ====================================" << endl;
@@ -86,78 +132,81 @@ void unfold_bayes_wBG(const string mcFilepath = path, bool doMC = true, bool doX
    RooUnfoldResponse response_abs = RooUnfoldResponse(nBin_int, eEnd, eStart);
 
    frame
-      .Range(50000) //last 50k ev
+      //.Range(50000) //last 50k ev
       .Foreach( [ &response_initE, &response_interE](double true_initE, double true_interE, 
                                                      double reco_initE, double reco_interE, 
-                                                     bool trueEqualBin, bool recoEqualBin){
+                                                     bool ev_response, bool ev_miss, bool ev_fake){
 
             //Signal
-            if(reco_initE != -999. && reco_interE != -999. && !recoEqualBin && !trueEqualBin){
+            if(ev_response){
             response_initE.Fill( reco_initE, true_initE);
             response_interE.Fill( reco_interE, true_interE);
             }
             //MisReconstruction
-            else if( ( reco_initE == -999. || reco_interE == -999. || recoEqualBin ) && !trueEqualBin) {
+            else if( ev_miss ) {
             response_initE.Miss (true_initE);
             response_interE.Miss (true_interE);
             }
             //BackGround will be subtracted before unfolding
-            else if( trueEqualBin ){
+            else if( ev_fake ){
 
             response_initE.Fake(reco_initE);
             response_interE.Fake(reco_interE);
             }
 
             }
-            ,{"true_initKE", "true_interKE", "reco_initKE", "reco_interKE", "true_equalBin","reco_equalBin"});
+            ,{"true_initKE", "true_interKE", "reco_initKE", "reco_interKE", 
+              "truePion_response", "truePion_miss", "truePion_fake"});
 
    //Total Inelastic
    frame
-      .Range(50000)
-      .Filter("true_primPionInel")//last 50k ev
+      //.Range(50000)
+      //.Filter("true_primPionInel")//last 50k ev
       .Foreach( [ &response_totInel](double true_initE, double true_interE, 
                                      double reco_initE, double reco_interE, 
-                                     bool trueEqualBin, bool recoEqualBin){
+                                     bool ev_response, bool ev_miss, bool ev_fake){
 
             //Signal
-            if(reco_initE != -999. && reco_interE != -999. && !recoEqualBin && !trueEqualBin){
+            if(ev_response){
             response_totInel.Fill(reco_interE, true_interE);
             }
             //MisReconstruction
-            else if( ( reco_initE == -999. || reco_interE == -999. || recoEqualBin ) && !trueEqualBin) {
+            else if( ev_miss ) {
             response_totInel.Miss (true_interE);
             }
             //BackGround will be subtracted before unfolding
-            else if( trueEqualBin ){
+            else if( ev_fake ){
             response_totInel.Fake(reco_interE);
             }
 
             }
-            ,{"true_initKE", "true_interKE", "reco_initKE", "reco_interKE", "true_equalBin","reco_equalBin"});
+            ,{"true_initKE", "true_interKE", "reco_initKE", "reco_interKE", 
+              "truePion_totInel_response", "truePion_totInel_miss", "truePion_totInel_fake"});
 
    //Total Inelastic
    frame
-      .Range(50000)
-      .Filter("true_absSignal")//last 50k ev
+      //.Range(50000)
+      //.Filter("true_absSignal")//last 50k ev
       .Foreach( [ &response_abs](double true_initE, double true_interE, 
                                      double reco_initE, double reco_interE, 
-                                     bool trueEqualBin, bool recoEqualBin){
+                                     bool ev_response, bool ev_miss, bool ev_fake){
 
             //Signal
-            if(reco_initE != -999. && reco_interE != -999. && !recoEqualBin && !trueEqualBin){
+            if(ev_response){
             response_abs.Fill(reco_interE, true_interE);
             }
             //MisReconstruction
-            else if( ( reco_initE == -999. || reco_interE == -999. || recoEqualBin ) && !trueEqualBin) {
+            else if( ev_miss ) {
             response_abs.Miss (true_interE);
             }
             //BackGround will be subtracted before unfolding
-            else if( trueEqualBin ){
+            else if( ev_fake ){
             response_abs.Fake(reco_interE);
             }
 
             }
-            ,{"true_initKE", "true_interKE", "reco_initKE", "reco_interKE", "true_equalBin","reco_equalBin"});
+            ,{"true_initKE", "true_interKE", "reco_initKE", "reco_interKE", 
+            "truePion_abs_response", "truePion_abs_miss", "truePion_abs_fake"});
 
 
    cout << "==================================== TEST =====================================" << endl;
@@ -177,74 +226,88 @@ void unfold_bayes_wBG(const string mcFilepath = path, bool doMC = true, bool doX
 
    //Build hMeas from same prefiltered sample that was supplied to response and fake (the Miss are misReco so won't catch them in reco)
    //Build hTrue from what was part of response and Miss (the fake are not part of hTrue
+   
+   cout << "==================================== Building the Measured Distribution =====================================" << endl;
 
    frame
-      //.Range(15000)
-      .Foreach( [ hMeas_initE, hTrue_initE, hMeas_interE, hTrue_interE ](double true_initE, double true_interE, 
-                                                                         double reco_initE, double reco_interE, 
-                                                                         bool trueEqualBin, bool recoEqualBin){
+      .Filter("selected_incidentPion")
+      .Foreach( [ hMeas_initE, hMeas_interE, hMeas_totInel ]( double reco_initE, double reco_interE, bool recoEqualBin){
 
             //Measured
             if(reco_initE != -999. && reco_interE != -999. && !recoEqualBin){
 
                hMeas_initE->Fill( reco_initE );
                hMeas_interE->Fill( reco_interE );
-            }
-
-            //True Distribution
-            if( !trueEqualBin ) {
-               
-               hTrue_initE->Fill( true_initE );
-               hTrue_interE->Fill( true_interE );
-            }
-
-            },{"true_initKE", "true_interKE", "reco_initKE", "reco_interKE", "true_equalBin","reco_equalBin"}
-            );
-
-
-   hTrue_initE->Write();
-   hTrue_interE->Write();
-
-   frame
-      //.Range(15000)
-      .Filter("true_primPionInel")
-      .Foreach( [ hMeas_totInel, hTrue_totInel ](double true_initE, double true_interE, 
-                                               double reco_initE, double reco_interE, 
-                                               bool trueEqualBin, bool recoEqualBin){
-
-            //Measured
-            if(reco_initE != -999. && reco_interE != -999. && !recoEqualBin){
                hMeas_totInel->Fill( reco_interE );
             }
 
-            //True Distribution
-            if( !trueEqualBin ) {
-               hTrue_totInel->Fill( true_interE );
             }
-            },{"true_initKE", "true_interKE", "reco_initKE", "reco_interKE", "true_equalBin","reco_equalBin"}
+            ,{"reco_initKE", "reco_interKE", "reco_equalBin"}
             );
-
-   hTrue_totInel->Write();
-
+   
    frame
-      //.Range(15000)
-      .Filter("true_absSignal")
-      .Foreach( [ hMeas_abs, hTrue_abs ](double true_initE, double true_interE, 
-                                               double reco_initE, double reco_interE, 
-                                               bool trueEqualBin, bool recoEqualBin){
+      .Filter("selected_abs")
+      .Foreach( [ hMeas_abs ]( double reco_initE, double reco_interE, bool recoEqualBin){
 
             //Measured
             if(reco_initE != -999. && reco_interE != -999. && !recoEqualBin){
                hMeas_abs->Fill( reco_interE );
             }
 
-            //True Distribution
-            if( !trueEqualBin ) {
-               hTrue_abs->Fill( true_interE );
             }
-            },{"true_initKE", "true_interKE", "reco_initKE", "reco_interKE", "true_equalBin","reco_equalBin"}
+            ,{ "reco_initKE", "reco_interKE", "reco_equalBin"}
             );
 
+   hMeas_initE->Write();
+   hMeas_interE->Write();
+   hMeas_totInel->Write();
+   hMeas_abs->Write();
+
+   cout << "==================================== Building the True Distribution =====================================" << endl;
+
+   frame
+      //.Filter("selected_incidentPion")
+      .Foreach( [ hTrue_initE, hTrue_interE ]( double true_initE, double true_interE, 
+                                               bool ev_response, bool ev_miss){
+
+            if( ev_response || ev_miss ){
+
+               hTrue_initE->Fill( true_initE );
+               hTrue_interE->Fill( true_interE );
+            }
+
+            }
+            ,{"true_initKE", "true_interKE", "truePion_response", "truePion_miss"}
+            );
+    frame
+      //.Filter("selected_incidentPion")
+      .Foreach( [ hTrue_totInel ]( double true_initE, double true_interE, 
+                                   bool ev_response, bool ev_miss){
+
+            if( ev_response || ev_miss ){
+               hTrue_totInel->Fill( true_interE );
+            }
+
+            }
+            ,{ "true_initKE", "true_interKE", "truePion_totInel_response", "truePion_totInel_miss"}
+            );
+  
+   frame
+      //.Filter("selected_abs")
+      .Foreach( [ hTrue_abs ]( double true_initE, double true_interE, 
+                               bool ev_response, bool ev_miss){
+
+            if( ev_response || ev_miss ){
+               hTrue_abs->Fill( true_interE );
+            }
+
+            }
+            ,{ "true_initKE", "true_interKE", "truePion_abs_response", "truePion_abs_miss"}
+            );
+
+   hTrue_initE->Write();
+   hTrue_interE->Write();
+   hTrue_totInel->Write();
    hTrue_abs->Write();
 
 

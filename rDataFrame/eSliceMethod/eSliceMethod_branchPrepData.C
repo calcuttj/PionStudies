@@ -145,7 +145,7 @@ int eSliceMethod_branchPrepData(const string mcFilepath, const string outputName
    std::cout << "Doing Reco Incident and Interacting energy" << std::endl;
    auto mcIncident_selected_primaryPi = frame      
      //uncalibrated
-      .Define("reco_firstEntryIncident", [](double beamInst_P){
+      .Define("reco_initKE", [](double beamInst_P){
             beamInst_P = 1000*beamInst_P;
             double startKE = sqrt( pow(beamInst_P,2) + pow(mass_pion,2) ) - mass_pion;
             return startKE;
@@ -153,7 +153,7 @@ int eSliceMethod_branchPrepData(const string mcFilepath, const string outputName
       ,{"beam_inst_P"})
       //For now in Reco not subtratcting any energy Loss... can do later on if needed
 
-      .Define("reco_interactingKE", [runningSum_dE](const std::vector<double> &reco_beam_calo_wire, double incidentE){
+      .Define("reco_interKE", [runningSum_dE](const std::vector<double> &reco_beam_calo_wire, double incidentE){
  
             double interactingWire, interactingKE;
 
@@ -169,7 +169,7 @@ int eSliceMethod_branchPrepData(const string mcFilepath, const string outputName
             return interactingKE;
             };
             }
-            ,{"reco_beam_calo_wire", "reco_firstEntryIncident"})
+            ,{"reco_beam_calo_wire", "reco_initKE"})
 
       //SCEcorr only need to change interactingKE
       //.Define("reco_interactingKE_SCEcorr", [runningSum_dE_SCEcorr](const std::vector<double> &reco_beam_calo_wire, double incidentE){

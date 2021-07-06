@@ -96,8 +96,6 @@ int eSliceMethod_trueProcess_trueE(const string mcFilepath){
       .Filter("true_beam_endZ > 0")
       //.Filter("selected_incidentPion")
       //.Filter("primary_isBeamType && passBeamQuality_TPCjustPosition")
-      .Define("true_initKE", "true_firstEntryIncident")
-      .Define("true_interKE", "true_interactingKE_fromLength")
       //.Define("true_interKE", "true_interactingKE") //this trueKE from true_beam_endP, doesn't give as good results as the one with Bethe
       .Filter("true_beam_PDG == 211");
       //.Filter("true_beam_PDG == 211 && passBeamQuality_TPCjustPosition && primary_isBeamType"); //shows how reco efficiency acts ununiformly on the XS computation

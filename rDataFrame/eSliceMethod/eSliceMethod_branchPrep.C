@@ -160,7 +160,7 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
 
    auto mcIncident_selected_primaryPi = frame_filter      
       //.Range(50)
-      .Define("true_firstEntryIncident", [](double true_beam_startP){
+      .Define("true_initKE", [](double true_beam_startP){
             true_beam_startP = 1000*true_beam_startP;
             double startKE = sqrt( pow(true_beam_startP,2) + pow(mass_pion,2) ) - mass_pion;
             //startKE = startKE - eLoss_mc_trueE; //subtracting for beam plug eLoss
@@ -168,13 +168,13 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
             }
       ,{"true_beam_startP"})
       
-      .Define("true_interactingKE", [](double true_beam_endP){
+      .Define("true_interactingKE_fromEndP", [](double true_beam_endP){
             true_beam_endP = 1000*true_beam_endP; //convert GeV -> MeV
             double endKE = sqrt( pow(true_beam_endP,2) + pow(mass_pion,2)  ) - mass_pion;
             return endKE;}
             ,{"true_beam_endP"})
  
-      .Define("true_interactingKE_fromLength", [runningSum_true_dE](double endX, double endY, double endZ, double startKE){
+      .Define("true_interKE", [runningSum_true_dE](double endX, double endY, double endZ, double startKE){
             double dist = sqrt( pow( endX - mc_meanX, 2) 
                   + pow( endY - mc_meanY, 2)
                   + pow( endZ - mc_meanZ, 2) );
@@ -185,10 +185,10 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
             else endKE = -999.;
 
             return endKE;}
-            ,{"true_beam_endX", "true_beam_endY", "true_beam_endZ", "true_firstEntryIncident"})
+            ,{"true_beam_endX", "true_beam_endY", "true_beam_endZ", "true_initKE"})
 
      //uncalibrated
-      .Define("reco_firstEntryIncident", [](double beamInst_P){
+      .Define("reco_initKE", [](double beamInst_P){
             beamInst_P = 1000*beamInst_P;
             double startKE = sqrt( pow(beamInst_P,2) + pow(mass_pion,2) ) - mass_pion;
             return startKE;
@@ -196,7 +196,7 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
       ,{"beam_inst_P"})
       //For now in Reco not subtratcting any energy Loss... can do later on if needed
 
-      .Define("reco_interactingKE", [runningSum_dE](const std::vector<double> &reco_beam_calo_wire, double incidentE){
+      .Define("reco_interKE", [runningSum_dE](const std::vector<double> &reco_beam_calo_wire, double incidentE){
  
             double interactingWire, interactingKE;
 
@@ -212,7 +212,7 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
             return interactingKE;
             };
             }
-            ,{"reco_beam_calo_wire", "reco_firstEntryIncident"})
+            ,{"reco_beam_calo_wire", "reco_initKE"})
 
       //SCEcorr only need to change interactingKE
       //.Define("reco_interactingKE_SCEcorr", [runningSum_dE_SCEcorr](const std::vector<double> &reco_beam_calo_wire, double incidentE){
@@ -247,8 +247,8 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
    delete fit_pitch_mean;
    mcIncident_selected_primaryPi.Snapshot("pionana/beamana", outputName);
    
-   mcIncident_selected_primaryPi.Range(0,31700).Snapshot("pionana/beamana", "eSliceMethod_Prod4_mc_1GeV_part1_06_01_21.root");
-   mcIncident_selected_primaryPi.Range(31701,0).Snapshot("pionana/beamana", "eSliceMethod_Prod4_mc_1GeV_part2_06_01_21.root");
+   //mcIncident_selected_primaryPi.Range(0,31700).Snapshot("pionana/beamana", "eSliceMethod_Prod4_mc_1GeV_part1_06_11_21.root");
+   //mcIncident_selected_primaryPi.Range(31701,0).Snapshot("pionana/beamana", "eSliceMethod_Prod4_mc_1GeV_part2_06_11_21.root");
 
 
    

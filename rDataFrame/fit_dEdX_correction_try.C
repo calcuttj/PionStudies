@@ -88,75 +88,75 @@ int fit_dEdX_correction_try(const string file_path) {
    }
 
    //get TH2D histos from file
-   TH2D* h2_5387_pitch_wire = (TH2D*)file->Get("h2_data5387_pitch_wire_uncorrected");
-   TH2D* h2_5387_dEdX_wire = (TH2D*)file->Get("h2_data5387_dEdX_wire_uncorrected");
+   TH2D* h2_58XX_pitch_wire = (TH2D*)file->Get("h2_data58XX_pitch_wire_uncorrected");
+   TH2D* h2_58XX_dEdX_wire = (TH2D*)file->Get("h2_data58XX_dEdX_wire_uncorrected");
    
-   TH2D* h2_5387_SCEcorr_pitch_wire = (TH2D*)file->Get("h2_data5387_pitch_wire_corrected");
-   TH2D* h2_5387_SCEcorr_dEdX_wire = (TH2D*)file->Get("h2_data5387_dEdX_wire_corrected");
+   TH2D* h2_58XX_SCEcorr_pitch_wire = (TH2D*)file->Get("h2_data58XX_pitch_wire_corrected");
+   TH2D* h2_58XX_SCEcorr_dEdX_wire = (TH2D*)file->Get("h2_data58XX_dEdX_wire_corrected");
    
-   if (!h2_5387_pitch_wire || !h2_5387_dEdX_wire || !h2_5387_SCEcorr_dEdX_wire || !h2_5387_SCEcorr_pitch_wire){
-      std::cout << "Couldnt find object " << h2_5387_pitch_wire << std::endl;
+   if (!h2_58XX_pitch_wire || !h2_58XX_dEdX_wire || !h2_58XX_SCEcorr_dEdX_wire || !h2_58XX_SCEcorr_pitch_wire){
+      std::cout << "Couldnt find object " << h2_58XX_pitch_wire << std::endl;
       return 2;
    }
 
-   TFile *output = new TFile("output_fit_5387_Prod4.root", "RECREATE");
+   TFile *output = new TFile("output_fit_58XX_Prod4.root", "RECREATE");
    int minEntries = 100;
 
-   int nbinWire = h2_5387_pitch_wire->GetNbinsX();
+   int nbinWire = h2_58XX_pitch_wire->GetNbinsX();
 
    //histos of the Fit
-   TH1D *fit_pitch_mean = new TH1D("fit_pitch_mean", "", h2_5387_pitch_wire->GetNbinsX(), 1, h2_5387_pitch_wire->GetNbinsX() );
+   TH1D *fit_pitch_mean = new TH1D("fit_pitch_mean", "", h2_58XX_pitch_wire->GetNbinsX(), 1, h2_58XX_pitch_wire->GetNbinsX() );
    fit_pitch_mean->GetXaxis()->SetTitle("wire");
    fit_pitch_mean->GetYaxis()->SetTitle("pitch (cm)");
-   TH1D *fit_pitch_std = new TH1D("fit_pitch_std", "", h2_5387_pitch_wire->GetNbinsX(), 1, h2_5387_pitch_wire->GetNbinsX() );
-   TH1D *fit_pitch_chi2 = new TH1D("fit_pitch_chi2", "", h2_5387_pitch_wire->GetNbinsX(), 1, h2_5387_pitch_wire->GetNbinsX() );
-   TH1D *fit_pitch_ndf = new TH1D("fit_pitch_ndf", "", h2_5387_pitch_wire->GetNbinsX(), 1, h2_5387_pitch_wire->GetNbinsX() );
+   TH1D *fit_pitch_std = new TH1D("fit_pitch_std", "", h2_58XX_pitch_wire->GetNbinsX(), 1, h2_58XX_pitch_wire->GetNbinsX() );
+   TH1D *fit_pitch_chi2 = new TH1D("fit_pitch_chi2", "", h2_58XX_pitch_wire->GetNbinsX(), 1, h2_58XX_pitch_wire->GetNbinsX() );
+   TH1D *fit_pitch_ndf = new TH1D("fit_pitch_ndf", "", h2_58XX_pitch_wire->GetNbinsX(), 1, h2_58XX_pitch_wire->GetNbinsX() );
 
-   TH1D *fit_pitch_SCEcorr_mean = new TH1D("fit_pitch_SCEcorr_mean", "", h2_5387_SCEcorr_pitch_wire->GetNbinsX(), 1, h2_5387_SCEcorr_pitch_wire->GetNbinsX() );
+   TH1D *fit_pitch_SCEcorr_mean = new TH1D("fit_pitch_SCEcorr_mean", "", h2_58XX_SCEcorr_pitch_wire->GetNbinsX(), 1, h2_58XX_SCEcorr_pitch_wire->GetNbinsX() );
    fit_pitch_SCEcorr_mean->GetXaxis()->SetTitle("wire");
    fit_pitch_SCEcorr_mean->GetYaxis()->SetTitle("pitch (cm)");
-   TH1D *fit_pitch_SCEcorr_std = new TH1D("fit_pitch_SCEcorr_std", "", h2_5387_SCEcorr_pitch_wire->GetNbinsX(), 1, h2_5387_SCEcorr_pitch_wire->GetNbinsX() );
-   TH1D *fit_pitch_SCEcorr_chi2 = new TH1D("fit_pitch_SCEcorr_chi2", "", h2_5387_SCEcorr_pitch_wire->GetNbinsX(), 1, h2_5387_SCEcorr_pitch_wire->GetNbinsX() );
-   TH1D *fit_pitch_SCEcorr_ndf = new TH1D("fit_pitch_SCEcorr_ndf", "", h2_5387_SCEcorr_pitch_wire->GetNbinsX(), 1, h2_5387_SCEcorr_pitch_wire->GetNbinsX() );
+   TH1D *fit_pitch_SCEcorr_std = new TH1D("fit_pitch_SCEcorr_std", "", h2_58XX_SCEcorr_pitch_wire->GetNbinsX(), 1, h2_58XX_SCEcorr_pitch_wire->GetNbinsX() );
+   TH1D *fit_pitch_SCEcorr_chi2 = new TH1D("fit_pitch_SCEcorr_chi2", "", h2_58XX_SCEcorr_pitch_wire->GetNbinsX(), 1, h2_58XX_SCEcorr_pitch_wire->GetNbinsX() );
+   TH1D *fit_pitch_SCEcorr_ndf = new TH1D("fit_pitch_SCEcorr_ndf", "", h2_58XX_SCEcorr_pitch_wire->GetNbinsX(), 1, h2_58XX_SCEcorr_pitch_wire->GetNbinsX() );
 
    //Call fit function for Gaus fit
-   gaus_fit( minEntries, h2_5387_pitch_wire, fit_pitch_mean, fit_pitch_std, fit_pitch_chi2, fit_pitch_ndf);
-   gaus_fit( minEntries, h2_5387_SCEcorr_pitch_wire, fit_pitch_SCEcorr_mean, fit_pitch_SCEcorr_std, fit_pitch_SCEcorr_chi2, fit_pitch_SCEcorr_ndf);
+   gaus_fit( minEntries, h2_58XX_pitch_wire, fit_pitch_mean, fit_pitch_std, fit_pitch_chi2, fit_pitch_ndf);
+   gaus_fit( minEntries, h2_58XX_SCEcorr_pitch_wire, fit_pitch_SCEcorr_mean, fit_pitch_SCEcorr_std, fit_pitch_SCEcorr_chi2, fit_pitch_SCEcorr_ndf);
    
-   TH1D *fit_dEdX_mpv = new TH1D("fit_dEdX_mpv", "", h2_5387_dEdX_wire->GetNbinsX(), 1, h2_5387_dEdX_wire->GetNbinsX() );
+   TH1D *fit_dEdX_mpv = new TH1D("fit_dEdX_mpv", "", h2_58XX_dEdX_wire->GetNbinsX(), 1, h2_58XX_dEdX_wire->GetNbinsX() );
    fit_dEdX_mpv->GetXaxis()->SetTitle("wire");
    fit_dEdX_mpv->GetYaxis()->SetTitle("dEdX (MeV/cm)"); 
-   TH1D *fit_dEdX_mean = new TH1D("fit_dEdX_mean", "", h2_5387_dEdX_wire->GetNbinsX(), 1, h2_5387_dEdX_wire->GetNbinsX() );
+   TH1D *fit_dEdX_mean = new TH1D("fit_dEdX_mean", "", h2_58XX_dEdX_wire->GetNbinsX(), 1, h2_58XX_dEdX_wire->GetNbinsX() );
    fit_dEdX_mean->GetXaxis()->SetTitle("wire");
    fit_dEdX_mean->GetYaxis()->SetTitle("dEdX (MeV/cm)"); 
-   TH1D *fit_dEdX_std = new TH1D("fit_dEdX_std", "", h2_5387_dEdX_wire->GetNbinsX(), 1, h2_5387_dEdX_wire->GetNbinsX() );
-   TH1D *fit_dEdX_chi2 = new TH1D("fit_dEdX_chi2", "", h2_5387_dEdX_wire->GetNbinsX(), 1, h2_5387_dEdX_wire->GetNbinsX() );
-   TH1D *fit_dEdX_ndf = new TH1D("fit_dEdX_ndf", "", h2_5387_dEdX_wire->GetNbinsX(), 1, h2_5387_dEdX_wire->GetNbinsX() );
+   TH1D *fit_dEdX_std = new TH1D("fit_dEdX_std", "", h2_58XX_dEdX_wire->GetNbinsX(), 1, h2_58XX_dEdX_wire->GetNbinsX() );
+   TH1D *fit_dEdX_chi2 = new TH1D("fit_dEdX_chi2", "", h2_58XX_dEdX_wire->GetNbinsX(), 1, h2_58XX_dEdX_wire->GetNbinsX() );
+   TH1D *fit_dEdX_ndf = new TH1D("fit_dEdX_ndf", "", h2_58XX_dEdX_wire->GetNbinsX(), 1, h2_58XX_dEdX_wire->GetNbinsX() );
 
-   TH1D *fit_dEdX_SCEcorr_mpv = new TH1D("fit_dEdX_SCEcorr_mpv", "", h2_5387_SCEcorr_dEdX_wire->GetNbinsX(), 1, h2_5387_SCEcorr_dEdX_wire->GetNbinsX() );
+   TH1D *fit_dEdX_SCEcorr_mpv = new TH1D("fit_dEdX_SCEcorr_mpv", "", h2_58XX_SCEcorr_dEdX_wire->GetNbinsX(), 1, h2_58XX_SCEcorr_dEdX_wire->GetNbinsX() );
    fit_dEdX_SCEcorr_mpv->GetXaxis()->SetTitle("wire");
    fit_dEdX_SCEcorr_mpv->GetYaxis()->SetTitle("dEdX (MeV/cm)"); 
-   TH1D *fit_dEdX_SCEcorr_mean = new TH1D("fit_dEdX_SCEcorr_mean", "", h2_5387_SCEcorr_dEdX_wire->GetNbinsX(), 1, h2_5387_SCEcorr_dEdX_wire->GetNbinsX() );
+   TH1D *fit_dEdX_SCEcorr_mean = new TH1D("fit_dEdX_SCEcorr_mean", "", h2_58XX_SCEcorr_dEdX_wire->GetNbinsX(), 1, h2_58XX_SCEcorr_dEdX_wire->GetNbinsX() );
    fit_dEdX_SCEcorr_mean->GetXaxis()->SetTitle("wire");
    fit_dEdX_SCEcorr_mean->GetYaxis()->SetTitle("dEdX (MeV/cm)"); 
-   TH1D *fit_dEdX_SCEcorr_std = new TH1D("fit_dEdX_SCEcorr_std", "", h2_5387_SCEcorr_dEdX_wire->GetNbinsX(), 1, h2_5387_SCEcorr_dEdX_wire->GetNbinsX() );
-   TH1D *fit_dEdX_SCEcorr_chi2 = new TH1D("fit_dEdX_SCEcorr_chi2", "", h2_5387_SCEcorr_dEdX_wire->GetNbinsX(), 1, h2_5387_SCEcorr_dEdX_wire->GetNbinsX() );
-   TH1D *fit_dEdX_SCEcorr_ndf = new TH1D("fit_dEdX_SCEcorr_ndf", "", h2_5387_SCEcorr_dEdX_wire->GetNbinsX(), 1, h2_5387_SCEcorr_dEdX_wire->GetNbinsX() );
+   TH1D *fit_dEdX_SCEcorr_std = new TH1D("fit_dEdX_SCEcorr_std", "", h2_58XX_SCEcorr_dEdX_wire->GetNbinsX(), 1, h2_58XX_SCEcorr_dEdX_wire->GetNbinsX() );
+   TH1D *fit_dEdX_SCEcorr_chi2 = new TH1D("fit_dEdX_SCEcorr_chi2", "", h2_58XX_SCEcorr_dEdX_wire->GetNbinsX(), 1, h2_58XX_SCEcorr_dEdX_wire->GetNbinsX() );
+   TH1D *fit_dEdX_SCEcorr_ndf = new TH1D("fit_dEdX_SCEcorr_ndf", "", h2_58XX_SCEcorr_dEdX_wire->GetNbinsX(), 1, h2_58XX_SCEcorr_dEdX_wire->GetNbinsX() );
 
    //Call fit function for Landau
-   landau_fit( minEntries, h2_5387_dEdX_wire, fit_dEdX_mpv, fit_dEdX_mean, fit_dEdX_std, fit_dEdX_chi2, fit_dEdX_ndf );
-   landau_fit( minEntries, h2_5387_SCEcorr_dEdX_wire, fit_dEdX_SCEcorr_mpv, fit_dEdX_SCEcorr_mean, fit_dEdX_SCEcorr_std, fit_dEdX_SCEcorr_chi2, fit_dEdX_SCEcorr_ndf );
+   landau_fit( minEntries, h2_58XX_dEdX_wire, fit_dEdX_mpv, fit_dEdX_mean, fit_dEdX_std, fit_dEdX_chi2, fit_dEdX_ndf );
+   landau_fit( minEntries, h2_58XX_SCEcorr_dEdX_wire, fit_dEdX_SCEcorr_mpv, fit_dEdX_SCEcorr_mean, fit_dEdX_SCEcorr_std, fit_dEdX_SCEcorr_chi2, fit_dEdX_SCEcorr_ndf );
 
    //Lifetime correction histogram --> This has to be applied to the non corrected pandoracalonosce object
-   //5387 had a correction of 20ms for the run (MC has 35ms) 
+   //58XX had a correction of 20ms for the run (MC has 35ms) 
    //Build a correction histo to multiply dEdx with. exp(tDrift(wire) / lifetime)
 
-   double x_drift = 360, x_beam_start = 28, v_drift = 0.1648, lifetime = 20000; //cm and us lifetime is 20ms
+   double x_drift = 360, x_beam_start = 28, v_drift = 0.1648, lifetime = 47000; //cm and us lifetime is 20ms for runs of 58XX it is 47us
    //first bin with content in dEdX bin (x axis)
    Int_t first_wire = fit_dEdX_mpv->FindFirstBinAbove(0,1, 1,80);
    //std::cout << "first wire = " << first_wire << std::endl;
 
-   TH1D* h_lifetime_correction = new TH1D("lifetimecorrection", "", h2_5387_dEdX_wire->GetNbinsX(), 1, h2_5387_dEdX_wire->GetNbinsX());
+   TH1D* h_lifetime_correction = new TH1D("lifetimecorrection", "", h2_58XX_dEdX_wire->GetNbinsX(), 1, h2_58XX_dEdX_wire->GetNbinsX());
 
    //fill hist with correction factors
    for(int i=1; i <= h_lifetime_correction->GetNbinsX(); i++){
@@ -178,19 +178,19 @@ int fit_dEdX_correction_try(const string file_path) {
    };
    h_lifetime_correction->Write();
 
-   TH1D* h_dEdX_mpv_lifetime = new TH1D("dEdX_mpv_lifetime", "", h2_5387_dEdX_wire->GetNbinsX(), 1, h2_5387_dEdX_wire->GetNbinsX());
+   TH1D* h_dEdX_mpv_lifetime = new TH1D("dEdX_mpv_lifetime", "", h2_58XX_dEdX_wire->GetNbinsX(), 1, h2_58XX_dEdX_wire->GetNbinsX());
    h_dEdX_mpv_lifetime->Multiply(h_lifetime_correction, fit_dEdX_mpv);
    h_dEdX_mpv_lifetime->Write();
 
-   TH1D* h_dEdX_mean_lifetime = new TH1D("dEdX_mean_lifetime", "", h2_5387_dEdX_wire->GetNbinsX(), 1, h2_5387_dEdX_wire->GetNbinsX());
+   TH1D* h_dEdX_mean_lifetime = new TH1D("dEdX_mean_lifetime", "", h2_58XX_dEdX_wire->GetNbinsX(), 1, h2_58XX_dEdX_wire->GetNbinsX());
    h_dEdX_mean_lifetime->Multiply(h_lifetime_correction, fit_dEdX_mean);
    h_dEdX_mean_lifetime->Write();
 
    //Bethe Bloch
-   TH1D* h_betheMPV_pion = new TH1D("betheMPV_pion", "", h2_5387_pitch_wire->GetNbinsX(), 1, h2_5387_pitch_wire->GetNbinsX() );
+   TH1D* h_betheMPV_pion = new TH1D("betheMPV_pion", "", h2_58XX_pitch_wire->GetNbinsX(), 1, h2_58XX_pitch_wire->GetNbinsX() );
    h_betheMPV_pion->GetXaxis()->SetTitle("wire");
    h_betheMPV_pion->GetYaxis()->SetTitle("dEdX (MeV/cm)");
-   TH1D* h_betheMPV_muon = new TH1D("betheMPV_muon", "", h2_5387_pitch_wire->GetNbinsX(), 1, h2_5387_pitch_wire->GetNbinsX() );
+   TH1D* h_betheMPV_muon = new TH1D("betheMPV_muon", "", h2_58XX_pitch_wire->GetNbinsX(), 1, h2_58XX_pitch_wire->GetNbinsX() );
    h_betheMPV_muon->GetXaxis()->SetTitle("wire");
    h_betheMPV_muon->GetYaxis()->SetTitle("dEdX (MeV/cm)");
 
@@ -204,10 +204,10 @@ int fit_dEdX_correction_try(const string file_path) {
    h_betheMPV_pion->Write();
    h_betheMPV_muon->Write();
 
-   TH1D* h_betheMean_pion = new TH1D("betheMean_pion", "", h2_5387_pitch_wire->GetNbinsX(), 1, h2_5387_pitch_wire->GetNbinsX() );
+   TH1D* h_betheMean_pion = new TH1D("betheMean_pion", "", h2_58XX_pitch_wire->GetNbinsX(), 1, h2_58XX_pitch_wire->GetNbinsX() );
    h_betheMean_pion->GetXaxis()->SetTitle("wire");
    h_betheMean_pion->GetYaxis()->SetTitle("dEdX (MeV/cm)");
-   TH1D* h_betheMean_muon = new TH1D("betheMean_muon", "", h2_5387_pitch_wire->GetNbinsX(), 1, h2_5387_pitch_wire->GetNbinsX() );
+   TH1D* h_betheMean_muon = new TH1D("betheMean_muon", "", h2_58XX_pitch_wire->GetNbinsX(), 1, h2_58XX_pitch_wire->GetNbinsX() );
    h_betheMean_muon->GetXaxis()->SetTitle("wire");
    h_betheMean_muon->GetYaxis()->SetTitle("dEdX (MeV/cm)");
  
@@ -222,14 +222,14 @@ int fit_dEdX_correction_try(const string file_path) {
 
    double data_cosThetaXZ = 0.98;
 
-   TH1D* pitch_mean_old = new TH1D("true_pitch_mean_old", "", h2_5387_pitch_wire->GetNbinsX(), 1, h2_5387_pitch_wire->GetNbinsX() );
+   TH1D* pitch_mean_old = new TH1D("true_pitch_mean_old", "", h2_58XX_pitch_wire->GetNbinsX(), 1, h2_58XX_pitch_wire->GetNbinsX() );
 
    // use for calculation of pitch true mean the uncalibrated but corrected dEdx
    pitch_mean_old->Multiply(fit_pitch_mean,fit_dEdX_mpv);
    pitch_mean_old->Divide(h_betheMPV_muon);
    pitch_mean_old->Write();
 
-   TH1D* pitch_calc_lifetime = new TH1D("true_pitch_mean_lifetime", "", h2_5387_pitch_wire->GetNbinsX(), 1, h2_5387_pitch_wire->GetNbinsX() );
+   TH1D* pitch_calc_lifetime = new TH1D("true_pitch_mean_lifetime", "", h2_58XX_pitch_wire->GetNbinsX(), 1, h2_58XX_pitch_wire->GetNbinsX() );
 
    // use for calculation of pitch true mean the uncalibrated but corrected dEdx
    pitch_calc_lifetime->Multiply(fit_pitch_mean,h_dEdX_mpv_lifetime);
@@ -242,7 +242,7 @@ int fit_dEdX_correction_try(const string file_path) {
    double diff_true_pandoracalonosce[nbinWire], diff_pandoracalonosce_SCEcorr[nbinWire];
 
    double sum1 = 0 , sum2 = 0, sum3 = 0;
-   for(int i=1; i <= h2_5387_pitch_wire->GetNbinsX(); i++){
+   for(int i=1; i <= h2_58XX_pitch_wire->GetNbinsX(); i++){
    //for(int i=1; i <= 80; i++){
       
       wire[i-1] = i;
@@ -329,10 +329,10 @@ int fit_dEdX_correction_try(const string file_path) {
    c_pandoracalonosce_SCEcorr->Write();
    c_pandoracalonosce_SCEcorr->Close();
 
-   h2_5387_pitch_wire->Write();
-   h2_5387_dEdX_wire->Write();
-   h2_5387_SCEcorr_pitch_wire->Write();
-   h2_5387_SCEcorr_dEdX_wire->Write();
+   h2_58XX_pitch_wire->Write();
+   h2_58XX_dEdX_wire->Write();
+   h2_58XX_SCEcorr_pitch_wire->Write();
+   h2_58XX_SCEcorr_dEdX_wire->Write();
    fit_pitch_mean->Write();
    fit_pitch_std->Write();
    fit_pitch_chi2->Write();
@@ -432,7 +432,7 @@ int fit_dEdX_correction_try(const string file_path) {
    legend->AddEntry(h_betheMPV_muon, "betheBloch MPV Muon Einit = 900 - 50 MeV");
    legend->Draw();
    
-   TPaveLabel *pl = new TPaveLabel(187.8666,3.010961,565.6985,3.142088,"Data 5387 dEdX","br");
+   TPaveLabel *pl = new TPaveLabel(187.8666,3.010961,565.6985,3.142088,"Data 58XX dEdX","br");
    pl->Draw();
    
    canv_dEdx_data->Modified();
@@ -499,7 +499,7 @@ int fit_dEdX_correction_try(const string file_path) {
    legend_pitch->AddEntry(fit_pitch_SCEcorr_mean, "pandoracalinoxyzt");
    legend_pitch->Draw();
    
-   TPaveLabel *pla = new TPaveLabel(187.8666,3.010961,565.6985,3.142088,"Data 5387 pitch","br");
+   TPaveLabel *pla = new TPaveLabel(187.8666,3.010961,565.6985,3.142088,"Data 58XX pitch","br");
    pla->Draw();
    
    canv_pitch_data->Modified();
@@ -513,7 +513,7 @@ int fit_dEdX_correction_try(const string file_path) {
    //output->Close();
 
    //Save for eSlice Method values
-   TFile *output_fitval = new TFile("output_fit_5387_Prod4_eSlice.root", "RECREATE");
+   TFile *output_fitval = new TFile("output_fit_58XX_Prod4_eSlice.root", "RECREATE");
 
 
    fit_pitch_SCEcorr_mean->Write();

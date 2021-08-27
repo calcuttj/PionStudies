@@ -34,7 +34,7 @@ using namespace ROOT::VecOps;
 
 using namespace std::chrono; 
 std::string default_data = 
-    "prod4a/pduneana_Prod4_1GeV_5387_5_12_21.root";
+    "prod4a/pduneana_Prod4_1GeV_58XX_7_12_21.root";
 std::string default_mc = 
     "prod4a/pduneana_Prod4a_1GeV_5_14_21.root";
 
@@ -272,11 +272,11 @@ int eventSelection(const string mcFile = default_mc, const string dataFile = def
             {"primary_isBeamType", "primary_ends_inAPA3", "has_noPion_daughter",
              "passBeamCutBI",
             /*"has_shower_nHits_distance"*/"has_shower_dist_energy"})
-     .Define("selected_incidentPion", "primary_isBeamType && passBeamQuality_TPCjustPosition && !isPrimaryMuonCandidate")
+     .Define("selected_incidentPion", "primary_isBeamType && passBeamQuality_TPCjustPosition && primary_ends_inAPA3 && !isPrimaryMuonCandidate")
      
-     .Define("selected_abs", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && !has_shower_nHits_distance")
+     .Define("selected_abs", "selected_incidentPion && has_noPion_daughter && !has_shower_nHits_distance")
      
-     .Define("selected_cex", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && has_shower_nHits_distance");
+     .Define("selected_cex", "selected_incidentPion && has_noPion_daughter && has_shower_nHits_distance");
     
   // DATA
   data_all/*_cutValues*/ = data_all
@@ -351,11 +351,11 @@ int eventSelection(const string mcFile = default_mc, const string dataFile = def
              "passBeamCut",
              /*"has_shower_nHits_distance"*/"has_shower_dist_energy"})
      
-     .Define("selected_incidentPion", "primary_isBeamType && passBeamQuality_TPCjustPosition && !isPrimaryMuonCandidate") //need passBeamQuality from BI??
+     .Define("selected_incidentPion", "primary_isBeamType && passBeamQuality_TPCjustPosition && primary_ends_inAPA3 && !isPrimaryMuonCandidate")
      
-     .Define("selected_abs", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && !has_shower_nHits_distance")
+     .Define("selected_abs", "selected_incidentPion && has_noPion_daughter && !has_shower_nHits_distance")
      
-     .Define("selected_cex", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && has_shower_nHits_distance");
+     .Define("selected_cex", "selected_incidentPion && has_noPion_daughter && has_shower_nHits_distance");
 
   //Label within MC files who passed which CUT (this can help to see when what drops out)
   auto mc_output_with_label = mc_all/*_cutValues*/;

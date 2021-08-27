@@ -17,6 +17,7 @@
 #include "../betheBloch.h"
 #include "eSlice.h"
 #include <ROOT/RDataFrame.hxx>
+#include "TRandom.h"
 
 
 #include <iostream>
@@ -33,6 +34,17 @@ using namespace ROOT::VecOps;
 //This Macro prepares the interacting and incident energy-branches for the eSliceMethod files.
 //Provide output name
 
+//values to be same in XY as for Beamwindow Cuts of TPC position, X diam 28cm, Y diam 35cm, check mactor true_beamWindow_coordinate
+//
+auto trueBeamLocation = [](std::vector<double> &trajX, std::vector<double> &trajY, std::vector<double> &trajZ){
+   int i=0;
+   while( trajZ[i] < 0 && i < trajZ.size() - 1 ) i++;
+
+   if( trajX[i+1] >= -46 && trajX[i+1] <= -18 && trajY[i+1] >= 410 && trajY[i+1] <= 435) return true;
+   else return false;
+}; 
+
+
 //***********************
 //Main Function
 
@@ -47,7 +59,7 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
 
    TH1D *fit_dEdX_lifetime_mpv_SCEcorr = (TH1D*)f2.Get("fit_mc_dEdX_SCEcorr_mpv"); //mean value corrected for lifetime
    TH1D *fit_pitch_mean_SCEcorr = (TH1D*)f2.Get("fit_mc_pitch_SCEcorr_mean");
-   TFile *output = new TFile ("eSliceMethod_energyDeposit_mc_06_11_21.root", "RECREATE");
+   TFile *output = new TFile ("eSliceMethod_energyDeposit_mc_08_22_21.root", "RECREATE");
 
    output->cd();
    fit_dEdX_lifetime_mpv->Write();
@@ -123,25 +135,6 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
    dE_product_fit_dEdX_pitch.Write();
    runningSum_dE->Write();
 
-   //SCEcorr
-   /*TH1D* dEdX_mean_calc_fit_bethe_SCEcorr = (TH1D*)bethe_frac_mu->Clone("dEdX_mean_calc_fit_bethe_SCEcorr");
-   dEdX_mean_calc_fit_bethe_SCEcorr->Multiply(fit_dEdX_lifetime_mpv_SCEcorr);
-   dEdX_mean_calc_fit_bethe_SCEcorr->Write();
-
-   TH1D dE_product_fit_dEdX_pitch_SCEcorr = (*dEdX_mean_calc_fit_bethe_SCEcorr) * (*fit_pitch_mean_SCEcorr);
-   dE_product_fit_dEdX_pitch_SCEcorr.SetName("dE_product_fit_dEdX_pitch_SCEcorr");
-
-   TH1D *runningSum_dE_SCEcorr = new TH1D("runningSum_dE_SCEcorr", "", fit_pitch_mean_SCEcorr->GetNbinsX(), 1, fit_pitch_mean_SCEcorr->GetNbinsX() );
-
-   temp = 0;
-   for(int i=1; i <= dE_product_fit_dEdX_pitch_SCEcorr.GetNbinsX(); i++){
-      temp += dE_product_fit_dEdX_pitch_SCEcorr.GetBinContent(i);
-      runningSum_dE_SCEcorr->SetBinContent( i, temp);
-   };
-
-   dE_product_fit_dEdX_pitch_SCEcorr.Write();
-   runningSum_dE_SCEcorr->Write();*/
-   //--------------------------------------------------------
 
    //Initial Filters for all events
    auto frame_filter = frame;
@@ -160,6 +153,8 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
 
    auto mcIncident_selected_primaryPi = frame_filter      
       //.Range(50)
+      .Define("pass_trueBeamLocation", trueBeamLocation, {"true_beam_traj_X","true_beam_traj_Y", "true_beam_traj_Z"})
+
       .Define("true_initKE", [](double true_beam_startP){
             true_beam_startP = 1000*true_beam_startP;
             double startKE = sqrt( pow(true_beam_startP,2) + pow(mass_pion,2) ) - mass_pion;
@@ -214,17 +209,35 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
             }
             ,{"reco_beam_calo_wire", "reco_initKE"})
 
-      //SCEcorr only need to change interactingKE
-      //.Define("reco_interactingKE_SCEcorr", [runningSum_dE_SCEcorr](const std::vector<double> &reco_beam_calo_wire, double incidentE){
-      //      double interactingWire = reco_beam_calo_wire[ reco_beam_calo_wire.size() - 1 ];
-      //      double interactingKE;
-      //      if(interactingWire >= 1 && interactingWire < runningSum_dE_SCEcorr->GetNbinsX()){
-      //      interactingKE = incidentE - runningSum_dE_SCEcorr->GetBinContent(interactingWire);
-      //      }
-      //      else interactingKE = -999;
-      //      return interactingKE;
-      //      }
-      //      ,{"reco_beam_calo_wire", "reco_firstEntryIncident"})
+      //=================================================================================
+      //             Reweight Reco_initKE with datadriven distribution
+      //=================================================================================
+      .Define("reco_initKE_rwData", [](double reco_initKE){
+
+            Double_t rand = gRandom->Gaus(0., diff_square_sigma);
+            return reco_initKE + diff_mean + rand;
+
+            }
+      ,{"reco_initKE"})
+      //For now in Reco not subtratcting any energy Loss... can do later on if needed
+
+      .Define("reco_interKE_rwData", [runningSum_dE](const std::vector<double> &reco_beam_calo_wire, double incidentE){
+ 
+            double interactingWire, interactingKE;
+
+            if( reco_beam_calo_wire.empty()) return -999.;
+            else{
+
+               interactingWire= reco_beam_calo_wire[ reco_beam_calo_wire.size() - 1]; //last entry
+            if(interactingWire >= 1 && interactingWire < runningSum_dE->GetNbinsX()){
+            interactingKE = incidentE - runningSum_dE->GetBinContent(interactingWire);
+            }
+            else interactingKE = -999;
+            //std::cout << "initWire = " << interactingWire << "  inter KE = " << interactingKE << std::endl;
+            return interactingKE;
+            };
+            }
+            ,{"reco_beam_calo_wire", "reco_initKE_rwData"})
 
       .Define("reco_incident_wire", [](std::vector<double> &reco_beam_calo_wire){
      if(reco_beam_calo_wire.empty()) return -999.;
@@ -235,13 +248,6 @@ int eSliceMethod_branchPrep(const string mcFilepath, const string outputName){
      if(reco_beam_calo_wire.empty()) return -999.;
      else return reco_beam_calo_wire[ reco_beam_calo_wire.size() - 1 ];
          },{"reco_beam_calo_wire"});
-
-   //.Define("selected_incidentPion", "primary_isBeamType && passBeamQuality_TPCjustPosition && !isPrimaryMuonCandidate")
-     
-   //.Define("selected_abs", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && !has_shower_nHits_distance")
-     
-  // .Define("selected_cex", "selected_incidentPion && primary_ends_inAPA3 && has_noPion_daughter && has_shower_nHits_distance");
-
 
    delete fit_dEdX_lifetime_mpv;
    delete fit_pitch_mean;

@@ -26,7 +26,7 @@ using namespace ROOT::VecOps;
 //**********************************************************
 //
 //Some Cut Values
-double cutAPA3_Z = 222.; //updated 19may2021
+double cutAPA3_Z = 220.; //updated 22aug2021
 double cut_trackScore = 0.3;
 double cut_michelScore = 0.55;
 double cut_dEdX = 3.8;
@@ -61,21 +61,21 @@ double mc_BI_yhigh= 2., mc_BI_zlow=28.5, mc_BI_zhigh=31., mc_BI_coslow=.97;
 //
 //These are computed AFTER SCE corrections!!
 //need to do plots too and cross-check values!
-
-double data_meanX = -27.91, data_sigmaX = 4.71;
-double data_meanY = 424.36, data_sigmaY = 5.16;
-double data_meanZ = 3.78, data_sigmaZ = 1.10;
-double data_thetaX = 100.45 * TMath::Pi()/ 180; 
-double data_thetaY = 103.52 * TMath::Pi() / 180;
-double data_thetaZ = 17.83 * TMath::Pi() / 180;
-
-
-double mc_meanX = -30.81, mc_sigmaX = 5.02;
-double mc_meanY = 422.41, mc_sigmaY = 4.51;
-double mc_meanZ = 0.11, mc_sigmaZ = 0.22;
-double mc_thetaX = 101.58 * TMath::Pi()/ 180; 
-double mc_thetaY = 101.19 * TMath::Pi()/ 180;
-double mc_thetaZ = 16.59 * TMath::Pi()/ 180;
+//Francesca values 58XX                                        //TJ values
+double data_meanX = -28.6, data_sigmaX = 4.888;                //double data_meanX = -27.91, data_sigmaX = 4.7
+double data_meanY = 424.6, data_sigmaY = 5.397;                //double data_meanY = 424.36, data_sigmaY = 5.1
+double data_meanZ = 2.707, data_sigmaZ = 1.215;                  //double data_meanZ = 3.78, data_sigmaZ = 1.10;
+double data_thetaX = 100.45 * TMath::Pi()/ 180;                //double data_thetaX = 100.45 * TMath::Pi()/ 18
+double data_thetaY = 103.52 * TMath::Pi() / 180;               //double data_thetaY = 103.52 * TMath::Pi() / 1
+double data_thetaZ = 17.83 * TMath::Pi() / 180;                //double data_thetaZ = 17.83 * TMath::Pi() / 18
+                                                               //
+                                                               //
+double mc_meanX = -30.81, mc_sigmaX = 5.02;                    //double mc_meanX = -30.81, mc_sigmaX = 5.02;
+double mc_meanY = 422.41, mc_sigmaY = 4.51;                    //double mc_meanY = 422.41, mc_sigmaY = 4.51;
+double mc_meanZ = 0.11, mc_sigmaZ = 0.22;                      //double mc_meanZ = 0.11, mc_sigmaZ = 0.22;
+double mc_thetaX = 101.58 * TMath::Pi()/ 180;                  //double mc_thetaX = 101.58 * TMath::Pi()/ 180;
+double mc_thetaY = 101.19 * TMath::Pi()/ 180;                  //double mc_thetaY = 101.19 * TMath::Pi()/ 180;
+double mc_thetaZ = 16.59 * TMath::Pi()/ 180;                   //double mc_thetaZ = 16.59 * TMath::Pi()/ 180;
 
 
 double cut_beamQuality_TPC_xyz = 3.;

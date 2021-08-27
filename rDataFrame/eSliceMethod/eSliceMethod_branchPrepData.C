@@ -40,14 +40,14 @@ int eSliceMethod_branchPrepData(const string mcFilepath, const string outputName
    gInterpreter->GenerateDictionary("vector<vector<int>>", "vector");
    ROOT::RDataFrame frame(pionTree, mcFilepath);
 
-   TFile f2("fit_5387_Prod4a_06_11_21.root", "UPDATE");
+   TFile f2("fit_58XX_Prod4a_07_14_21.root", "UPDATE");
    TH1D *fit_dEdX_lifetime_mpv = (TH1D*)f2.Get("dEdX_mpv_lifetime"); //mean value corrected for lifetime
    TH1D *fit_pitch_mean = (TH1D*)f2.Get("fit_pitch_mean");
    
    TH1D *fit_dEdX_lifetime_mpv_SCEcorr = (TH1D*)f2.Get("fit_dEdX_SCEcorr_mpv"); //mean value corrected for lifetime
    TH1D *fit_pitch_mean_SCEcorr = (TH1D*)f2.Get("fit_pitch_SCEcorr_mean");
 
-   TFile *output = new TFile ("eSliceMethod_energyDeposit_5387_06_11_21.root", "RECREATE");
+   TFile *output = new TFile ("eSliceMethod_energyDeposit_58XX_08_22_21.root", "RECREATE");
 
    output->cd();
    fit_dEdX_lifetime_mpv->Write();

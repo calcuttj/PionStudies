@@ -62,13 +62,13 @@ int dEdX_correction_try(const string path1, const string path2 ){
    //gROOT->ForceStyle();
    //read in Data, MC SCE and MC without SCE
    ROOT::RDataFrame frame_mc_SCE(pionTree, path1);
-   ROOT::RDataFrame frame_data5387(pionTree, path2);
+   ROOT::RDataFrame frame_data58XX(pionTree, path2);
 
    //ROOT::RDataFrame frame_data5809(pionTree, path3);
    //ROOT::RDataFrame frame_data5770(pionTree, path4);
 
 
-   TFile *output = new TFile ("output_dEdX_correction.root", "RECREATE");
+   TFile *output = new TFile ("output_dEdX_correction_58XX.root", "RECREATE");
    int nBin_wire, nBin_dE, nBin_dEdX, nBin_pitch;
    double binLow_wire, binHigh_wire,  binLow_dE, binHigh_dE, 
           binLow_dEdX, binHigh_dEdX,  binLow_pitch, binHigh_pitch;
@@ -87,7 +87,7 @@ int dEdX_correction_try(const string path1, const string path2 ){
       .Define("cut_uncorrected_dEdX", cut_dEdX, {"reco_beam_calibrated_dEdX_NoSCE", "reco_beam_calo_wire"})
       .Define("cut_corrected_dEdX", cut_dEdX, {"reco_beam_calibrated_dEdX_SCE", "reco_beam_calo_wire"});
 
-   auto filtered_data5387 = frame_data5387
+   auto filtered_data58XX = frame_data58XX
       .Filter("primary_isBeamType")
       .Filter("passBeamQuality_TPCjustPosition")
       .Filter("!isPrimaryMuonCandidate")
@@ -132,11 +132,11 @@ int dEdX_correction_try(const string path1, const string path2 ){
    auto h2_mc_dE_wire_corrected = filtered_SCE
       .Histo2D({"h2_mc_dE_wire_corrected","MC wire vs dE corrected for SCE", nBin_wire ,binLow_wire ,binHigh_wire ,nBin_dE, binLow_dE, binHigh_dE}, "reco_beam_calo_wire","corrected_dE");
 
-   auto h2_data5387_dE_wire_uncorrected = filtered_data5387
-      .Histo2D({"h2_data5387_dE_wire_uncorrected","DATA 5387 wire vs dE uncorrected", nBin_wire ,binLow_wire ,binHigh_wire ,nBin_dE, binLow_dE, binHigh_dE}, "reco_beam_calo_wire_NoSCE","uncorrected_dE");
+   auto h2_data58XX_dE_wire_uncorrected = filtered_data58XX
+      .Histo2D({"h2_data58XX_dE_wire_uncorrected","DATA 58XX wire vs dE uncorrected", nBin_wire ,binLow_wire ,binHigh_wire ,nBin_dE, binLow_dE, binHigh_dE}, "reco_beam_calo_wire_NoSCE","uncorrected_dE");
 
-   auto h2_data5387_dE_wire_corrected = filtered_data5387
-      .Histo2D({"h2_data5387_dE_wire_corrected","DATA 5387 wire vs dE corrected", nBin_wire ,binLow_wire ,binHigh_wire ,nBin_dE, binLow_dE, binHigh_dE}, "reco_beam_calo_wire","corrected_dE");
+   auto h2_data58XX_dE_wire_corrected = filtered_data58XX
+      .Histo2D({"h2_data58XX_dE_wire_corrected","DATA 58XX wire vs dE corrected", nBin_wire ,binLow_wire ,binHigh_wire ,nBin_dE, binLow_dE, binHigh_dE}, "reco_beam_calo_wire","corrected_dE");
 
 /*   
    auto h2_data5809_dE_wire_uncorrected = filtered_data5809
@@ -156,18 +156,18 @@ int dEdX_correction_try(const string path1, const string path2 ){
 
    h2_mc_dE_wire_uncorrected->GetYaxis()->SetTitle("dE");
    h2_mc_dE_wire_corrected->GetYaxis()->SetTitle("dE");
-   h2_data5387_dE_wire_uncorrected->GetYaxis()->SetTitle("dE");
-   h2_data5387_dE_wire_corrected->GetYaxis()->SetTitle("dE");
+   h2_data58XX_dE_wire_uncorrected->GetYaxis()->SetTitle("dE");
+   h2_data58XX_dE_wire_corrected->GetYaxis()->SetTitle("dE");
 
    h2_mc_dE_wire_uncorrected->GetXaxis()->SetTitle("wire");
    h2_mc_dE_wire_corrected->GetXaxis()->SetTitle("wire");
-   h2_data5387_dE_wire_uncorrected->GetXaxis()->SetTitle("wire");
-   h2_data5387_dE_wire_corrected->GetXaxis()->SetTitle("wire");
+   h2_data58XX_dE_wire_uncorrected->GetXaxis()->SetTitle("wire");
+   h2_data58XX_dE_wire_corrected->GetXaxis()->SetTitle("wire");
 
    h2_mc_dE_wire_uncorrected->Write();
    h2_mc_dE_wire_corrected->Write();
-   h2_data5387_dE_wire_uncorrected->Write();
-   h2_data5387_dE_wire_corrected->Write();
+   h2_data58XX_dE_wire_uncorrected->Write();
+   h2_data58XX_dE_wire_corrected->Write();
 
 /*
    h2_data5809_dE_wire_uncorrected->GetYaxis()->SetTitle("dE");
@@ -195,11 +195,11 @@ int dEdX_correction_try(const string path1, const string path2 ){
    auto h2_mc_dEdX_wire_corrected = filtered_SCE
       .Histo2D({"h2_mc_dEdX_wire_corrected","MC wire vs dEdX corrected for SCE", nBin_wire, binLow_wire, binHigh_wire, nBin_dEdX, binLow_dEdX, binHigh_dEdX}, "reco_beam_calo_wire","cut_corrected_dEdX");
 
-   auto h2_data5387_dEdX_wire_uncorrected = filtered_data5387
-      .Histo2D({"h2_data5387_dEdX_wire_uncorrected","DATA 5387 wire vs dEdX uncorrected", nBin_wire, binLow_wire, binHigh_wire, nBin_dEdX, binLow_dEdX, binHigh_dEdX}, "reco_beam_calo_wire_NoSCE","cut_uncorrected_dEdX");
+   auto h2_data58XX_dEdX_wire_uncorrected = filtered_data58XX
+      .Histo2D({"h2_data58XX_dEdX_wire_uncorrected","DATA 58XX wire vs dEdX uncorrected", nBin_wire, binLow_wire, binHigh_wire, nBin_dEdX, binLow_dEdX, binHigh_dEdX}, "reco_beam_calo_wire_NoSCE","cut_uncorrected_dEdX");
 
-   auto h2_data5387_dEdX_wire_corrected = filtered_data5387
-      .Histo2D({"h2_data5387_dEdX_wire_corrected","DATA 5387 wire vs dEdX corrected", nBin_wire, binLow_wire, binHigh_wire, nBin_dEdX, binLow_dEdX, binHigh_dEdX}, "reco_beam_calo_wire","cut_corrected_dEdX");
+   auto h2_data58XX_dEdX_wire_corrected = filtered_data58XX
+      .Histo2D({"h2_data58XX_dEdX_wire_corrected","DATA 58XX wire vs dEdX corrected", nBin_wire, binLow_wire, binHigh_wire, nBin_dEdX, binLow_dEdX, binHigh_dEdX}, "reco_beam_calo_wire","cut_corrected_dEdX");
 
 /*   
    auto h2_data5809_dEdX_wire_uncorrected = filtered_data5809
@@ -216,17 +216,17 @@ int dEdX_correction_try(const string path1, const string path2 ){
 
    h2_mc_dEdX_wire_uncorrected->GetYaxis()->SetTitle("dEdX");
    h2_mc_dEdX_wire_corrected->GetYaxis()->SetTitle("dEdX");
-   h2_data5387_dEdX_wire_uncorrected->GetYaxis()->SetTitle("dEdX");
+   h2_data58XX_dEdX_wire_uncorrected->GetYaxis()->SetTitle("dEdX");
 
    h2_mc_dEdX_wire_uncorrected->GetXaxis()->SetTitle("wire");
    h2_mc_dEdX_wire_corrected->GetXaxis()->SetTitle("wire");
-   h2_data5387_dEdX_wire_uncorrected->GetXaxis()->SetTitle("wire");
+   h2_data58XX_dEdX_wire_uncorrected->GetXaxis()->SetTitle("wire");
 
 
    h2_mc_dEdX_wire_uncorrected->Write();
    h2_mc_dEdX_wire_corrected->Write();
-   h2_data5387_dEdX_wire_uncorrected->Write();
-   h2_data5387_dEdX_wire_corrected->Write();
+   h2_data58XX_dEdX_wire_uncorrected->Write();
+   h2_data58XX_dEdX_wire_corrected->Write();
 /*
    h2_data5809_dEdX_wire_uncorrected->GetXaxis()->SetTitle("wire");
    h2_data5809_dEdX_wire_uncorrected->GetYaxis()->SetTitle("dEdX");
@@ -244,11 +244,11 @@ int dEdX_correction_try(const string path1, const string path2 ){
    auto h2_mc_pitch_wire_corrected = filtered_SCE
       .Histo2D({"h2_mc_pitch_wire_corrected","MC wire vs pitch corrected for SCE", nBin_wire, binLow_wire, binHigh_wire, nBin_pitch, binLow_pitch, binHigh_pitch}, "reco_beam_calo_wire","reco_beam_TrkPitch_SCE");
 
-   auto h2_data5387_pitch_wire_uncorrected = filtered_data5387
-      .Histo2D({"h2_data5387_pitch_wire_uncorrected","DATA 5387 wire vs pitch uncorrected", nBin_wire, binLow_wire, binHigh_wire, nBin_pitch, binLow_pitch, binHigh_pitch}, "reco_beam_calo_wire_NoSCE","reco_beam_TrkPitch_NoSCE");
+   auto h2_data58XX_pitch_wire_uncorrected = filtered_data58XX
+      .Histo2D({"h2_data58XX_pitch_wire_uncorrected","DATA 58XX wire vs pitch uncorrected", nBin_wire, binLow_wire, binHigh_wire, nBin_pitch, binLow_pitch, binHigh_pitch}, "reco_beam_calo_wire_NoSCE","reco_beam_TrkPitch_NoSCE");
 
-   auto h2_data5387_pitch_wire_corrected = filtered_data5387
-      .Histo2D({"h2_data5387_pitch_wire_corrected","DATA 5387 wire vs pitch corrected", nBin_wire, binLow_wire, binHigh_wire, nBin_pitch, binLow_pitch, binHigh_pitch}, "reco_beam_calo_wire","reco_beam_TrkPitch_SCE");
+   auto h2_data58XX_pitch_wire_corrected = filtered_data58XX
+      .Histo2D({"h2_data58XX_pitch_wire_corrected","DATA 58XX wire vs pitch corrected", nBin_wire, binLow_wire, binHigh_wire, nBin_pitch, binLow_pitch, binHigh_pitch}, "reco_beam_calo_wire","reco_beam_TrkPitch_SCE");
 
 /*   
    auto h2_data5809_pitch_wire_uncorrected = filtered_data5809
@@ -265,19 +265,19 @@ int dEdX_correction_try(const string path1, const string path2 ){
 
    h2_mc_pitch_wire_uncorrected->GetYaxis()->SetTitle("pitch");
    h2_mc_pitch_wire_corrected->GetYaxis()->SetTitle("pitch");
-   h2_data5387_pitch_wire_uncorrected->GetYaxis()->SetTitle("pitch");
-   h2_data5387_pitch_wire_corrected->GetYaxis()->SetTitle("pitch");
+   h2_data58XX_pitch_wire_uncorrected->GetYaxis()->SetTitle("pitch");
+   h2_data58XX_pitch_wire_corrected->GetYaxis()->SetTitle("pitch");
 
    h2_mc_pitch_wire_uncorrected->GetXaxis()->SetTitle("wire");
    h2_mc_pitch_wire_corrected->GetXaxis()->SetTitle("wire");
-   h2_data5387_pitch_wire_uncorrected->GetXaxis()->SetTitle("wire");
-   h2_data5387_pitch_wire_corrected->GetXaxis()->SetTitle("wire");
+   h2_data58XX_pitch_wire_uncorrected->GetXaxis()->SetTitle("wire");
+   h2_data58XX_pitch_wire_corrected->GetXaxis()->SetTitle("wire");
 
    h2_mc_pitch_wire_uncorrected->Write();
    h2_mc_pitch_wire_corrected->Write();
 
-   h2_data5387_pitch_wire_uncorrected->Write();
-   h2_data5387_pitch_wire_corrected->Write();
+   h2_data58XX_pitch_wire_uncorrected->Write();
+   h2_data58XX_pitch_wire_corrected->Write();
 
 /*   
    h2_data5809_pitch_wire_uncorrected->GetYaxis()->SetTitle("pitch");
@@ -290,13 +290,13 @@ int dEdX_correction_try(const string path1, const string path2 ){
    h2_data5809_pitch_wire_corrected->Write();
    h2_data5770_pitch_wire_corrected->Write();
 */
-   auto h_data_cosThetaXZ = filtered_data5387
+   auto h_data_cosThetaXZ = filtered_data58XX
       .Define("data_cosThetaXZ", "reco_beam_trackDirX * beam_inst_dirX + reco_beam_trackDirY * beam_inst_dirY + reco_beam_trackDirZ * beam_inst_dirZ")
-      .Histo1D({"h_data5387_cosThetaXZ", "DATA 5387 cosine Theta XZ", 200,0.5,1.2}, "data_cosThetaXZ");
+      .Histo1D({"h_data58XX_cosThetaXZ", "DATA 58XX cosine Theta XZ", 200,0.5,1.2}, "data_cosThetaXZ");
 
    auto h_mc_cosThetaXZ = filtered_SCE
       .Define("mc_cosThetaXZ", "reco_beam_trackDirX * beam_inst_dirX + reco_beam_trackDirY * beam_inst_dirY + reco_beam_trackDirZ * beam_inst_dirZ")
-      .Histo1D({"h_mc_cosThetaXZ", "mc 5387 cosine Theta XZ", 200,0.5,1.2}, "mc_cosThetaXZ");
+      .Histo1D({"h_mc_cosThetaXZ", "mc 58XX cosine Theta XZ", 200,0.5,1.2}, "mc_cosThetaXZ");
 
    h_data_cosThetaXZ->GetXaxis()->SetTitle("cos");
    h_mc_cosThetaXZ->GetXaxis()->SetTitle("cos");
